@@ -17,7 +17,7 @@ pip_build:
     - python3 --version
     - python3 -m pip install --upgrade pip
   script:
-    - python3 -m pip install .
+    - python3 -m pip install .   
 
 
 pytest:
