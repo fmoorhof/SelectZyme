@@ -29,9 +29,10 @@ jobs:
         pip install flake8 pytest  # todo: replace later with install options from pyproject.toml
         if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install .; fi  # install requirements declared in pyproject.toml
         python -m pip list
+        pwd
     - name: Test with pytest
       run: |
-        python -m pytest
+        python -m pytest tests/
 #        pytest
 #    - name: Lint with flake8
 #      run: |
