@@ -44,7 +44,7 @@ jobs:
     - name: Install dependencies
       if: steps.cache-venv.outputs.cache-hit != 'true'
       run: |
-        python -m venv ./.venv && ./venv/bin/activate
+        python -m venv ./.venv && ./.venv/bin/activate
         pip install --upgrade pip
         # install requirements declared in pyproject.toml
         if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install .[dev]; fi
