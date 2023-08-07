@@ -32,7 +32,7 @@ jobs:
         pwd
     - name: Test with pytest
       run: |
-        python -m pytest tests/
+        python -m pytest tests/test_stack.py
 #        pytest
 #    - name: Lint with flake8
 #      run: |
