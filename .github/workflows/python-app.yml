@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "1-fix-CI" ]
   pull_request:
     branches: [ "main" ]
 
@@ -31,7 +31,7 @@ jobs:
         python -m pip list
     - name: Test with pytest
       run: |
-        
+        pwd
         python -m pytest tests/
     - name: Lint with flake8
       run: |
