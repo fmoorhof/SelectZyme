@@ -14,6 +14,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["click, numpy"],
+    install_requires=["click", "numpy"],
     entry_points={"console_scripts": ["ec = src.main:main"]},
 )
