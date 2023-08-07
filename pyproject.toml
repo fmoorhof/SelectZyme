@@ -20,7 +20,7 @@ requires-python = ">= 3.7"
 dependencies = [
     "numpy >= 1.23.5",
     "pandas",
-#    "matplotlib",
+    "matplotlib",
 #    "plotly",
 #    "qdrant-client",
 #    "scipy",
