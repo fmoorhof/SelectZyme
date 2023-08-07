@@ -18,9 +18,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # chek if the .yaml is valid: a bit unnecessary because actions tell you anyways if its not valid
     - name: Validate YAML file
-      run: yamllint .github/workflows/python-app.yml
+      uses: karancode/yamllint-github-action@master
       with:
+          yamllint_file_or_dir: '.github/workflows/python-app.yml'
           yamllint_strict: false
           yamllint_comment: true
           yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
