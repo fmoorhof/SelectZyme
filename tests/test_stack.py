@@ -8,19 +8,19 @@ def stack_fixture():
     return Stack()
 
 
-def constructor_test(stack_inst):
+def test_constructor(stack_inst):
     assert isinstance(stack_inst, Stack)
     assert len(stack_inst) == 0
 
 
-def push_test(stack_inst):
+def test_push(stack_inst):
     stack_inst.push(3)
     assert len(stack_inst) == 1
     stack_inst.push(5)
     assert len(stack_inst) == 2
 
 
-def pop_test(stack_inst):
+def test_pop(stack_inst):
     stack_inst.push("abc")
     stack_inst.push("def")
     assert stack_inst.pop() == "def"

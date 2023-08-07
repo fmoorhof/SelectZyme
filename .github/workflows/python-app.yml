@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "1-fix-CI" ]
   pull_request:
     branches: [ "main" ]
 
@@ -31,8 +31,9 @@ jobs:
         python -m pip list
     - name: Test with pytest
       run: |
-        python -m pytest
-        pytest
+        pwd
+        python -m pytest tests/test_stack.py
+#        pytest
 #    - name: Lint with flake8
 #      run: |
 #        # stop the build if there are Python syntax errors or undefined names
