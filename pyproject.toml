@@ -1,6 +1,6 @@
 [project]
 name = "ec"
-version = "0.0.0"
+version = "0.0.1"
 description = "Predict EC numbers for protein sequences"
 readme = "README.md"
 authors = [
@@ -18,7 +18,14 @@ classifiers = [
 ]
 requires-python = ">= 3.7"
 dependencies = [
-    "numpy >= 1.23.5",
+    "numpy >= 1.23.5"
+    "fair-esm"
+    "torch"
+    "pandas"
+    "matplotlib"
+    "plotly"
+    "qdrant"
+    "scipy",
 ]
 
 [project.urls]
