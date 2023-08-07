@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "1-fix-CI" ]
+    branches: [ "1-simple-embedding-and-visualization" ]
   pull_request:
     branches: [ "main" ]
 
