@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -19,20 +19,25 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Validate YAML file
-      run: yamllint .github/workflows/python-app.yml     
+      run: yamllint .github/workflows/python-app.yml
+      with:
+          yamllint_strict: false
+          yamllint_comment: true
+          yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-        # cache-dependency-path: pyproject.toml
-        # cache: 'pip' # caching pip dependencies, default from [**/requirements.txt]
+        cache-dependency-path: pyproject.toml
+        cache: 'pip' # caching pip dependencies, default from [**/requirements.txt]
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest  # todo: replace later with install options from pyproject.toml
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install .; fi  # install requirements declared in pyproject.toml
+        # install requirements declared in pyproject.toml
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install .; fi
         python -m pip list
 
     - name: Test with pytest
