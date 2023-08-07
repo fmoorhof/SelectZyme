@@ -16,6 +16,7 @@ pip_build:
     - apt-get update -y && apt-get upgrade -y
     - python3 --version
     - python3 -m pip install --upgrade pip
+    - pwd
   script:
     - python3 -m pip install .   
 
@@ -24,6 +25,7 @@ pytest:
   stage: test
   before_script:
     - echo 'before script started'
+    - pwd
   script:
     - python -m pytest tests/ -vvv -s
       --durations=0

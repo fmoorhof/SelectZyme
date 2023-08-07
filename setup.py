@@ -7,12 +7,13 @@ setup(
     author_email="fmoorhof@ipb-halle.de",
     url="https://www.ipb-halle.de/en/research/bioorganic-chemistry/research-groups/computational-chemistry/projects/",
     description="Predict EC numbers for protein sequences",
-    packages=find_packages(),
+    package_dir={'': 'src'},
+    packages=find_packages(where='src'),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["click"],
+    install_requires=["click, numpy"],
     entry_points={"console_scripts": ["ec = src.main:main"]},
 )
