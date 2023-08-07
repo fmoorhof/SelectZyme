@@ -4,7 +4,7 @@ from src.logic import Stack
 
 
 @pytest.fixture(name="stack_inst")
-def stack_fixture():
+def stack_fixture_test():
     return Stack()
 
 
