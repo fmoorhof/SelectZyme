@@ -14,16 +14,19 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
+
+    - name: Validate YAML file
+      run: yamllint abc.yml     
+
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-        cache: 'pip' # caching pip dependencies
+        cache-dependency-path: pyproject.toml
+        cache: 'pip' # caching pip dependencies, default from [**/requirements.txt]
 
     - name: Install dependencies
       run: |
@@ -31,10 +34,12 @@ jobs:
         pip install flake8 pytest  # todo: replace later with install options from pyproject.toml
         if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install .; fi  # install requirements declared in pyproject.toml
         python -m pip list
+
     - name: Test with pytest
       run: |
         pwd
         python -m pytest tests/
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
