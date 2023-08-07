@@ -50,6 +50,7 @@ jobs:
     - name: Test with pytest
       run: |
         pwd
+        pip list
         python -m pip list
         python -m pytest tests/
 
