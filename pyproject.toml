@@ -1,0 +1,117 @@
+[project]
+name = "ec"
+version = "0.0.0"
+description = "Predict EC numbers for protein sequences"
+readme = "README.md"
+authors = [
+    { name = "Felix Moorhoff", email = "fmoorhof@ipb-halle.de" },
+]
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+]
+requires-python = ">= 3.7"
+dependencies = [
+    "numpy >= 1.23.5",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/fmoorhof/ec"
+"Repository" = "https://github.com/fmoorhof/ec"
+"Documentation" = "https://fmoorhof.github.io/fmoorhof/ec"
+"Bug Tracker" = "https://github.com/fmoorhof/ec/-/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[build-system]
+requires = ["setuptools>=0.61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "pytest-cov",
+    "pyproject-flake8",
+]
+docs = [
+    "sphinx",
+    "sphinxcontrib-napoleon",
+    "sphinxcontrib-runcmd",
+]
+codegen = [
+    "black",
+    "isort",
+    "jinja2",
+    "typer",
+]
+full = [
+    "black",
+    "isort",
+    "jinja2",
+    # flake8 does not support pyproject.toml config natively; pyproject-flake8 does not support flake8 >= 5.0.0
+    "flake8 < 5.0.0",
+    "pyproject-flake8",
+    "pytest",
+    "pytest-cov",
+    "sphinx",
+    "sphinxcontrib-napoleon",
+    "sphinxcontrib-runcmd",
+    "typer",
+    "xmlschema",
+]
+
+
+[tool.pytest.ini_options]
+pythonpath = "src/"
+filterwarnings = [
+    "ignore:.*pkg_resources.*:DeprecationWarning",
+]
+
+[tool.black]
+line-length = 120
+fast = true
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "@abstractmethod",
+    "@abc.abstractmethod",
+    "def __repr__(self):",
+    # re-enable the standard pragma
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING",
+]
+omit = [
+    "setup.py",
+]
+precision = 2
+
+[tool.isort]
+line_length = 120
+profile = "black"
+skip = [
+    "venv",
+]
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = "E203,E501,W293"
+exclude = [
+    "venv",
+]
