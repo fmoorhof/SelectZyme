@@ -20,12 +20,12 @@ requires-python = ">= 3.7"
 dependencies = [
     "numpy >= 1.23.5",
     "pandas",
-    "matplotlib",
-    "plotly",
-    "qdrant-client",
-    "scipy",
-    "fair-esm",    
-    "torch",
+#    "matplotlib",
+#    "plotly",
+#    "qdrant-client",
+#    "scipy",
+#    "fair-esm",    
+#    "torch",
 ]
 
 [project.urls]
