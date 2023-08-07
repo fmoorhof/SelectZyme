@@ -19,6 +19,5 @@ def main(location, zone):
         st.pop(zone)
 
 
-
 if __name__ == "__main__":
     main()
