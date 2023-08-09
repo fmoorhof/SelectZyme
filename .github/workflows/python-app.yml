@@ -53,14 +53,10 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         mamba create -n my-env
-        echo $HOME
-        ls ~/*
-        cat ~/.profile
-        source ~/.bashrc
-        source activate my-env  # mamba init bash requires shell restart
+        source ~/.profile  # mamba init bash would require shell restart
+        mamba activate my-env
         ls /usr/share/miniconda3/envs/my-env/*
         ls /usr/share/miniconda3/envs/my-env/conda-meta/*
-        ls /usr/share/miniconda3/envs/my-env/shell
 
         # mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
         #   cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels  # install cudf and cuml
