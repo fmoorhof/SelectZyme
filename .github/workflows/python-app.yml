@@ -54,14 +54,6 @@ jobs:
       run: |
         mamba create -n my-env
         mamba init bash
-        mamba activate my-env
-
-        # mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-        #   cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels  # install cudf and cuml
-        python --version
-        pip list
-        pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
-        pip list
 
 # todo: No module named pytest: can not access dependencies
     - name: Test with pytest
