@@ -28,7 +28,7 @@ jobs:
     #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
     
     - name: Setup Mambaforge
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v2
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
