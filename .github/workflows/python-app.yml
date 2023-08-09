@@ -54,7 +54,8 @@ jobs:
       run: |
         mamba create -n my-env
         echo $HOME
-        ls ~/.bashrc
+        ls ~/*
+        cat ~/.profile
         source ~/.bashrc
         source activate my-env  # mamba init bash requires shell restart
         ls /usr/share/miniconda3/envs/my-env/*
