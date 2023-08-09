@@ -16,25 +16,25 @@ rapidsai/rapidsai:cuda11.5-base-centos7-py3.9
 import logging
 import sys
 
+import cudf
+import matplotlib.pyplot as plt
+
 # downstram analysis: not particularly needed here
 import plotly.express as px
 import plotly.figure_factory as ff
-# ! pip install qdrant-client
-from qdrant_client import models, QdrantClient
-
-import matplotlib.pyplot as plt
-
-import cudf
-from cuml.cluster import DBSCAN
-from cuml.cluster import HDBSCAN  # pip install hdbscan (the cuml is based on it else plotting can not be done direcly from the module)
-from cuml.cluster import AgglomerativeClustering
+from cuml.cluster import (
+    HDBSCAN,
+)  # pip install hdbscan (the cuml is based on it else plotting can not be done direcly from the module)
+from cuml.cluster import DBSCAN, AgglomerativeClustering
 from cuml.decomposition import PCA
 
+# ! pip install qdrant-client
+from qdrant_client import QdrantClient, models
 
 # qdrant = QdrantClient(":memory:") # Create in-memory Qdrant instance
 qdrant = QdrantClient(path="Vector_db/")  # Persists changes to disk
-collection_name = '2ogd_ec_50'
-collection_name = '2ogd_ec_only'
+collection_name = "2ogd_ec_50"
+collection_name = "2ogd_ec_only"
 # collection_name = '2ogd_full'
 # collection_name = 'test_parsing'
 # collection_name = 'test_parsing_batch2_annotated_headtail'
@@ -43,22 +43,26 @@ collection_name = '2ogd_ec_only'
 # Retrieve all points of a collection with defined return fields (payload e.g.)  # takes ~10 mins for 200k
 # A point is a record consisting of a vector and an optional payload
 collection = qdrant.get_collection(collection_name)
-records = qdrant.scroll(collection_name=collection_name,
-                           with_payload=True,  # If List of string - include only specified fields
-                           with_vectors=True,
-                           limit=collection.vectors_count)  # Tuple(Records, size)
+records = qdrant.scroll(
+    collection_name=collection_name,
+    with_payload=True,  # If List of string - include only specified fields
+    with_vectors=True,
+    limit=collection.vectors_count,
+)  # Tuple(Records, size)
 # qdrant.delete_collection(collection_name)
-logging.info(f'Collection {collection_name} loaded')
+logging.info(f"Collection {collection_name} loaded")
 
 # extract the header and vector from the Qdrant data structure
 id_embed = {}
 annotation = []
 for i in records[0]:  # access only the Records: [0]
     vector = i.vector
-    id = i.payload.get('Entry')
+    id = i.payload.get("Entry")
     id_embed[id] = vector
     annotation.append(i.payload)
-embeddings = cudf.DataFrame(list(id_embed.values()))  # dimension error if dataset has duplicates
+embeddings = cudf.DataFrame(
+    list(id_embed.values())
+)  # dimension error if dataset has duplicates
 df = cudf.DataFrame(annotation)
 
 X = embeddings
@@ -68,48 +72,51 @@ X = embeddings
 sys.setrecursionlimit(203252)
 
 # Clustering  # finished in 12 mins on 200k:)
-min_samples = 30  # 30 worked good for ec_only; 50 for 200k 
-hdbscan = HDBSCAN(min_samples=min_samples, gen_min_span_tree=True)  # min_samples= amount of how many points shall be in a neighborhood of a point to form a cluster
+min_samples = 30  # 30 worked good for ec_only; 50 for 200k
+hdbscan = HDBSCAN(
+    min_samples=min_samples, gen_min_span_tree=True
+)  # min_samples= amount of how many points shall be in a neighborhood of a point to form a cluster
 labels = hdbscan.fit_predict(X)
-logging.info(f'HDBSCAN done')
+logging.info(f"HDBSCAN done")
 
-#insert here the plottings again
-
+# insert here the plottings again
 
 
 # Clustering
 # dbscan = DBSCAN(eps=1.0, min_samples=1)
 # labels = dbscan.fit_predict(X)
-logging.info(f'DBSCAN done')
+logging.info(f"DBSCAN done")
 
 
 # Dim reduced visualization with PCA
-pca = PCA(n_components=3, output_type='numpy')
+pca = PCA(n_components=3, output_type="numpy")
 X_pca = pca.fit_transform(X)
 variance = pca.explained_variance_ratio_ * 100
-variance = [ '%.1f' % i for i in variance]  # 1 decimal only
-print(f'% Variance of the PCA components: {variance}')
-logging.info(f'PCA done')
+variance = ["%.1f" % i for i in variance]  # 1 decimal only
+print(f"% Variance of the PCA components: {variance}")
+logging.info(f"PCA done")
 
 # Visualize the clusters using Plotly Express
-df['cluster'] = labels
-df['x'] = X_pca[:, 0]
-df['y'] = X_pca[:, 1]
+df["cluster"] = labels
+df["x"] = X_pca[:, 0]
+df["y"] = X_pca[:, 1]
 # df['z'] = X_pca[:, 2]  # 2D looks sophisticated
 # df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
 cols = df.columns.values.tolist()
 cols = cols[0:-2]
-fig = px.scatter(df, x='x', y='y', color='EC number',  # color='cluster'  # scatter_3d(, z='z')
-                 title=f'CuML HDBSCAN (min_samples = {min_samples}) with 2D-PCA (variance: {variance}) on dataset: {collection_name}', 
-                 hover_data=cols,
-                 opacity=0.5,
-                 color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
-                 # symbol=['diamond' if value == True else 'circle' for value in df['Reviewed'].to_pandas()],  # .to_pandas() needed in cudf
-                 )
+fig = px.scatter(
+    df,
+    x="x",
+    y="y",
+    color="EC number",  # color='cluster'  # scatter_3d(, z='z')
+    title=f"CuML HDBSCAN (min_samples = {min_samples}) with 2D-PCA (variance: {variance}) on dataset: {collection_name}",
+    hover_data=cols,
+    opacity=0.5,
+    color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
+    # symbol=['diamond' if value == True else 'circle' for value in df['Reviewed'].to_pandas()],  # .to_pandas() needed in cudf
+)
 fig.write_html(f"Output/trash2_Viridis_diamond{collection_name}_hdbscan_pca.html")
-logging.info(f'Script completed without errors')
-
-
+logging.info(f"Script completed without errors")
 
 
 # plotting the results
@@ -117,12 +124,11 @@ print(labels)
 # Bug: dtype: int32 - Segmentation fault (core dumped)
 
 hdbscan.single_linkage_tree_.plot()
-plt.savefig(f'Output/{collection_name}_single_linkage_tree.pdf')
+plt.savefig(f"Output/{collection_name}_single_linkage_tree.pdf")
 hdbscan.minimum_spanning_tree_.plot()
-plt.savefig(f'Output/{collection_name}_minimum_spanning_tree.pdf')
+plt.savefig(f"Output/{collection_name}_minimum_spanning_tree.pdf")
 hdbscan.condensed_tree.plot()
-plt.savefig(f'Output/{collection_name}_condensed_tree.pdf')
-
+plt.savefig(f"Output/{collection_name}_condensed_tree.pdf")
 
 
 """
