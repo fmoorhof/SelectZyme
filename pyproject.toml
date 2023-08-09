@@ -22,10 +22,10 @@ dependencies = [
     "pandas",
     "matplotlib",
     "plotly",
-#    "qdrant-client",
-#    "scipy",
-#    "fair-esm",    
-#    "torch",
+    "qdrant-client",
+    "scipy",
+    "fair-esm",    
+    "torch",
 ]
 
 [project.urls]
