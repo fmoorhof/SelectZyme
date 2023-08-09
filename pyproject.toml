@@ -26,6 +26,8 @@ dependencies = [
     "scipy",
     "fair-esm",    
     "torch",
+    "cudf-cu11",
+    "cuml-cu11",
 ]
 
 [project.urls]
