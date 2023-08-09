@@ -53,8 +53,9 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         mamba create -n my-env
-        ls /usr/share/miniconda3/envs/my-env
+        source activate my-env  # mamba init bash requires shell restart
         ls /usr/share/miniconda3/envs/my-env/*
+        ls /usr/share/miniconda3/envs/my-env/conda-meta/*
         ls /usr/share/miniconda3/envs/my-env/shell
         mamba init bash
         mamba activate my-env
