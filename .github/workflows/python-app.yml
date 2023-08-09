@@ -57,7 +57,6 @@ jobs:
 
 # todo: No module named pytest: can not access dependencies
     - name: Test with pytest
-      shell: bash -l {0}
       run: |
         pwd
         mamba activate my-env
