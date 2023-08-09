@@ -66,7 +66,7 @@ jobs:
       shell: bash -l {0}
       run: |
         source ~/.profile  # mamba init bash would require shell restart
-        source ~/.bashrc  # created by 'mamba init'
+        # source ~/.bashrc  # created by 'mamba init'  # non existent for cached env
         mamba activate my-env
 
         which python
