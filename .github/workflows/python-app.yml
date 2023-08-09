@@ -52,8 +52,7 @@ jobs:
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        mamba env update -n my-env 
-        mamba install -c rapidsai -c conda-forge -c nvidia  \
+        mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
           cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels  # install cudf and cuml
         mamba activate my-env
         pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
