@@ -57,9 +57,6 @@ jobs:
         source ~/.profile  # mamba init bash would require shell restart
         source ~/.bashrc  # created by 'mamba init'
         mamba activate my-env
-        ls /usr/share/miniconda3/envs/my-env/*
-        ls /usr/share/miniconda3/envs/my-env/conda-meta/*
-
         # mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
         #   cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels  # install cudf and cuml
         python --version
@@ -71,17 +68,21 @@ jobs:
     - name: Test with pytest
       shell: bash -l {0}
       run: |
-        pwd
+        source ~/.profile  # mamba init bash would require shell restart
+        source ~/.bashrc  # created by 'mamba init'
         mamba activate my-env
         # ./.venv/bin/activate
         which python
+        python --version
         pip list
-        python -m pytest tests/  # python -m needed to import correctly
+        python -m pytest tests/test_stack.py  # python -m needed to import correctly
         pytest tests/  # test
 
     - name: Lint with flake8
     # shell: bash -l {0}
       run: |
+        source ~/.profile  # mamba init bash would require shell restart
+        source ~/.bashrc  # created by 'mamba init'      
         mamba activate my-env
         # ./.venv/bin/activate
         # stop the build if there are Python syntax errors or undefined names
