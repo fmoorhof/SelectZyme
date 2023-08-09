@@ -55,7 +55,7 @@ jobs:
         mamba create -n my-env
         mamba init
         source ~/.profile  # mamba init bash would require shell restart
-        mamba init
+        source ~/.bashrc  # created by 'mamba init'
         mamba activate my-env
         ls /usr/share/miniconda3/envs/my-env/*
         ls /usr/share/miniconda3/envs/my-env/conda-meta/*
