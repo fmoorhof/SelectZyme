@@ -52,10 +52,12 @@ jobs:
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-          cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels  # install cudf and cuml
-        # mamba init
-        conda activate my-env
+        mamba create -n my-env
+        mamba init bash
+        mamba activate my-env
+
+        # mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
+        #   cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels  # install cudf and cuml
         python --version
         pip list
         pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
@@ -66,7 +68,7 @@ jobs:
       shell: bash -l {0}
       run: |
         pwd
-        conda activate my-env
+        mamba activate my-env
         # ./.venv/bin/activate
         which python
         pip list
@@ -76,7 +78,7 @@ jobs:
     - name: Lint with flake8
     # shell: bash -l {0}
       run: |
-        conda activate my-env
+        mamba activate my-env
         # ./.venv/bin/activate
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
