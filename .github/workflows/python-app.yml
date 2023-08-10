@@ -58,7 +58,13 @@ jobs:
         python --version
         pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
 
-# todo: No module named pytest: can not access dependencies
+
+  test:
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v3
+
     - name: Test with pytest
       shell: bash -l {0}
       run: |
@@ -73,8 +79,15 @@ jobs:
         python -m pytest tests/test_stack.py  # python -m needed to import correctly
         # pytest tests/  # test
 
+
+  style:
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v3
+
     - name: Lint with flake8
-    # shell: bash -l {0}
+      shell: bash -l {0}
       run: |
         mamba init
         source ~/.profile  # mamba init bash would require shell restart
@@ -82,4 +95,4 @@ jobs:
         mamba activate my-env
 
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
