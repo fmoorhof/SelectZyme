@@ -14,7 +14,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
 
@@ -26,7 +27,6 @@ jobs:
     #       yamllint_strict: false
     #       yamllint_comment: true
     #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
-    
     
     - name: Setup Mambaforge
       uses: conda-incubator/setup-miniconda@v2
