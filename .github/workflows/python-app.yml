@@ -58,7 +58,6 @@ jobs:
         python --version
         pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
 
-
   test:
     # runs-on: ubuntu-latest
     runs-on: self-hosted
