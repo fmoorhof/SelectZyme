@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    # runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest  # todo: change chaching path when modifying this
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
@@ -40,7 +40,8 @@ jobs:
       id: cache
       uses: actions/cache@v3
       with:
-        path: /usr/share/miniconda3/envs/my-env
+        # path: /usr/share/miniconda3/envs/my-env  # Github Actions
+        path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
         key: ${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
@@ -58,7 +59,7 @@ jobs:
         mamba info --all
         which mamba
         mamba env list
-        ls /usr/share/m*
+        ls /usr/share/min*
         python --version
         # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
 
