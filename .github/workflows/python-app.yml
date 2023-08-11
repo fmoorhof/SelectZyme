@@ -50,7 +50,7 @@ jobs:
       run: |
         # get CuDF and CuML
         # mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-          cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels
+        #   cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels
         mamba init
         source ~/.profile  # mamba init bash would require shell restart
         source ~/.bashrc  # created by 'mamba init'
@@ -58,6 +58,7 @@ jobs:
         mamba info --all
         which mamba
         mamba env list
+        ls /usr/share/m*
         python --version
         # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
 
