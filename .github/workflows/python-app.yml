@@ -59,7 +59,6 @@ jobs:
         mamba info --all
         which mamba
         mamba env list
-        ls /usr/share/min*
         python --version
         # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
 
