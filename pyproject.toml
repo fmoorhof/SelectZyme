@@ -17,18 +17,15 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 requires-python = ">= 3.7"
-dependencies = [
-    "numpy >= 1.23.5",
-    "pandas",
-    "matplotlib",
-    "plotly",
-    "qdrant-client",
-    "scipy",
-    "fair-esm",    
-    "torch",
-#    "cudf-cu11",  # only exists for conda
-#    "cuml-cu11",  # only exists for conda
-]
+
+dynamic = ["dependencies", "optional-dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.dynamic.optional-dependencies]
+dev = { file = ["requirements-dev.txt"] }
+
 
 [project.urls]
 "Homepage" = "https://github.com/fmoorhof/ec"
@@ -47,13 +44,6 @@ build-backend = "setuptools.build_meta"
 test = [
     "pytest",
     "pytest-cov",
-]
-dev = [
-    "black",
-    "isort",
-    "pytest",
-    "pytest-cov",
-    "pyproject-flake8",
 ]
 docs = [
     "sphinx",

@@ -1,0 +1,7 @@
+pytest
+pytest-cov
+black
+isort
+pytest
+pytest-cov
+pyproject-flake8

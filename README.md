@@ -10,6 +10,27 @@ EC number prediction tool
       ├── logic.py
       └── main.py
 
+## Install
+### Conda
+```
+conda create -n ENVNAME "python>=3.7" --file requirements.txt
+conda update --name ENVNAME --file requirements.txt
+```
+
+### Pip
+```
+# local installation of the package:
+pip install .
+
+# editable install:
+pip install -e .
+
+# editable install with optional dependencies:
+pip install -e `.[full]`
+```
+
+
+
 
 
 #### Development tools

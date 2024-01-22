@@ -1,0 +1,5 @@
+numpy
+fair-esm
+torch
+# cudf-cu11  # only exists for conda
+# cuml-cu11 # only exists for conda
