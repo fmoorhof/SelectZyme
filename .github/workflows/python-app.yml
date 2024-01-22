@@ -7,7 +7,7 @@ name: Python application
 
 on:
   push:
-    branches: ["4-objectification"]
+    branches: ["5-pipeline-implementations"]
   pull_request:
     branches: ["main"]
 
@@ -86,6 +86,7 @@ jobs:
     - name: Pytest
         # shell: bash -l {0}
       run: |
+          pip list
           mamba init
           mamba activate my-env
           python --version
@@ -104,40 +105,43 @@ jobs:
 
     - name: Setup Mambaforge2
       run: |
-          echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-          echo "conda activate my-env" >> $GITHUB_ENV
+          source /usr/share/miniconda3/etc/profile.d/conda.sh
+          mamba activate my-env
+          pip list
 
     - name: Test with pytest
       shell: bash -l {0}
       run: |
-        echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-        echo "conda activate my-env" >> $GITHUB_ENV
-
-        # source ~/.bashrc  # created by 'mamba init'
-        # source ~/.profile  # mamba init bash would require shell restart
-        pip list
-        mamba activate my-env
-
         which python
         python --version
         pip list
         python -m pytest tests/test_stack.py  # python -m needed to import correctly
         pytest tests/test_embed.py
 
-  style:
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted
-    needs: build
-    steps:
-    - uses: actions/checkout@v3
-
-
-    - name: Lint with flake8
-      shell: bash -l {0}
+    - name: Test with pytest
+      # shell: bash -l {0}
       run: |
-        source ~/.profile  # mamba init bash would require shell restart
-        source ~/.bashrc  # created by 'mamba init'
-        mamba activate my-env
+        which python
+        python --version
+        pip list
+        python -m pytest tests/test_stack.py  # python -m needed to import correctly
+        pytest tests/test_embed.py        
 
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics        
+
+  # style:
+  #   # runs-on: ubuntu-latest
+  #   runs-on: self-hosted
+  #   needs: build
+  #   steps:
+  #   - uses: actions/checkout@v3
+
+
+  #   - name: Lint with flake8
+  #     shell: bash -l {0}
+  #     run: |
+  #       source ~/.profile  # mamba init bash would require shell restart
+  #       source ~/.bashrc  # created by 'mamba init'
+  #       mamba activate my-env
+
+  #       # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+  #       # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics        
