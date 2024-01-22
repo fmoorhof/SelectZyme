@@ -1,2 +1,3 @@
 # GPU torch and Cu* installed via conda
 fair-esm
+qdrant-client

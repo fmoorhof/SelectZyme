@@ -7,7 +7,7 @@ name: Python application
 
 on:
   push:
-    branches: ["5-pipeline-implementations"]
+    branches: ["5-"]
   pull_request:
     branches: ["main"]
 
@@ -56,8 +56,6 @@ jobs:
           cudf=23.12 cuml=23.12 python=3.10 cuda-version=11.2 \
           pytorch  # cugraph=23.12 dash  # this may take some time
         mamba init
-        ls /usr/share/*
-        cat /usr/share/miniconda3/etc/profile.d/conda.sh
         echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
         echo "conda activate my-env" >> $GITHUB_ENV
         which mamba
