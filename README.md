@@ -11,10 +11,14 @@ EC number prediction tool
       └── main.py
 
 ## Install
+For optimal GPU support, the conda installation is reccomended.
 ### Conda
 ```
-conda create -n ENVNAME "python>=3.7" --file requirements.txt
-conda update --name ENVNAME --file requirements.txt
+# conda create -n ec "python==3.10" --file requirements.txt
+conda create -n ec -c rapidsai -c conda-forge -c nvidia  \
+    cudf=23.12 cuml=23.12 cugraph=23.12 python=3.10 cuda-version=11.2 \
+    pytorch dash  # this may take some time
+conda update --name ec --file requirements.txt    
 ```
 
 ### Pip
@@ -29,6 +33,13 @@ pip install -e .
 pip install -e `.[full]`
 ```
 
+Warning GPU support with CuDF and CuML are unfortunately only available (stable) via conda :/
+However, you could still try to install it seperately by:
+```
+pip install \
+    --extra-index-url=https://pypi.nvidia.com \
+    cudf-cu11==23.12.* cuml-cu11==23.12.* cugraph-cu11==23.12.*
+```
 
 
 

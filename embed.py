@@ -10,34 +10,6 @@ import esm
 from preprocessing import read_fasta
 
 
-def read_fasta(filepath):
-    """
-    Iteratively returns the entries from a fasta file.
-    
-    Parameters
-    ----------
-    file : str
-        the fasta file
-    
-    Yields
-    ------
-    output : tuple
-        a single entry in the fasta file (header, sequence)
-    """
-    is_header = lambda x: x.startswith('>')
-    compress  = lambda x: ''.join(_.strip() for _ in x)
-    reader    = iter(groupby(open(filepath), is_header))
-    reader    = iter(groupby(open(filepath), is_header)) if next(reader)[0] else reader
-    for key, group in reader:
-        if key:
-            for header in group:
-                header = header[1:].strip()
-        else:
-            sequence = compress(group)
-            if sequence != '':
-                yield header, sequence
-
-
 def gen_embedding(sequences, device: str = 'cuda'):
     """
     Generate embeddings for a list of protein sequences.

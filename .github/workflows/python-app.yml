@@ -1,11 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
+# todo: try miniconda 3 from here instead, think about versions and OSes https://github.com/conda-incubator/setup-miniconda#example-1-basic-usage
+
 name: Python application
 
 on:
   push:
-    branches: ["3-tests"]
+    branches: ["4-objectification"]
   pull_request:
     branches: ["main"]
 
@@ -14,8 +16,8 @@ permissions:
 
 jobs:
   build:
-    # runs-on: ubuntu-latest  # todo: change chaching path when modifying this
-    runs-on: self-hosted
+    runs-on: ubuntu-latest  # todo: change chaching path when modifying this
+    # runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
 
@@ -40,8 +42,8 @@ jobs:
       id: cache
       uses: actions/cache@v3
       with:
-        # path: /usr/share/miniconda3/envs/my-env  # Github Actions
-        path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
+        path: /usr/share/miniconda3/envs/my-env  # Github Actions
+        # path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
         key: ${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
@@ -51,7 +53,8 @@ jobs:
       run: |
         # get CuDF and CuML
         mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-          cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels
+          cudf=23.12 cuml=23.12 cugraph=23.12 python=3.10 cuda-version=11.2 \
+          pytorch dash  # this may take some time
         mamba init
         source ~/.profile  # mamba init bash would require shell restart
         source ~/.bashrc  # created by 'mamba init'
@@ -59,12 +62,13 @@ jobs:
         which mamba
         mamba env list
         python --version
-        pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
+        # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
+        pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
 
 
   test:
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    # runs-on: self-hosted
     needs: build
     steps:
     - uses: actions/checkout@v3
