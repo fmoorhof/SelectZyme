@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import esm 
 
-from preprocessing import read_fasta
+from preprocessing import Preprocessing
 
 
 def gen_embedding(sequences, device: str = 'cuda'):
@@ -54,7 +54,7 @@ if __name__=='__main__':
     # todo: re-write: this is super ugly -> parse as df directly
     headers = []
     sequences = []
-    for h, s in read_fasta(fasta_file):
+    for h, s in Preprocessing.read_fasta(fasta_file):
         headers.append(h)
         sequences.append(s)
 
