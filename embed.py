@@ -2,11 +2,12 @@
 This file provides basic functionalites like file parsing and esm embedding.
 """
 import logging
-from itertools import groupby
 
 import numpy as np
 import torch
 import esm 
+
+from preprocessing import read_fasta
 
 
 def read_fasta(filepath):
@@ -76,9 +77,7 @@ def gen_embedding(sequences, device: str = 'cuda'):
 if __name__=='__main__':
 
     # example dataset from the paper
-    fasta_file = 'head_10.fasta'
-    fasta_file = '50_feedbacked.fasta'
-    fasta_file = 'datasets/1685531781.fas.3'
+    fasta_file = 'tests/head_10.fasta'
 
     # todo: re-write: this is super ugly -> parse as df directly
     headers = []
