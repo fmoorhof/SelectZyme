@@ -1,3 +1,2 @@
 # GPU torch and Cu* installed via conda
-numpy
 fair-esm
