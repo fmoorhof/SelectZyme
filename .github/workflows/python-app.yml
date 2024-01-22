@@ -1,11 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
+# todo: try miniconda 3 from here instead, think about versions and OSes https://github.com/conda-incubator/setup-miniconda#example-1-basic-usage
+
 name: Python application
 
 on:
   push:
-    branches: ["3-tests"]
+    branches: ["4-objectification"]
   pull_request:
     branches: ["main"]
 
@@ -13,9 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    # runs-on: ubuntu-latest  # todo: change chaching path when modifying this
-    runs-on: self-hosted
+  build:  # cached build is 2mins vs. 11mins
+    runs-on: ubuntu-latest  # todo: change chaching path when modifying this (- name: Cache my dependencies)
+    # runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
 
@@ -40,8 +42,8 @@ jobs:
       id: cache
       uses: actions/cache@v3
       with:
-        # path: /usr/share/miniconda3/envs/my-env  # Github Actions
-        path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
+        path: /usr/share/miniconda3/envs/my-env  # Github Actions
+        # path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
         key: ${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
@@ -51,37 +53,76 @@ jobs:
       run: |
         # get CuDF and CuML
         mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-          cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels
+          cudf=23.12 cuml=23.12 python=3.10 cuda-version=11.2 \
+          pytorch  # cugraph=23.12 dash  # this may take some time
         mamba init
-        source ~/.profile  # mamba init bash would require shell restart
-        source ~/.bashrc  # created by 'mamba init'
-        mamba activate my-env
+        ls /usr/share/*
+        cat /usr/share/miniconda3/etc/profile.d/conda.sh
+        echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
+        echo "conda activate my-env" >> $GITHUB_ENV
         which mamba
         mamba env list
         python --version
-        pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
+        pip list
+        # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
+        pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
 
 
   test:
-    # runs-on: ubuntu-latest
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    # runs-on: self-hosted
     needs: build
     steps:
     - uses: actions/checkout@v3
 
+    - name: Setup Mambaforge
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: my-env
+          use-mamba: true
+
+    - name: Pytest
+        # shell: bash -l {0}
+      run: |
+          mamba init
+          mamba activate my-env
+          python --version
+          which python
+          pip list
+          python -m pytest tests/test_stack.py  # python -m needed to import correctly
+          pytest tests/test_embed.py
+
+
+  test2:
+    runs-on: ubuntu-latest
+    # runs-on: self-hosted
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Mambaforge2
+      run: |
+          echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
+          echo "conda activate my-env" >> $GITHUB_ENV
+
     - name: Test with pytest
       shell: bash -l {0}
       run: |
-        source ~/.bashrc  # created by 'mamba init'
-        source ~/.profile  # mamba init bash would require shell restart
+        echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
+        echo "conda activate my-env" >> $GITHUB_ENV
+
+        # source ~/.bashrc  # created by 'mamba init'
+        # source ~/.profile  # mamba init bash would require shell restart
+        pip list
         mamba activate my-env
 
         which python
         python --version
         pip list
         python -m pytest tests/test_stack.py  # python -m needed to import correctly
-        # pytest tests/  # test
-
+        pytest tests/test_embed.py
 
   style:
     # runs-on: ubuntu-latest
@@ -99,4 +140,4 @@ jobs:
         mamba activate my-env
 
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics        

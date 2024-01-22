@@ -2,39 +2,12 @@
 This file provides basic functionalites like file parsing and esm embedding.
 """
 import logging
-from itertools import groupby
 
 import numpy as np
 import torch
 import esm 
 
-
-def read_fasta(filepath):
-    """
-    Iteratively returns the entries from a fasta file.
-    
-    Parameters
-    ----------
-    file : str
-        the fasta file
-    
-    Yields
-    ------
-    output : tuple
-        a single entry in the fasta file (header, sequence)
-    """
-    is_header = lambda x: x.startswith('>')
-    compress  = lambda x: ''.join(_.strip() for _ in x)
-    reader    = iter(groupby(open(filepath), is_header))
-    reader    = iter(groupby(open(filepath), is_header)) if next(reader)[0] else reader
-    for key, group in reader:
-        if key:
-            for header in group:
-                header = header[1:].strip()
-        else:
-            sequence = compress(group)
-            if sequence != '':
-                yield header, sequence
+from preprocessing import Preprocessing
 
 
 def gen_embedding(sequences, device: str = 'cuda'):
@@ -76,14 +49,12 @@ def gen_embedding(sequences, device: str = 'cuda'):
 if __name__=='__main__':
 
     # example dataset from the paper
-    fasta_file = 'head_10.fasta'
-    fasta_file = '50_feedbacked.fasta'
-    fasta_file = 'datasets/1685531781.fas.3'
+    fasta_file = 'tests/head_10.fasta'
 
     # todo: re-write: this is super ugly -> parse as df directly
     headers = []
     sequences = []
-    for h, s in read_fasta(fasta_file):
+    for h, s in Preprocessing.read_fasta(fasta_file):
         headers.append(h)
         sequences.append(s)
 

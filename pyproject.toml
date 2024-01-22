@@ -16,19 +16,13 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
 ]
-requires-python = ">= 3.7"
-dependencies = [
-    "numpy >= 1.23.5",
-    "pandas",
-    "matplotlib",
-    "plotly",
-    "qdrant-client",
-    "scipy",
-    "fair-esm",    
-    "torch",
-#    "cudf-cu11",  # only exists for conda
-#    "cuml-cu11",  # only exists for conda
-]
+requires-python = ">= 3.10"
+
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
 
 [project.urls]
 "Homepage" = "https://github.com/fmoorhof/ec"
