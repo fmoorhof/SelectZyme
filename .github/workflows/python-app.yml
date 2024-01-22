@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: ["main"]
+    branches: ["3-tests"]
   pull_request:
     branches: ["main"]
 
@@ -14,7 +14,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest  # todo: change chaching path when modifying this
+    runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
 
@@ -26,43 +27,76 @@ jobs:
     #       yamllint_strict: false
     #       yamllint_comment: true
     #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
+    
+    - name: Setup Mambaforge
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: my-env
+          use-mamba: true
 
     - name: Cache my dependencies
-      id: cache-venv
+      id: cache
       uses: actions/cache@v3
       with:
-        path: ./.venv/
-        key: ${{ runner.os }}-venv-${{ hashFiles('**/pyproject.toml') }}
+        # path: /usr/share/miniconda3/envs/my-env  # Github Actions
+        path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
+        key: ${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
-          ${{ runner.os }}-venv-
-
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
+          ${{ runner.os }}-conda-
 
     - name: Install dependencies
-      if: steps.cache-venv.outputs.cache-hit != 'true'
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        python -m venv ./.venv && ./.venv/bin/activate
-        pip install --upgrade pip
-        # install requirements declared in pyproject.toml
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install .[dev]; fi
-        pip list
+        # get CuDF and CuML
+        mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
+          cudf=23.06 cuml=23.06 python=3.10 cudatoolkit=11.2 --override-channels
+        mamba init
+        source ~/.profile  # mamba init bash would require shell restart
+        source ~/.bashrc  # created by 'mamba init'
+        mamba activate my-env
+        which mamba
+        mamba env list
+        python --version
+        pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
 
-# todo: No module named pytest: can not access dependencies
+
+  test:
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+
     - name: Test with pytest
+      shell: bash -l {0}
       run: |
-        pwd
-        ./.venv/bin/activate
-        which python
-        pip list
-        python -m pytest tests/  # python -m needed to import correctly
+        source ~/.bashrc  # created by 'mamba init'
+        source ~/.profile  # mamba init bash would require shell restart
+        mamba activate my-env
 
-    # - name: Lint with flake8
-    #   run: |
-    #     ./.venv/bin/activate
-    #     # stop the build if there are Python syntax errors or undefined names
-    #     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-    #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        which python
+        python --version
+        pip list
+        python -m pytest tests/test_stack.py  # python -m needed to import correctly
+        # pytest tests/  # test
+
+
+  style:
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+
+
+    - name: Lint with flake8
+      shell: bash -l {0}
+      run: |
+        source ~/.profile  # mamba init bash would require shell restart
+        source ~/.bashrc  # created by 'mamba init'
+        mamba activate my-env
+
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
