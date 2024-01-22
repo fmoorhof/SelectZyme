@@ -18,13 +18,10 @@ classifiers = [
 ]
 requires-python = ">= 3.10"
 
-dynamic = ["dependencies", "optional-dependencies"]
+dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
-
-[tool.setuptools.dynamic.optional-dependencies]
-dev = { file = ["requirements-dev.txt"] }
 
 
 [project.urls]
@@ -44,6 +41,13 @@ build-backend = "setuptools.build_meta"
 test = [
     "pytest",
     "pytest-cov",
+]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "pytest-cov",
+    "pyproject-flake8",
 ]
 docs = [
     "sphinx",

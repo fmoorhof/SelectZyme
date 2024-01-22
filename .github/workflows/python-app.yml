@@ -53,8 +53,8 @@ jobs:
       run: |
         # get CuDF and CuML
         mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-          cudf=23.12 cuml=23.12 cugraph=23.12 python=3.10 cuda-version=11.2 \
-          pytorch dash  # this may take some time
+          cudf=23.12 cuml=23.12 python=3.10 cuda-version=11.2 \
+          pytorch  # cugraph=23.12 dash  # this may take some time
         mamba init
         source ~/.profile  # mamba init bash would require shell restart
         source ~/.bashrc  # created by 'mamba init'
@@ -62,6 +62,7 @@ jobs:
         which mamba
         mamba env list
         python --version
+        pip list
         # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
         pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
 
