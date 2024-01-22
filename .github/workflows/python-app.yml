@@ -35,15 +35,15 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          activate-environment: my-env
+          activate-environment: base
           use-mamba: true
 
     - name: Cache my dependencies
       id: cache
       uses: actions/cache@v3
       with:
-        path: /usr/share/miniconda3/envs/my-env  # Github Actions
-        # path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
+        path: /usr/share/miniconda3/envs/base  # Github Actions
+        # path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/base  # self-hosted
         key: ${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
@@ -52,13 +52,14 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         # get CuDF and CuML
-        mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
+        mamba create -n base -c rapidsai -c conda-forge -c nvidia  \
           cudf=23.12 cuml=23.12 python=3.10 cuda-version=11.2 \
           pytorch  # cugraph=23.12 dash  # this may take some time
         mamba init
+        ls /usr/share/*
         cat /usr/share/miniconda3/etc/profile.d/conda.sh
         echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-        echo "conda activate my-env" >> $GITHUB_ENV
+        echo "conda activate base" >> $GITHUB_ENV
         which mamba
         mamba env list
         python --version
@@ -79,20 +80,14 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          activate-environment: my-env
+          activate-environment: base
           use-mamba: true
-
-          run: |
-            python --version
-            which python
-            pip list
-            python -m pytest tests/test_stack.py  # python -m needed to import correctly
-            pytest tests/test_embed.py
 
     - name: Pytest
         # shell: bash -l {0}
       run: |
-          mamba activate my-env
+          mamba init
+          mamba activate base
           python --version
           which python
           pip list
@@ -110,17 +105,18 @@ jobs:
     - name: Setup Mambaforge2
       run: |
           echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-          echo "conda activate my-env" >> $GITHUB_ENV
+          echo "conda activate base" >> $GITHUB_ENV
 
     - name: Test with pytest
       shell: bash -l {0}
       run: |
         echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-        echo "conda activate my-env" >> $GITHUB_ENV
+        echo "conda activate base" >> $GITHUB_ENV
 
         # source ~/.bashrc  # created by 'mamba init'
         # source ~/.profile  # mamba init bash would require shell restart
-        mamba activate my-env
+        pip list
+        mamba activate base
 
         which python
         python --version
