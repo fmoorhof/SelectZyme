@@ -53,10 +53,11 @@ jobs:
     - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        ls /home/runner/work/ec/ec/*  # locate the requirements.txt file
+        cd /home/runner/work/ec/ec/  # else requirements.txt file not found
         mamba env update -n my-env -f environment.yml
         python --version
         pip list
+        cat /usr/share/miniconda3/etc/profile.d/conda.sh > $GITHUB_ENV
       
     # - name: Install dependencies
     #   if: steps.cache.outputs.cache-hit != 'true'
@@ -89,23 +90,9 @@ jobs:
 
     - shell: bash -el {0}  # use activated shell, not dependent on conda init
       run: |
-        conda info
-        conda list
-        conda config --show-sources
-        conda config --show
-        printenv | sort
-
-    - shell: bash -el {0}
-      run: |
-          pip list
-          mamba init
-          mamba activate my-env
-          python --version
-          which python
-          pip install pytest
           pip list
           python -m pytest tests/test_stack.py  # python -m needed to import correctly
-          pytest tests/test_embed.py
+          pytest tests/test_preprocessing.py
 
 
   test2:
@@ -117,7 +104,7 @@ jobs:
 
     - name: Setup Mambaforge2
       run: |
-          source /usr/share/miniconda3/etc/profile.d/conda.sh
+          source $GITHUB_ENV
           mamba activate my-env
           pip list
 
@@ -128,7 +115,7 @@ jobs:
         python --version
         pip list
         python -m pytest tests/test_stack.py  # python -m needed to import correctly
-        pytest tests/test_embed.py
+        pytest tests/test_preprocessing.py
 
   # style:
   #   # runs-on: ubuntu-latest
