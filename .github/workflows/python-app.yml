@@ -37,7 +37,7 @@ jobs:
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-          # environment-file: environment.yml  # define later for 'better' caching
+          environment-file: environment.yml
 
     - name: Cache mamba environment
       id: cache
@@ -84,11 +84,12 @@ jobs:
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-          # environment-file: environment.yml   
+          environment-file: environment.yml   
 
     - shell: bash -el {0}  # use activated shell, not dependent on conda init
       run: |
           pip list
+          pip install pytest
           python -m pytest tests/test_stack.py  # python -m needed to import correctly
           # pytest tests/test_preprocessing.py
 
