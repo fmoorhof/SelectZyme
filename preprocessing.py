@@ -8,8 +8,8 @@ import pandas as pd
 
 class Parsing():
     """This class should assist in the parsing of the data."""
-    def parse_fasta(filepath):
-        """Parse a fasta file and return a list for the headers and one for the sequences.
+    def parse_fasta(filepath) -> pd.DataFrame:
+        """Parse a fasta file and return a df with the header and sequences in columns.
         params: filepath: path to the fasta file
         return: headers: list of headers
         return: sequences: list of sequences"""
@@ -26,7 +26,9 @@ class Parsing():
                 else:
                     sequence += line.strip()
             sequences.append(sequence)  # Append the last sequence
-        return headers, sequences
+
+        df = pd.DataFrame({'Entry': headers, 'Sequence': sequences})
+        return df
     
     def parse_tsv(filepath):
         """Parse a tsv file and return a dataframe.
@@ -34,6 +36,13 @@ class Parsing():
         return: df: dataframe containing the sequences"""
         df = pd.read_csv(filepath, sep='\t')
         return df    
+    
+    def parse_csv(filepath):
+        """Parse a tsv file and return a dataframe.
+        params: filepath: path to the tsv file
+        return: df: dataframe containing the sequences"""
+        df = pd.read_csv(filepath, sep=',')
+        return df 
     
 
 class Preprocessing:
@@ -79,17 +88,40 @@ class Preprocessing:
         self.df = df
         # return df
 
+    def remove_duplicate_entries(self):
+        """
+        This function removes duplicate entries from the dataframe.
+        params: df: dataframe containing the sequences
+        return: df: dataframe containing only unique sequences
+        """
+        df = self.df.drop_duplicates(subset='Entry', keep='first')
+        df.reset_index(drop=True, inplace=True)
+        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of duplicates.')
+        self.df = df
+        # return df
+
+    def remove_duplicate_sequences(self):
+        """
+        This function removes duplicate entries from the dataframe.
+        params: df: dataframe containing the sequences
+        return: df: dataframe containing only unique sequences
+        """
+        df = self.df.drop_duplicates(subset='Sequence', keep='first')
+        df.reset_index(drop=True, inplace=True)
+        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of duplicates.')
+        self.df = df
+        # return df        
+
 
 
 if __name__=='__main__':
 
     # example datasets
     fasta_file = 'tests/head_10.fasta'
-    fasta_file = 'tests/head_10.tsv'
+    # fasta_file = 'tests/head_10.tsv'
 
     if fasta_file.endswith('.fasta'):
-        headers, sequences = Parsing.parse_fasta(fasta_file)
-        df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
+        df = Parsing.parse_fasta(fasta_file)
     else:
         df = Parsing.parse_tsv(fasta_file)
     
@@ -97,4 +129,8 @@ if __name__=='__main__':
     pp.remove_long_sequences()
     pp.remove_sequences_without_Metheonin()
     pp.remove_sequences_with_undertermined_amino_acids()
+    pp.remove_duplicate_entries()
+    pp.remove_duplicate_sequences()
+    print(df.shape)
     df = pp.df  # Get the final DataFrame
+    print(df.shape)

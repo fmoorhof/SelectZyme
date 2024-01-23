@@ -20,7 +20,7 @@ def db_creation(df, collection_name: str):
         embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda')
         create_vector_db_collection(df, embeddings, collection_name=collection_name)
     else:
-        df = load_collection_from_vector_db(collection_name='test_collection')
+        df = load_collection_from_vector_db(collection_name=collection_name)
 
 
 def main(input_file: str, project_name: str):
@@ -33,9 +33,12 @@ def main(input_file: str, project_name: str):
 
     # df needs to contain a column 'Sequence' with the sequences
     pp = Preprocessing(df)
-    df = pp.remove_long_sequenes(df)
-    df = pp.remove_sequences_without_Metheonin(df)
-    df = pp.remove_sequences_with_undertermined_amino_acids(df)
+    pp.remove_long_sequences()
+    pp.remove_sequences_without_Metheonin()
+    pp.remove_sequences_with_undertermined_amino_acids()
+    pp.remove_duplicate_entries()
+    pp.remove_duplicate_sequences()
+    df = pp.df
 
     # Create a collection in Qdrant DB with embedded sequences
     db_creation(df, collection_name=project_name)
