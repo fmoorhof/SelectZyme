@@ -51,7 +51,7 @@ jobs:
 
     - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
-      run:
+      run: |
         mamba env update -n my-env -f etc/environment.yml
         python --version
         pip list
