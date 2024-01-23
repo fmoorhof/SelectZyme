@@ -13,8 +13,7 @@ on:
 
 permissions:
   contents: read
-      
-            
+              
 jobs:
   build:  # cached build is 2mins vs. 11mins
     runs-on: ubuntu-latest  # todo: change chaching path when modifying this (- name: Cache my dependencies)
@@ -57,7 +56,6 @@ jobs:
         mamba env update -n my-env -f environment.yml
         python --version
         pip list
-        cat /usr/share/miniconda3/etc/profile.d/conda.sh > $GITHUB_ENV
       
     # - name: Install dependencies
     #   if: steps.cache.outputs.cache-hit != 'true'
@@ -86,36 +84,13 @@ jobs:
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-          environment-file: environment.yml   
+          # environment-file: environment.yml   
 
     - shell: bash -el {0}  # use activated shell, not dependent on conda init
       run: |
           pip list
           python -m pytest tests/test_stack.py  # python -m needed to import correctly
-          pytest tests/test_preprocessing.py
-
-
-  test2:
-    runs-on: ubuntu-latest
-    # runs-on: self-hosted
-    needs: build
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Mambaforge2
-      run: |
-          source $GITHUB_ENV
-          mamba activate my-env
-          pip list
-
-    - name: Test with pytest
-      shell: bash -el {0}
-      run: |
-        which python
-        python --version
-        pip list
-        python -m pytest tests/test_stack.py  # python -m needed to import correctly
-        pytest tests/test_preprocessing.py
+          # pytest tests/test_preprocessing.py
 
   # style:
   #   # runs-on: ubuntu-latest
