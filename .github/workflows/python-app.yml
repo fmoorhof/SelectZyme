@@ -35,11 +35,11 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          channels: conda-forge, defaults, rapidsai, nvidia
           activate-environment: my-env
           use-mamba: true
+          environment-file: environment.yml
 
-    - name: Cache my dependencies
+    - name: Cache mamba environment
       id: cache
       uses: actions/cache@v3
       with:
@@ -52,11 +52,6 @@ jobs:
     - name: Install dependencies
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        # get CuDF and CuML
-        mamba create -n my-env -c rapidsai -c conda-forge -c nvidia  \
-          cudf=23.12 cuml=23.12 python=3.10 cuda-version=11.2 \
-          pytorch  # cugraph=23.12 dash  # this may take some time
-        mamba init
         echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
         echo "conda activate my-env" >> $GITHUB_ENV
         which mamba
@@ -64,7 +59,9 @@ jobs:
         python --version
         pip list
         # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
-        pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
+        # pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
+        pip install .
+        pip list
 
 
   test:
@@ -77,11 +74,11 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          channels: conda-forge, defaults, rapidsai, nvidia
           activate-environment: my-env
           use-mamba: true
+          environment-file: environment.yml   
 
-    - shell: bash -el {0}
+    - shell: bash -el {0}  # use activated shell, not dependent on conda init
       run: |
         conda info
         conda list
@@ -96,6 +93,7 @@ jobs:
           mamba activate my-env
           python --version
           which python
+          pip install pytest
           pip list
           python -m pytest tests/test_stack.py  # python -m needed to import correctly
           pytest tests/test_embed.py

@@ -14,11 +14,7 @@ EC number prediction tool
 For optimal GPU support, the conda installation is reccomended.
 ### Conda
 ```
-# conda create -n ec "python==3.10" --file requirements.txt
-conda create -n ec -c rapidsai -c conda-forge -c nvidia  \
-    cudf=23.12 cuml=23.12 cugraph=23.12 python=3.10 cuda-version=11.2 \
-    pytorch dash  # this may take some time
-conda update --name ec --file requirements.txt    
+conda env create -f environment.yml
 ```
 
 ### Pip
