@@ -13,4 +13,6 @@ dependencies:
   - dash
   - pip
   - pip:
-    - -r file:requirements.txt
+    - fair-esm
+    - qdrant-client
+    # - -r file:requirements.txt
