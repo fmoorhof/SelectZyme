@@ -42,19 +42,20 @@ class Preprocessing:
         self.df = df
         self.length = df.shape[0]  # original length of the dataframe
 
-    def remove_long_sequenes(self) -> pd.DataFrame:
+    def remove_long_sequences(self):
         """
         This function removes too long sequences from the dataset. Sequences > 1024 amino acids cause the esm embedding to fail.
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a length <= 1024 amino acids
         """
-        df = self.df[self.df['Sequence'].str.len() <= 1024]
-        df.drop_duplicates(inplace=True)
-        df.reset_index(drop=True, inplace=True)  # todo: with removed index log which sequences were excluded
+        df = self.df[self.df['Sequence'].str.len() <= 1024]  # update df instead of returning it
+        # df.drop_duplicates(inplace=True)
+        df.reset_index(drop=True, inplace=True)  # todo: with removed index log which sequences were excluded?
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of exaggerated size (>=1024 amino acids)')
-        return df
+        self.df = df  # update df instead of returning it
+        # return df
 
-    def remove_sequences_without_Metheonin(self) -> pd.DataFrame:
+    def remove_sequences_without_Metheonin(self):
         """
         This function removes sequences without a Methionine at the beginning.
         params: df: dataframe containing the sequences
@@ -63,9 +64,10 @@ class Preprocessing:
         df = self.df[self.df['Sequence'].str.startswith('M')]
         df.reset_index(drop=True, inplace=True)
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of missing Methionins.')
-        return df
+        self.df = df
+        # return df
     
-    def remove_sequences_with_undertermined_amino_acids(self) -> pd.DataFrame:
+    def remove_sequences_with_undertermined_amino_acids(self):
         """
         This function removes sequences with undertermined amino acids 'X'.
         params: df: dataframe containing the sequences
@@ -74,7 +76,8 @@ class Preprocessing:
         df = self.df[~self.df['Sequence'].str.contains('X')]
         df.reset_index(drop=True, inplace=True)
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of undertermined amino acids.')
-        return df
+        self.df = df
+        # return df
 
 
 
@@ -89,9 +92,9 @@ if __name__=='__main__':
         df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
     else:
         df = Parsing.parse_tsv(fasta_file)
-
-    # df needs to contain a column 'Sequence' with the sequences
+    
     pp = Preprocessing(df)
-    df = pp.remove_long_sequenes(df)
-    df = pp.remove_sequences_without_Metheonin(df)
-    df = pp.remove_sequences_with_undertermined_amino_acids(df)
+    pp.remove_long_sequences()
+    pp.remove_sequences_without_Metheonin()
+    pp.remove_sequences_with_undertermined_amino_acids()
+    df = pp.df  # Get the final DataFrame
