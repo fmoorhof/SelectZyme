@@ -37,7 +37,7 @@ jobs:
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-          environment-file: environment.yml
+          # environment-file: environment.yml  # define later for 'better' caching
 
     - name: Cache mamba environment
       id: cache
@@ -49,19 +49,27 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-conda-
 
-    - name: Install dependencies
+    - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-        echo "conda activate my-env" >> $GITHUB_ENV
-        which mamba
-        mamba env list
+      run:
+        mamba env update -n my-env -f
+        etc/environment.yml
         python --version
         pip list
-        # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
-        # pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
-        pip install .
-        pip list
+      
+    # - name: Install dependencies
+    #   if: steps.cache.outputs.cache-hit != 'true'
+    #   run: |
+    #     echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
+    #     echo "conda activate my-env" >> $GITHUB_ENV
+    #     which mamba
+    #     mamba env list
+    #     python --version
+    #     pip list
+    #     # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
+    #     # pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
+    #     pip install .
+    #     pip list
 
 
   test:
