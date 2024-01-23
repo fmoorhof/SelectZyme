@@ -53,7 +53,7 @@ jobs:
     - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        ls /home/runner/work/ec/ec/*equiements.txt  # locate the requirements.txt file
+        ls /home/runner/work/ec/ec/*  # locate the requirements.txt file
         mamba env update -n my-env -f environment.yml
         python --version
         pip list
