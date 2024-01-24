@@ -52,8 +52,6 @@ jobs:
     - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        echo "${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}"
-        echo "${{ runner.os }}-conda-"
         cd /home/runner/work/ec/ec/  # else requirements.txt file not found
         mamba env update -n my-env -f environment.yml
         python --version
@@ -72,13 +70,13 @@ jobs:
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-          environment-file: environment.yml   
+          # environment-file: environment.yml  # use from cache anyways 
 
     - shell: bash -el {0}  # use activated shell, not dependent on conda init
       run: |
           pip list
           pip install pytest
-          pip install .[test]
+          # pip install .[test]
           pip list
           python -m pytest tests/test_stack.py  # python -m needed to import correctly
           python -m pytest tests/test_preprocessing.py
