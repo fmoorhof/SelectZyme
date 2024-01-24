@@ -35,7 +35,7 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          # activate-environment: my-env
+          activate-environment: my-env
           use-mamba: true
           # environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
 
@@ -53,7 +53,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd /home/runner/work/ec/ec/  # else requirements.txt file not found
-        mamba env create -n my-env -f environment.yml
+        mamba create -n my-env -f environment.yml
         python --version
         pip install .[test]
         pip list
