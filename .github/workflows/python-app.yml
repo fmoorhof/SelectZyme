@@ -55,6 +55,7 @@ jobs:
         cd /home/runner/work/ec/ec/  # else requirements.txt file not found
         mamba env update -n my-env -f environment.yml
         python --version
+        pip install .[test]
         pip list
       
     # - name: Install dependencies
@@ -90,8 +91,10 @@ jobs:
       run: |
           pip list
           pip install pytest
+          pip install .[test]
+          pip list
           python -m pytest tests/test_stack.py  # python -m needed to import correctly
-          pytest tests/test_preprocessing.py
+          python -m pytest tests/test_preprocessing.py
 
   # style:
   #   # runs-on: ubuntu-latest
