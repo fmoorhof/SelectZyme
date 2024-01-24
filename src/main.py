@@ -49,12 +49,13 @@ def main(input_file: str, project_name: str):
     if df.shape[0] != embeddings.shape[0]:
         raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. Something went wrong.")
 
+    sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
     labels = visualizer.clustering_HDBSCAN(X, min_samples=1)
-    df = visualizer.custom_plotting(df)
-    sys.setrecursionlimit(df.shape[0])  # If your dataset is too large, you need to increase the recursion depth for the hierarchical clustering; else: RecursionError: maximum recursion depth exceeded
-    X_red = visualizer.pca(X, df, project_name=project_name)
-    visualizer.plot_2d(df, X_red, labels, collection_name=project_name, method='PCA')
+    df = visualizer.custom_plotting(df, labels)
+    X_red = visualizer.pca(X)
+    visualizer.plot_2d(df, X_red, collection_name=project_name, method='PCA')
+
 
 
 if __name__ == "__main__":

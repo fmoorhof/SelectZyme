@@ -14,7 +14,6 @@ The container name is fmoorhof_rapidsai and the ID: 2cee57c21810
 rapidsai/rapidsai:cuda11.5-base-centos7-py3.9
 """
 import logging
-import sys
 
 import pandas as pd
 import plotly.express as px
@@ -29,12 +28,6 @@ from cuml.manifold import (
     TSNE,
     UMAP
 )
-
-
-class UnsupervisedLearning:
-    def __init__(self, df, X):
-        self.X = X
-        sys.setrecursionlimit(df.shape[0])  # If your dataset is too large, you need to increase the recursion depth for the hierarchical clustering; else: RecursionError: maximum recursion depth exceeded
 
 
 def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250):
