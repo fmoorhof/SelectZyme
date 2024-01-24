@@ -31,7 +31,7 @@ jobs:
     #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
     
     - name: Setup Mambaforge
-      uses: conda-incubator/setup-miniconda@v2  # dont change to v3, else caching not working?
+      uses: conda-incubator/setup-miniconda@v3
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
@@ -53,26 +53,10 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cd /home/runner/work/ec/ec/  # else requirements.txt file not found
-        mamba env update -n my-env -f environment.yml
+        mamba env create -n my-env -f environment.yml
         python --version
         pip install .[test]
         pip list
-
-  default-shell:
-    name: Default shell
-    runs-on: "ubuntu-latest"
-    defaults:
-      run:
-        shell: bash -el {0}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: anaconda-client-env
-          environment-file: etc/example-environment-caching.yml
-      - run: conda info
-      - run: conda list
-      - run: conda config --show
 
   tests-shell:
     name: test shell
@@ -83,10 +67,10 @@ jobs:
         shell: bash -el {0}
     steps:
       - uses: actions/checkout@v3
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: my-env
-          environment-file: environment.yml
+          # environment-file: environment.yml
       - run: pip list
       - run: pip install pytest
       - run: python -m pytest tests/test_stack.py  # python -m needed to import correctly
@@ -98,7 +82,7 @@ jobs:
     needs: build
     steps:
     - uses: actions/checkout@v3
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: conda-incubator/setup-miniconda@v3
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
