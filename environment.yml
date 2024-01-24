@@ -15,5 +15,6 @@ dependencies:
   - pip:
     - fair-esm
     - qdrant-client
+    - hdbscan
     # - -r file:requirements.txt
     

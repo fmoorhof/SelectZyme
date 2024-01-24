@@ -1,12 +1,13 @@
 import logging
+import sys
 
 import pandas as pd
 from qdrant_client import QdrantClient, models
 
-
 from preprocessing import Parsing
 from preprocessing import Preprocessing
-from embed import *
+import embed
+import visualizer
 
 
 logging.basicConfig(
@@ -15,12 +16,14 @@ logging.basicConfig(
 
 
 def db_creation(df, collection_name: str):
+    qdrant = QdrantClient(path="datasets/Vector_db/")  # OR write them to disk
     collections_info = qdrant.get_collections()
     if collection_name not in str(collections_info):  # todo: implement this nicely: access the 'name' field of the object
-        embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda')
-        create_vector_db_collection(df, embeddings, collection_name=collection_name)
+        embeddings = embed.gen_embedding(df['Sequence'].tolist(), device='cuda')
+        annotation = embed.create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
     else:
-        df = load_collection_from_vector_db(collection_name=collection_name)
+        annotation, embeddings = embed.load_collection_from_vector_db(qdrant, collection_name)
+    return annotation, embeddings
 
 
 def main(input_file: str, project_name: str):
@@ -40,9 +43,18 @@ def main(input_file: str, project_name: str):
     pp.remove_duplicate_sequences()
     df = pp.df
 
-    # Create a collection in Qdrant DB with embedded sequences
-    db_creation(df, collection_name=project_name)
 
+    # Create a collection in Qdrant DB with embedded sequences
+    annotation, embeddings = db_creation(df, collection_name=project_name)
+    if df.shape[0] != embeddings.shape[0]:
+        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. Something went wrong.")
+
+    X = embeddings
+    labels = visualizer.clustering_HDBSCAN(X, min_samples=1)
+    df = visualizer.custom_plotting(df)
+    sys.setrecursionlimit(df.shape[0])  # If your dataset is too large, you need to increase the recursion depth for the hierarchical clustering; else: RecursionError: maximum recursion depth exceeded
+    X_red = visualizer.pca(X, df, project_name=project_name)
+    visualizer.plot_2d(df, X_red, labels, collection_name=project_name, method='PCA')
 
 
 if __name__ == "__main__":
