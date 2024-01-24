@@ -1,2 +1,4 @@
-# GPU torch and Cu* installed via conda
+# GPU torch and CuDF, CuML, * installed via conda
 fair-esm
+qdrant-client
+hdbscan  # required by CuML HDBScan for plotting

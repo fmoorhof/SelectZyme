@@ -1,0 +1,20 @@
+name: my-env
+channels:
+  - rapidsai
+  - conda-forge
+  - nvidia
+dependencies:
+  - cudf=23.12
+  - cuml=23.12
+  - python=3.10
+  - cuda-version=11.2
+  - pytorch
+  - cugraph=23.12
+  - dash
+  - pip
+  - pip:
+    - fair-esm
+    - qdrant-client
+    - hdbscan
+    # - -r file:requirements.txt
+    
