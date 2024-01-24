@@ -16,3 +16,4 @@ dependencies:
     - fair-esm
     - qdrant-client
     # - -r file:requirements.txt
+    
