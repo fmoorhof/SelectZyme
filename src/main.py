@@ -53,8 +53,16 @@ def main(input_file: str, project_name: str):
     X = embeddings
     labels = visualizer.clustering_HDBSCAN(X, min_samples=1)
     df = visualizer.custom_plotting(df, labels)
-    X_red = visualizer.pca(X)
-    visualizer.plot_2d(df, X_red, collection_name=project_name, method='PCA')
+
+    iter_methods = ['PCA', 'TSNE', 'UMAP']
+    for method in iter_methods:
+        if method == 'PCA':
+            X_red = visualizer.pca(X)
+        elif method == 'TSNE':
+            X_red = visualizer.tsne(X)
+        elif method == 'UMAP':
+            X_red = visualizer.umap(X)
+        visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
 
 
 

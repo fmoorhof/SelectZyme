@@ -114,6 +114,18 @@ def custom_plotting(df, labels):
         condition = (df['BRENDA'] != '') 
         condition2 = (df['EC number'] != '0.0.0.0')
 
+    # build Brenda URLs
+    df['BRENDA URL'] = [
+        f"https://www.brenda-enzymes.org/enzyme.php?ecno={ec.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
+        if pd.notna(ec)
+        else pd.NA  # Fill with NaN for rows where BRENDA is NaN
+        for ec, entry, organism in zip(df['BRENDA'].values, df['Entry'].values, df['Organism (ID)'].values)  # values_host with cudf
+    ]        
+    
+    # alphabetically sort df based on EC numbers (for nicer legend)
+    df = df.sort_values(by=['EC number'])
+
+    # define markers for the plot
     df['marker_size'] = 5
     df['marker_symbol'] = 'circle'
     df.loc[condition2, 'marker_size'] = 6  # Set to other value for data points that meet the condition
@@ -121,17 +133,11 @@ def custom_plotting(df, labels):
     df.loc[condition, 'marker_size'] = 18
     df.loc[condition, 'marker_symbol'] = 'cross'
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
-    
-    # build Brenda URLs
-    df['BRENDA URL'] = [
-        f"https://www.brenda-enzymes.org/enzyme.php?ecno={ec.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
-        if pd.notna(ec)
-        else pd.NA  # Fill with NaN for rows where BRENDA is NaN
-        for ec, entry, organism in zip(df['BRENDA'].values, df['Entry'].values, df['Organism (ID)'].values)  # values_host with cudf
-    ]
-    
-    # alphabetically sort df based on EC numbers (for nicer legend)
-    df = df.sort_values(by=['EC number'])
+
+    # line breaks for long entries that hover template can still show all information
+    df['Sequence'] = df['Sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
+    df['PDB'] = df['PDB'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
+    df['PDB'] = df['PDB'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
 
     return df
 
@@ -144,7 +150,7 @@ def plot_2d(df, X_red, collection_name: str, method: str):
     :param collection_name: name of the collection/dataset
     :param method: dimensionality reduction method used"""
     cols = df.columns.values.tolist()
-    # cols = cols[0:-2]  # do not provide sequence
+    cols = cols[0:-2]  # do not provide markers in hover template
     fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
                      color='EC number', # color='cluster'
                  title=f'2D {method} on dataset {collection_name}',
