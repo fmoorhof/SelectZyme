@@ -17,8 +17,6 @@ import logging
 import sys
 
 import pandas as pd
-from qdrant_client import QdrantClient
-
 import plotly.express as px
 
 import cudf
@@ -31,6 +29,12 @@ from cuml.manifold import (
     TSNE,
     UMAP
 )
+
+
+class UnsupervisedLearning:
+    def __init__(self, df, X):
+        self.X = X
+        sys.setrecursionlimit(df.shape[0])  # If your dataset is too large, you need to increase the recursion depth for the hierarchical clustering; else: RecursionError: maximum recursion depth exceeded
 
 
 def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250):
@@ -95,8 +99,9 @@ def umap(X, dimension: int = 2, n_neighbors: int = 15):
     return X_umap
 
 
-def custom_plotting(df):
+def custom_plotting(df, labels):
     """Modify the df before plotting."""
+    df['cluster'] = labels  # add cluster labels to df (from clustering)
 
     # Create new columns 'marker_size' and 'marker_symbol' based on a condition
     df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
@@ -109,9 +114,13 @@ def custom_plotting(df):
     values_to_replace = ['1.-.-.-']
     df['EC number'] = df['EC number'].replace(values_to_replace, '0.0.0.0')
     
-    
-    condition = (df['BRENDA'].to_pandas() != '')  # todo: fix: AttributeError: 'Series' object has no attribute 'to_pandas'
-    condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
+    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
+        condition = (df['BRENDA'].to_pandas() != '') 
+        condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
+    else:  # pandas DataFrame
+        condition = (df['BRENDA'] != '') 
+        condition2 = (df['EC number'] != '0.0.0.0')
+
     df['marker_size'] = 5
     df['marker_symbol'] = 'circle'
     df.loc[condition2, 'marker_size'] = 6  # Set to other value for data points that meet the condition
@@ -125,7 +134,7 @@ def custom_plotting(df):
         f"https://www.brenda-enzymes.org/enzyme.php?ecno={ec.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
         if pd.notna(ec)
         else pd.NA  # Fill with NaN for rows where BRENDA is NaN
-        for ec, entry, organism in zip(df['BRENDA'].values_host, df['Entry'].values_host, df['Organism (ID)'].values_host)
+        for ec, entry, organism in zip(df['BRENDA'].values, df['Entry'].values, df['Organism (ID)'].values)  # values_host with cudf
     ]
     
     # alphabetically sort df based on EC numbers (for nicer legend)
