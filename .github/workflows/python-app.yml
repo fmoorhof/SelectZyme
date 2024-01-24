@@ -53,7 +53,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         cat *.yml
-        mamba create -n my-env -f environment.yml
+        mamba install -n my-env -f $(pwd)/environment.yml
         python --version
         pip install .[test]
         pip list
