@@ -59,6 +59,7 @@ jobs:
         python --version
         pip install .[test]
         pip list
+        
  # disable for ci: caching fox
   # test:
   #   runs-on: ubuntu-latest
