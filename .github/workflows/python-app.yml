@@ -35,7 +35,7 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          activate-environment: my-env
+          # activate-environment: my-env
           use-mamba: true
           # environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
 
