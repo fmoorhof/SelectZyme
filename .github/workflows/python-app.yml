@@ -31,7 +31,7 @@ jobs:
     #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
     
     - name: Setup Mambaforge
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v2
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
@@ -52,49 +52,36 @@ jobs:
     - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
+        echo "${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}"
+        echo "${{ runner.os }}-conda-"
         cd /home/runner/work/ec/ec/  # else requirements.txt file not found
         mamba env update -n my-env -f environment.yml
         python --version
         pip install .[test]
         pip list
-      
-    # - name: Install dependencies
-    #   if: steps.cache.outputs.cache-hit != 'true'
-    #   run: |
-    #     echo "source /usr/share/miniconda3/etc/profile.d/conda.sh" >> $GITHUB_ENV
-    #     echo "conda activate my-env" >> $GITHUB_ENV
-    #     which mamba
-    #     mamba env list
-    #     python --version
-    #     pip list
-    #     # pip install .[dev]  # install the pyproject.toml contents incl. my package 'ec'
-    #     # pip install .[test]  # install the pyproject.toml contents incl. my package 'ec'
-    #     pip install .
-    #     pip list
+ # disable for ci: caching fox
+  # test:
+  #   runs-on: ubuntu-latest
+  #   # runs-on: self-hosted
+  #   needs: build
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - uses: conda-incubator/setup-miniconda@v3
+  #     with:
+  #         miniforge-variant: Mambaforge
+  #         miniforge-version: latest
+  #         activate-environment: my-env
+  #         use-mamba: true
+  #         environment-file: environment.yml   
 
-
-  test:
-    runs-on: ubuntu-latest
-    # runs-on: self-hosted
-    needs: build
-    steps:
-    - uses: actions/checkout@v3
-    - uses: conda-incubator/setup-miniconda@v3
-      with:
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          activate-environment: my-env
-          use-mamba: true
-          environment-file: environment.yml   
-
-    - shell: bash -el {0}  # use activated shell, not dependent on conda init
-      run: |
-          pip list
-          pip install pytest
-          pip install .[test]
-          pip list
-          python -m pytest tests/test_stack.py  # python -m needed to import correctly
-          python -m pytest tests/test_preprocessing.py
+  #   - shell: bash -el {0}  # use activated shell, not dependent on conda init
+  #     run: |
+  #         pip list
+  #         pip install pytest
+  #         pip install .[test]
+  #         pip list
+  #         python -m pytest tests/test_stack.py  # python -m needed to import correctly
+  #         python -m pytest tests/test_preprocessing.py
 
   # style:
   #   # runs-on: ubuntu-latest
