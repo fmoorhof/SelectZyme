@@ -52,7 +52,7 @@ jobs:
     - name: Update environment
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        cd /home/runner/work/ec/ec/  # else requirements.txt file not found
+        # cd /home/runner/work/ec/ec/  # else requirements.txt file not found
         mamba create -n my-env -f environment.yml
         python --version
         pip install .[test]
