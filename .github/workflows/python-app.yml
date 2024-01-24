@@ -59,6 +59,7 @@ jobs:
           use-mamba: true
           environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
 
+          
     # - name: Update environment for cache  # todo: .yml installs not cached
     #   if: steps.cache.outputs.cache-hit != 'true'
     #   run: |
