@@ -35,11 +35,11 @@ jobs:
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          activate-environment: my-env
+          # activate-environment: my-env
           use-mamba: true
           # environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
 
-    - name: Cache mamba environment
+    - name: Set Cache mamba environment
       id: cache
       uses: actions/cache@v3
       with:
@@ -49,14 +49,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-conda-
 
-    - name: Update environment
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        cat *.yml
-        mamba install -n my-env -f $(pwd)/environment.yml
-        python --version
-        pip install .[test]
-        pip list
+    - name: Set cache Mambaforge
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: my-env
+          use-mamba: true
+          environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
+
+    # - name: Update environment for cache  # todo: .yml installs not cached
+    #   if: steps.cache.outputs.cache-hit != 'true'
+    #   run: |
+    #     mamba create -n my-env -f environment.yml
+    #     python --version
+    #     pip install .[test]
+    #     pip list
 
   tests-shell:
     name: test shell
