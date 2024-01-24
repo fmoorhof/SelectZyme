@@ -58,6 +58,40 @@ jobs:
         pip install .[test]
         pip list
 
+  default-shell:
+    name: Default shell
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: anaconda-client-env
+          environment-file: etc/example-environment-caching.yml
+      - run: conda info
+      - run: conda list
+      - run: conda config --show
+
+  tests-shell:
+    name: test shell
+    runs-on: "ubuntu-latest"
+    needs: build
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: anaconda-client-env
+          environment-file: etc/example-environment-caching.yml
+      - run: pip list
+      - run: pip install pytest
+      - run: python -m pytest tests/test_stack.py  # python -m needed to import correctly
+      - run: python -m pytest tests/test_preprocessing.py    
+
   test:
     runs-on: ubuntu-latest
     # runs-on: self-hosted
