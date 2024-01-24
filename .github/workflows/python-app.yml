@@ -31,13 +31,13 @@ jobs:
     #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
     
     - name: Setup Mambaforge
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v2  # dont change to v3, else caching not working?
       with:
           miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: my-env
           use-mamba: true
-          environment-file: environment.yml
+          # environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
 
     - name: Cache mamba environment
       id: cache
@@ -59,30 +59,29 @@ jobs:
         python --version
         pip install .[test]
         pip list
-        
- # disable for ci: caching fox
-  # test:
-  #   runs-on: ubuntu-latest
-  #   # runs-on: self-hosted
-  #   needs: build
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - uses: conda-incubator/setup-miniconda@v3
-  #     with:
-  #         miniforge-variant: Mambaforge
-  #         miniforge-version: latest
-  #         activate-environment: my-env
-  #         use-mamba: true
-  #         environment-file: environment.yml   
 
-  #   - shell: bash -el {0}  # use activated shell, not dependent on conda init
-  #     run: |
-  #         pip list
-  #         pip install pytest
-  #         pip install .[test]
-  #         pip list
-  #         python -m pytest tests/test_stack.py  # python -m needed to import correctly
-  #         python -m pytest tests/test_preprocessing.py
+  test:
+    runs-on: ubuntu-latest
+    # runs-on: self-hosted
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: my-env
+          use-mamba: true
+          environment-file: environment.yml   
+
+    - shell: bash -el {0}  # use activated shell, not dependent on conda init
+      run: |
+          pip list
+          pip install pytest
+          pip install .[test]
+          pip list
+          python -m pytest tests/test_stack.py  # python -m needed to import correctly
+          python -m pytest tests/test_preprocessing.py
 
   # style:
   #   # runs-on: ubuntu-latest
