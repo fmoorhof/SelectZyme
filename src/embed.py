@@ -3,6 +3,7 @@ This file provides basic functionalites like file parsing and esm embedding.
 """
 import logging
 
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import torch
@@ -16,12 +17,12 @@ from preprocessing import Parsing
 from preprocessing import Preprocessing
 
 
-def gen_embedding(sequences, device: str = 'cuda'):
+def gen_embedding(sequences, device: str = 'cuda:0'):
     """
     Generate embeddings for a list of protein sequences.
 
     :param sequences: list containing protein sequences to embed here
-    :param device: device for running the model (either cpu or gpu=cuda)
+    :param device: device for running the model (either cpu or gpu=cuda), :number specifies the gpu (if you have multiple use >1 e.g. cuda:1)
     """
     # load the esm-1b protein language model
     model, alphabet = esm.pretrained.esm1b_t33_650M_UR50S()
@@ -33,10 +34,8 @@ def gen_embedding(sequences, device: str = 'cuda'):
     embeddings = []
 
     with torch.no_grad():
-        for n, s in enumerate(sequences):
-            logging.info(f'Progress : {n+1} / {len(sequences)}\r')
-            
-            batch_labels, batch_strs, batch_tokens = batch_converter([[None, s]])
+        for sequence in tqdm(sequences):
+            batch_labels, batch_strs, batch_tokens = batch_converter([[None, sequence]])
             batch_tokens = batch_tokens.to(device)
             
             # generate the full size embedding vector
@@ -131,7 +130,7 @@ if __name__=='__main__':
     df = pp.df
     collection_name='pytest'
 
-    embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda')
+    embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
 
     # Check if the collection exists yet if not create it
     # qdrant = QdrantClient(":memory:") # Create in-memory Qdrant instance
