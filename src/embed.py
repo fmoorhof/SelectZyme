@@ -54,7 +54,6 @@ def gen_embedding(sequences, device: str = 'cuda:0'):
 def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) -> list:
     """
     Create a vector database with the embeddings of the sequences and the annotation from the dataframe (but not the sequences themselves).
-    The DB will be created at: "datasets/Vector_db/"
 
     :param df: dataframe containing the sequences and the annotation
     :param embeddings: numpy array containing the embeddings
@@ -72,18 +71,19 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
         )
         )
     
-    # Upload records to Qdrant collection (Entry, vector)
-    annotation = df.iloc[:, 0:1].to_dict(orient='index')  # only use 'Entry' as key
-    qdrant.upload_records(
+    records = []
+    annotation = df.iloc[:, 0:2].to_dict(orient='index')  # only use 'Entry' as key (0:1)  # (0, {'Entry': 'Q9NWT6', 'Reviewed': True})
+    for i, anno in annotation.items():
+        vector = embeddings[i].tolist()
+        record = models.Record(id=i, vector=vector, payload=anno)  # {'Entry': 'Q9NWT6', 'Reviewed': True}
+        records.append(record)
+
+    # Upload records to Qdrant collection
+    qdrant.upload_points(
         collection_name=collection_name,
-        records=[
-            models.Record(
-                id=idx,
-                vector=embeddings[idx].tolist(),
-                payload=heads  # dict/json required; payload is ability to store additional information along with vectors
-            ) for idx, heads in annotation.items()
-        ]
+        records=records
     )
+    
     return annotation
 
 
