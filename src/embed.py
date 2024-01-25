@@ -4,17 +4,10 @@ This file provides basic functionalites like file parsing and esm embedding.
 import logging
 
 from tqdm import tqdm
-import pandas as pd
 import numpy as np
 import torch
 import esm
 from qdrant_client import QdrantClient, models  # ! pip install qdrant-client
-
-# testing
-from preprocessing import Parsing
-
-
-from preprocessing import Preprocessing
 
 
 def gen_embedding(sequences, device: str = 'cuda:0'):
@@ -73,13 +66,14 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
     
     records = []
     annotation = df.iloc[:, 0:2].to_dict(orient='index')  # only use 'Entry' as key (0:1)  # (0, {'Entry': 'Q9NWT6', 'Reviewed': True})
-    for i, anno in annotation.items():
+    logging.info(f"Creating Qdrant records. This may take a while.")
+    for i, anno in tqdm(annotation.items()):
         vector = embeddings[i].tolist()
         record = models.Record(id=i, vector=vector, payload=anno)  # {'Entry': 'Q9NWT6', 'Reviewed': True}
         records.append(record)
 
-    # Upload records to Qdrant collection
-    qdrant.upload_points(
+    logging.info(f"Uploading data to Qdrant DB. This may take a while.")
+    qdrant.upload_records(
         collection_name=collection_name,
         records=records
     )
@@ -97,7 +91,7 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     :param collection_name: name of the vector database
     return: annotation: list of 'Entry'
     return: embeddings: numpy array containing the embeddings"""
-    logging.info(f"Retrieving data from Qdrant DB. This may take a while for some 100k sequences.")
+    logging.info(f"Retrieving data from Qdrant DB. This may take a while.")
     collection = qdrant.get_collection(collection_name)
     records = qdrant.scroll(collection_name=collection_name,
                             with_payload=True,  # If List of string - include only specified fields
@@ -121,6 +115,9 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     
 
 if __name__=='__main__':
+    # load example data
+    from preprocessing import Parsing
+    from preprocessing import Preprocessing
 
     df = Parsing.parse_tsv('tests/head_10.tsv')
     pp = Preprocessing(df)
@@ -130,6 +127,7 @@ if __name__=='__main__':
     df = pp.df
     collection_name='pytest'
 
+    # start testing my code:
     embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
 
     # Check if the collection exists yet if not create it

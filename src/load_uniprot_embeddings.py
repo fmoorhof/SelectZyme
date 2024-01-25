@@ -7,6 +7,7 @@ import logging
 
 import h5py  # todo: not yet appended to requirements.txt
 from qdrant_client import QdrantClient, models
+from tqdm import tqdm
 
 
 def create_db_from_5h(filename: str, collection_name: str) -> list:
@@ -33,12 +34,14 @@ def create_db_from_5h(filename: str, collection_name: str) -> list:
 
     X = []
     records = []
-    for i, entry in enumerate(entries):  # see embed.create_vector_db_collection() for an alternative implementation
+    logging.info(f"Creating Qdrant records. This may take a while.")
+    for i, entry in enumerate(tqdm(entries)):  # see embed.create_vector_db_collection() for an alternative implementation
         vector = f[entry][:].tolist()
         annotation = f.get(entry).attrs["original_id"]
-        record = models.Record(id=i, vector=vector, payload={entry: entry})  # payload needs to be a dict
+        record = models.Record(id=i, vector=vector, payload={'Entry': entry})  # payload needs to be a dict
         records.append(record)
 
+    logging.info(f"Uploading data to Qdrant DB. This may take a while.")
     qdrant.upload_records(
         collection_name=collection_name,
         records=records
