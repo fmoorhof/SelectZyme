@@ -24,8 +24,8 @@ def gen_embedding(sequences, device: str = 'cuda:0'):
     model.eval()  # disable dropout for deterministic results
     model = model.to(device)
 
+    logging.info(f"Generating embeddings for your {len(sequences)} sequences. This may take a while.")
     embeddings = []
-
     with torch.no_grad():
         for sequence in tqdm(sequences):
             batch_labels, batch_strs, batch_tokens = batch_converter([[None, sequence]])
@@ -78,7 +78,7 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
         records=records
     )
     
-    return annotation
+    return annotation, embeddings
 
 
 def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
@@ -113,6 +113,24 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     return annotation, embeddings
 
     
+def load_or_createDB(qdrant: QdrantClient, df, collection_name: str):
+    """Checks if a collection with the given name already exists. If not, it will be created.
+    :param qdrant: qdrant object
+    :param df: dataframe containing the sequences and the annotation
+    :param collection_name: name of the vector database
+    return: annotation: list of 'Entry'
+    return: embeddings: numpy array containing the embeddings"""
+    # qdrant = QdrantClient(":memory:") # Create in-memory Qdrant instance
+    collections_info = qdrant.get_collections()
+    collection_names = [collection.name for collection in collections_info.collections]
+    if collection_name not in collection_names:
+        embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
+        annotation, embeddings = create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
+    else:
+        annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
+    return annotation, embeddings
+
+
 
 if __name__=='__main__':
     # load example data
@@ -125,30 +143,11 @@ if __name__=='__main__':
     pp.remove_sequences_without_Metheonin()
     pp.remove_sequences_with_undertermined_amino_acids()
     df = pp.df
+
+
     collection_name='pytest'
 
     # start testing my code:
     embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
-
-    # Check if the collection exists yet if not create it
-    # qdrant = QdrantClient(":memory:") # Create in-memory Qdrant instance
-    qdrant = QdrantClient(path="datasets/Vector_db/")  # OR write them to disk
-
-    qdrant.delete_collection(collection_name)  # todo: remove this after code development
-
-    collections_info = qdrant.get_collections()
-
-    if collection_name not in str(collections_info):  # todo: implement this nicely: access the 'name' field of the object
-        create_vector_db_collection(qdrant, df, embeddings, collection_name)
-        print('created collection')
-        collection = qdrant.get_collection(collection_name)
-        records = qdrant.scroll(collection_name=collection_name,
-                            with_payload=True,  # If List of string - include only specified fields
-                            with_vectors=True,
-                            limit=collection.vectors_count)
-        print(records[0][1].payload) 
-        annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
-        print(annotation, embeddings)
-    else:
-        annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
-        print(annotation, embeddings)
+    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
+    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name)

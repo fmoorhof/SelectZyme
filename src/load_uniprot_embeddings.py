@@ -27,10 +27,18 @@ def create_db_from_5h(filename: str, collection_name: str) -> list:
     logging.info(f"Got {len(entries)} entries from {filename}.")
 
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # host="http://localhost:6333")
-    qdrant.create_collection(collection_name=collection_name, vectors_config=models.VectorParams(
+    
+    collections_info = qdrant.get_collections()
+    collection_names = [collection.name for collection in collections_info.collections]
+    if collection_name not in collection_names:
+        logging.info(f"Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=/scratch/global_1/fmoorhof/Databases/Vector_db/")
+        qdrant.create_collection(collection_name=collection_name, vectors_config=models.VectorParams(
                 size=vector_size,
                 distance=models.Distance.COSINE
             ))
+    else:
+        logging.info(f"Collection '{collection_name}' already exists. To prevent overwriting, this script will be aborted.")
+        raise ValueError(f"Collection '{collection_name}' already exists. To prevent overwriting, this script will be aborted.")
 
     X = []
     records = []

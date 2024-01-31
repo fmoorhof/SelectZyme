@@ -7,7 +7,7 @@ import dash
 
 from preprocessing import Parsing
 from preprocessing import Preprocessing
-import embed
+from embed import load_or_createDB
 import visualizer
 from dash_app import run_dash_app
 
@@ -15,17 +15,6 @@ from dash_app import run_dash_app
 logging.basicConfig(
     format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG
 )
-
-
-def db_creation(df, collection_name: str):
-    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
-    collections_info = qdrant.get_collections()
-    if collection_name not in str(collections_info):  # todo: implement this nicely: access the 'name' field of the object
-        embeddings = embed.gen_embedding(df['Sequence'].tolist(), device='cuda:1')
-        annotation = embed.create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
-    else:
-        annotation, embeddings = embed.load_collection_from_vector_db(qdrant, collection_name)
-    return annotation, embeddings
 
 
 def main(input_file: str, project_name: str, app):
@@ -47,7 +36,8 @@ def main(input_file: str, project_name: str, app):
 
 
     # Create a collection in Qdrant DB with embedded sequences
-    annotation, embeddings = db_creation(df, collection_name=project_name)
+    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
+    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
     if df.shape[0] != embeddings.shape[0]:
         raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. Something went wrong.")
 
@@ -72,6 +62,8 @@ def main(input_file: str, project_name: str, app):
 
 
 if __name__ == "__main__":
+    # todo: fix that the app is constantly re-starting itself and calling the main() function again:/
     app = dash.Dash(__name__)
-    main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
+    # main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
+    main(input_file='tests/head_10.tsv', project_name='swiss-prot2024-01-14_testing', app=app)
     app.run_server(host='0.0.0.0', port=8051, debug=True)  # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8051/
