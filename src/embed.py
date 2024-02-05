@@ -102,7 +102,7 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     # extract the header and vector from the Qdrant data structure
     id_embed = {}
     annotation = []
-    for i in records[0]:  # access only the Records: [0]
+    for i in tqdm(records[0]):  # access only the Records: [0]
         vector = i.vector
         id = i.payload.get('Entry')
         id_embed[id] = vector

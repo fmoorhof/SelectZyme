@@ -92,27 +92,22 @@ def umap(X, dimension: int = 2, n_neighbors: int = 15):
     return X_umap
 
 
-def custom_plotting(df, labels):
+def custom_plotting(df):
     """Modify the df before plotting."""
-    df['cluster'] = labels  # add cluster labels to df (from clustering)
-
     # Create new columns 'marker_size' and 'marker_symbol' based on a condition
-    df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
-    # df['BRENDA'] = df['BRENDA'].fillna('')  # replace empty ECs because they will not get plottet (if color='EC number')
-    values_to_replace = ['NA', '', '0']
+    df['BRENDA'] = df['BRENDA'].fillna('')  # replace empty ECs because they will not get plottet (if color='EC number')
+    values_to_replace = ['NA', '0']
     df['BRENDA'] = df['BRENDA'].replace(values_to_replace, '')
     
-    values_to_replace = ['1.14.11.-', '1.14.20.-']
-    df['EC number'] = df['EC number'].replace(values_to_replace, '0.0.0.1')
-    values_to_replace = ['1.-.-.-']
-    df['EC number'] = df['EC number'].replace(values_to_replace, '0.0.0.0')
-    
-    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = (df['BRENDA'].to_pandas() != '') 
-        condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
-    else:  # pandas DataFrame
-        condition = (df['BRENDA'] != '') 
-        condition2 = (df['EC number'] != '0.0.0.0')
+    df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
+    df['EC number'] = df['EC number'].str.replace(r'\..\..\..\.-;', '0.0.0.0', regex=True)  # 1.1.1.- to 0.0.0.0    
+    # values_to_replace = ['1.14.11.-', '1.14.20.-']
+    # df['EC number'] = df['EC number'].replace(values_to_replace, '1.14.1120')
+    # Replace 'EC number' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
+    # df['EC number'] = df['EC number'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
+    df['EC number'] = df['EC number'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec number of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
+    logging.info(f"{(df['EC number'] != '0.0.0.0').sum()} EC numbers are found.")
+    logging.info(f"{(df['EC number'] != '').sum()} Brenda entries are found.")
 
     # build Brenda URLs
     df['BRENDA URL'] = [
@@ -121,18 +116,24 @@ def custom_plotting(df, labels):
         else pd.NA  # Fill with NaN for rows where BRENDA is NaN
         for ec, entry, organism in zip(df['BRENDA'].values, df['Entry'].values, df['Organism (ID)'].values)  # values_host with cudf
     ]        
-    
-    # alphabetically sort df based on EC numbers (for nicer legend)
-    df = df.sort_values(by=['EC number'])
 
     # define markers for the plot
+    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
+        condition = (df['BRENDA'].to_pandas() != '') 
+        condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
+    else:  # pandas DataFrame
+        condition = (df['BRENDA'] != '') 
+        condition2 = (df['EC number'] != '0.0.0.0')
     df['marker_size'] = 5
     df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 6  # Set to other value for data points that meet the condition
+    df.loc[condition2, 'marker_size'] = 10  # Set to other value for data points that meet the condition
     df.loc[condition2, 'marker_symbol'] = 'diamond'
     df.loc[condition, 'marker_size'] = 18
     df.loc[condition, 'marker_symbol'] = 'cross'
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
+
+    # alphabetically sort df based on EC numbers (for nicer legend)
+    # df = df.sort_values(by=['EC number'])
 
     # line breaks for long entries that hover template can still show all information
     df['Sequence'] = df['Sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
@@ -152,7 +153,7 @@ def plot_2d(df, X_red, collection_name: str, method: str):
     cols = df.columns.values.tolist()
     cols = cols[0:-2]  # do not provide markers in hover template
     fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
-                     color='EC number', # color='cluster'
+                     color='cluster', # color='EC number'
                  title=f'2D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,
@@ -174,7 +175,7 @@ def plot_3d(df, X_red, collection_name: str, method: str):
     cols = df.columns.values.tolist()
     # cols = cols[0:-2]  # do not provide sequence
     fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],  # X_umap[0].to_numpy()?
-                        color='EC number', # color='cluster'
+                        color='cluster', # color='EC number'
                  title=f'3D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,

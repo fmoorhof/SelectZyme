@@ -6,11 +6,20 @@ import visualizer
 from embed import load_collection_from_vector_db
 
 
+
+
 class TestVisualizer:
     def setup_method(self):
         self.df = pd.read_csv('tests/head_10.tsv')
+        # todo: also test the embeddings ProtT5 from UniProt
         qdrant = QdrantClient(path="datasets/Vector_db/")  # OR write them to disk
         self.annotation, self.X = load_collection_from_vector_db(qdrant, collection_name='pytest')  # X = embeddings
+
+    def test_load_datasets(self):
+        """Test the loading of the datasets."""
+        assert self.df is not None
+        assert self.annotation is not None
+        assert self.X is not None
 
     def test_error_clustering_HDBSCAN(self):
         """Test the clustering of the embeddings with HDBSCAN."""
