@@ -23,7 +23,11 @@ from cuml.cluster import (
     HDBSCAN,
     DBSCAN
 )  # pip install hdbscan (the cuml is based on it else plotting can not be done direcly from the module)
-from cuml.decomposition import PCA
+from cuml.decomposition import (
+    PCA,
+    TruncatedSVD,
+    IncrementalPCA
+)
 from cuml.manifold import (
     TSNE,
     UMAP
@@ -73,6 +77,27 @@ def pca(X, dimension: int = 2):
     print(f"% Variance of the PCA components: {variance}")
     logging.info(f"PCA done")
     return X_pca
+
+
+def incremental_pca(X, dimension: int = 2):
+    """Dimensionality reduction with Incremental PCA.
+    Incremental PCA (Principal Component Analysis) is a variant of PCA that is designed to handle very large datasets that may not fit into memory.
+    Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently."""
+    ipca = IncrementalPCA(n_components=dimension, output_type="numpy")
+    X_ipca = ipca.fit_transform(X)
+    variance = ipca.explained_variance_ratio_ * 100
+    variance = ["%.1f" % i for i in variance]  # 1 decimal only
+    print(f"% Variance of the PCA components: {variance}")
+    logging.info(f"Incremental PCA done")
+    return X_ipca
+
+
+def truncated_svd(X, dimension: int = 2):
+    """Dimensionality reduction with Truncated SVD."""
+    svd = TruncatedSVD(n_components=dimension, output_type="numpy")
+    X_svd = svd.fit_transform(X)
+    logging.info(f"Truncated SVD done")
+    return X_svd
 
 
 def tsne(X, dimension: int = 2):
@@ -139,6 +164,11 @@ def custom_plotting(df):
     df['Sequence'] = df['Sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
     df['PDB'] = df['PDB'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
     df['PDB'] = df['PDB'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
+
+    # put long columns at the end of the df
+    cols_at_end = ['BRENDA URL', 'PDB', 'Sequence']
+    df = df[[c for c in df if c not in cols_at_end] 
+        + [c for c in cols_at_end if c in df]]
 
     return df
 
