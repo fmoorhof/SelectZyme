@@ -2,7 +2,7 @@
 import logging
  
 import dash
-from dash import dcc, html
+from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import plotly.express as px
 
@@ -41,15 +41,23 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             },
             style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
         ),
-        html.Table(id='data-table')
+        # html.Table(id='data-table')
+        dash_table.DataTable(
+        id='data-table',
+        # data=df.to_dict('records'),  # prints all available data at once
+        columns=[{'id': c, 'name': c} for c in df.columns],
+        editable=True,
+        export_format='xlsx',
+        export_headers='display',
+        merge_duplicate_headers=True
+    )
     ])
 
-    empty_table = []
-
+    # Define the callback function
     @app.callback(
-        Output('data-table', 'children'),
+        Output('data-table', 'data'),
         Input('plot', 'clickData'),
-        [dash.dependencies.State('data-table', 'children')]
+        [dash.dependencies.State('data-table', 'data')]
     )
 
     def update_table(clickData, existing_table):
@@ -61,19 +69,14 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
         print(selected_feature)
     
         # Create a new row for the table
-        new_row = [
-            html.Tr([
-                html.Td(','.join(map(str, selected_feature))),  # show only specific values: [selected_feature[i] for i in [1, 2, 3, 6]]
-                html.Td(html.A("BRENDA link", href=selected_feature[-1], target="_blank"))  # selected_feature[-1] = brenda url
-            ]),  # join: print with delimiter
-        ]
+        new_row = {col: value for col, value in zip(df.columns, selected_feature)}
     
         # If the existing_table is None (first time), use an empty table
         if existing_table is None:
-            existing_table = empty_table
+            existing_table = []
     
         # Append the new row to the existing table
-        return existing_table + new_row
+        return existing_table + [new_row]
     return app
  
  
