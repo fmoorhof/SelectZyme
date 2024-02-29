@@ -41,15 +41,21 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             },
             style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
         ),
-        # html.Table(id='data-table')
         dash_table.DataTable(
         id='data-table',
-        # data=df.to_dict('records'),  # prints all available data at once
         columns=[{'id': c, 'name': c} for c in df.columns],
+        style_cell={'textAlign': 'left'},
         editable=True,
+        row_deletable=True,
         export_format='xlsx',
         export_headers='display',
-        merge_duplicate_headers=True
+        merge_duplicate_headers=True,
+        # additional stuff:
+        filter_action="native",
+        sort_action="native",
+        sort_mode="multi",
+        column_selectable="single",
+        row_selectable="multi",
     )
     ])
 
