@@ -7,7 +7,7 @@ name: Python application
 
 on:
   push:
-    branches: ["5-"]
+    branches: ["main", "6-visualization-bux-fixing"]
   pull_request:
     branches: ["main"]
 
@@ -20,16 +20,6 @@ jobs:
     # runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
-
-    # # check if the .yaml is valid: a bit unnecessary because actions tell you anyways if its not valid
-    # - name: Validate YAML file
-    #   uses: karancode/yamllint-github-action@master
-    #   with:
-    #       yamllint_file_or_dir: '.github/workflows/python-app.yml'
-    #       yamllint_strict: false
-    #       yamllint_comment: true
-    #       yamllint_config_datapath: '{extends: relaxed, rules: {line-length: {max: 120}}}'
-    
     - name: Setup Mambaforge
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -81,9 +71,9 @@ jobs:
           activate-environment: my-env
           # environment-file: environment.yml
       - run: pip list
-      - run: pip install pytest
-      - run: python -m pytest tests/test_stack.py  # python -m needed to import correctly
-      - run: python -m pytest tests/test_preprocessing.py    
+      - run: pip install pytest pytest-cov
+      - run: python -m pytest --cov=src/ -v tests/test_stack.py  # python -m needed to import correctly
+      - run: python -m pytest --cov=src/ -v tests/test_*   
 
   test:
     runs-on: ubuntu-latest
@@ -105,23 +95,5 @@ jobs:
           pip install pytest
           # pip install .[test]
           pip list
-          python -m pytest tests/test_stack.py  # python -m needed to import correctly
-          python -m pytest tests/test_preprocessing.py
-
-  # style:
-  #   # runs-on: ubuntu-latest
-  #   runs-on: self-hosted
-  #   needs: build
-  #   steps:
-  #   - uses: actions/checkout@v3
-
-
-  #   - name: Lint with flake8
-  #     shell: bash -l {0}
-  #     run: |
-  #       source ~/.profile  # mamba init bash would require shell restart
-  #       source ~/.bashrc  # created by 'mamba init'
-  #       mamba activate my-env
-
-  #       # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-  #       # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics        
+          python -m pytest tests/test_stack.py
+          python -m pytest tests/test_*

@@ -1,4 +1,7 @@
-"""Definitions for the Dash app."""
+"""Definitions for the Dash app.
+
+Dash wiki was insanely helpful for the DataTable. If you like to implement additional features, check out the documentation:
+https://dash.plotly.com/datatable/editable"""
 import logging
  
 import dash
@@ -41,6 +44,7 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             },
             style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
         ),
+        # Define appearance of the table
         dash_table.DataTable(
         id='data-table',
         columns=[{'id': c, 'name': c} for c in df.columns],

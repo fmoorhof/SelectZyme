@@ -132,7 +132,7 @@ if __name__ == "__main__":
     # df_counts = pd.DataFrame(df['Organism (ID)'].groupby(df['Organism (ID)'].tolist()).size().reset_index(name='size'))  # count and make unique
     df = df.groupby(df.columns.tolist(), as_index=False).size()  # count and make unique
     df['Organism Name'] = [scientific_name_resolver(i) for i in df['Organism (ID)'].values]
-    df['Lineage'] = [lineage_resolver(i, level=3) for i in df['Organism (ID)'].values]
+    df['Lineage'] = [lineage_resolver(i, level=0) for i in df['Organism (ID)'].values]
     logging.info(f"The following {len(exc)}/{len(df['Organism (ID)'])} entries were discovered to be unresolvable: {exc}."
                 f"You can try to resolve them manually with the NCBI taxonomy browser")
 

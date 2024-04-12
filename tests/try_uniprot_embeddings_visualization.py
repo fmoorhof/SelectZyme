@@ -16,7 +16,7 @@ logging.basicConfig(
     format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG
 )
 
-import h5py  # todo: not yet appended to requirements.txt
+import h5py
 from tqdm import tqdm
 import requests
 import pandas as pd
@@ -65,6 +65,39 @@ def load_from_5h(filename: str) -> list:
     return annotations, X
 
 
+def create_debugging_subset_from_5h(input_filename: str, output_filename: str, num_entries: int):
+    """
+    Create a debugging subset from an h5 file.
+
+    Args:
+        input_filename (str): The path to the input h5 file.
+        output_filename (str): The path to the output h5 file.
+        num_entries (int): The number of entries to process.
+
+    Returns:
+        None
+    """
+    # Load the h5 data
+    with h5py.File(input_filename, 'r') as input_file:
+        entries = list(input_file.keys())
+        vector_size = input_file[entries[0]].shape[0]
+        logging.info(f"The vectors are of dimension: {vector_size}")
+        logging.info(f"Got {len(entries)} entries from {input_filename}.")
+
+        # Limit the number of entries processed
+        entries = entries[:num_entries]
+
+        with h5py.File(output_filename, 'w') as output_file:
+            for i, entry in enumerate(tqdm(entries)):
+                vector = input_file[entry][:].tolist()
+                annotation = input_file.get(entry).attrs["original_id"]
+
+                # Create a dataset for the vector in the output file
+                dset = output_file.create_dataset(entry, data=vector)
+                dset.attrs["original_id"] = annotation
+
+
+
 def main(annotations, X, project_name: str, app):
 
     df = pd.DataFrame(annotations, columns=['Entry'])
@@ -72,6 +105,7 @@ def main(annotations, X, project_name: str, app):
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     labels = visualizer.clustering_HDBSCAN(X, min_samples=50)  # 50
     df['cluster'] = labels  # add cluster labels to df (from clustering)
+
     # mock data for the plotly dash app
     df['EC number'] = '0.0.0.0'
     df['marker_size'] = 5
@@ -80,10 +114,16 @@ def main(annotations, X, project_name: str, app):
     # todo: annotations are garbage in the dataset, fetch own annoations from uniprot based on the 'Entry' column
     # df['Length'], df['Organism ID'], df['EC number'] = zip(*df['Entry'].map(fetch_uniprot_data))
 
-    iter_methods = ['PCA', 'TSNE', 'UMAP']
+
+    iter_methods = ['PCA', 'iPCA', 'tSVD', 'TSNE', 'UMAP']
     for method in iter_methods:
         if method == 'PCA':
+            continue  # skip PCA for now
             X_red = visualizer.pca(X)
+        elif method == 'iPCA':
+            X_red = visualizer.incremental_pca(X)
+        elif method == 'tSVD':
+            X_red = visualizer.truncated_svd(X)
         elif method == 'TSNE':
             X_red = visualizer.tsne(X)
         elif method == 'UMAP':
@@ -102,7 +142,9 @@ if __name__ == "__main__":
 
     from load_uniprot_embeddings import create_db_from_5h
     # annotations, X = create_db_from_5h('/scratch/global_1/fmoorhof/Databases/per-protein.h5', 'swiss-prot2024-01-14')
-    annotations, X = load_from_5h('/scratch/global_1/fmoorhof/Databases/per-protein.h5')
+
+    create_debugging_subset_from_5h('/scratch/global_1/fmoorhof/Databases/per-protein.h5', '/scratch/global_1/fmoorhof/Databases/per-protein_debugging.h5', num_entries=10)
+    annotations, X = load_from_5h('/scratch/global_1/fmoorhof/Databases/per-protein.h5')  # protein_debugging
     main(annotations, X, project_name='swiss-prot2024-01-14', app=app)  # test uniprot embeddings
 
     # app.run_server(host='0.0.0.0', port=8051, debug=True)  # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8051/

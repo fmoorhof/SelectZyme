@@ -101,7 +101,9 @@ def truncated_svd(X, dimension: int = 2):
 
 
 def tsne(X, dimension: int = 2):
-    """Dimensionality reduction with tSNE."""
+    """Dimensionality reduction with tSNE.
+    Currently TSNE supports n_components = 2; so only 2D plots are possible in May 2024!
+    """
     tsne = TSNE(n_components=dimension, random_state=42)
     X_tsne = tsne.fit_transform(X)
     logging.info(f"tSNE done")
@@ -158,7 +160,7 @@ def custom_plotting(df):
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
 
     # alphabetically sort df based on EC numbers (for nicer legend)
-    # df = df.sort_values(by=['EC number'])
+    # df = df.sort_values(by=['EC number'])  # Todo: need triage!: embeddings always need to be in same order as df!
 
     # line breaks for long entries that hover template can still show all information
     df['Sequence'] = df['Sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
