@@ -14,11 +14,8 @@ The container name is fmoorhof_rapidsai and the ID: 2cee57c21810
 rapidsai/rapidsai:cuda11.5-base-centos7-py3.9
 """
 import logging
-import sys
 
 import pandas as pd
-from qdrant_client import QdrantClient
-
 import plotly.express as px
 
 import cudf
@@ -26,7 +23,11 @@ from cuml.cluster import (
     HDBSCAN,
     DBSCAN
 )  # pip install hdbscan (the cuml is based on it else plotting can not be done direcly from the module)
-from cuml.decomposition import PCA
+from cuml.decomposition import (
+    PCA,
+    TruncatedSVD,
+    IncrementalPCA
+)
 from cuml.manifold import (
     TSNE,
     UMAP
@@ -78,8 +79,31 @@ def pca(X, dimension: int = 2):
     return X_pca
 
 
+def incremental_pca(X, dimension: int = 2):
+    """Dimensionality reduction with Incremental PCA.
+    Incremental PCA (Principal Component Analysis) is a variant of PCA that is designed to handle very large datasets that may not fit into memory.
+    Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently."""
+    ipca = IncrementalPCA(n_components=dimension, output_type="numpy")
+    X_ipca = ipca.fit_transform(X)
+    variance = ipca.explained_variance_ratio_ * 100
+    variance = ["%.1f" % i for i in variance]  # 1 decimal only
+    print(f"% Variance of the PCA components: {variance}")
+    logging.info(f"Incremental PCA done")
+    return X_ipca
+
+
+def truncated_svd(X, dimension: int = 2):
+    """Dimensionality reduction with Truncated SVD."""
+    svd = TruncatedSVD(n_components=dimension, output_type="numpy")
+    X_svd = svd.fit_transform(X)
+    logging.info(f"Truncated SVD done")
+    return X_svd
+
+
 def tsne(X, dimension: int = 2):
-    """Dimensionality reduction with tSNE."""
+    """Dimensionality reduction with tSNE.
+    Currently TSNE supports n_components = 2; so only 2D plots are possible in May 2024!
+    """
     tsne = TSNE(n_components=dimension, random_state=42)
     X_tsne = tsne.fit_transform(X)
     logging.info(f"tSNE done")
@@ -97,39 +121,56 @@ def umap(X, dimension: int = 2, n_neighbors: int = 15):
 
 def custom_plotting(df):
     """Modify the df before plotting."""
-
     # Create new columns 'marker_size' and 'marker_symbol' based on a condition
-    df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
-    # df['BRENDA'] = df['BRENDA'].fillna('')  # replace empty ECs because they will not get plottet (if color='EC number')
-    values_to_replace = ['NA', '', '0']
+    df['BRENDA'] = df['BRENDA'].fillna('')  # replace empty ECs because they will not get plottet (if color='EC number')
+    values_to_replace = ['NA', '0']
     df['BRENDA'] = df['BRENDA'].replace(values_to_replace, '')
     
-    values_to_replace = ['1.14.11.-', '1.14.20.-']
-    df['EC number'] = df['EC number'].replace(values_to_replace, '0.0.0.1')
-    values_to_replace = ['1.-.-.-']
-    df['EC number'] = df['EC number'].replace(values_to_replace, '0.0.0.0')
-    
-    
-    condition = (df['BRENDA'].to_pandas() != '')  # todo: fix: AttributeError: 'Series' object has no attribute 'to_pandas'
-    condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
-    df['marker_size'] = 5
-    df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 6  # Set to other value for data points that meet the condition
-    df.loc[condition2, 'marker_symbol'] = 'diamond'
-    df.loc[condition, 'marker_size'] = 18
-    df.loc[condition, 'marker_symbol'] = 'cross'
-    # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
-    
+    df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
+    df['EC number'] = df['EC number'].str.replace(r'\..\..\..\.-;', '0.0.0.0', regex=True)  # 1.1.1.- to 0.0.0.0    
+    # values_to_replace = ['1.14.11.-', '1.14.20.-']
+    # df['EC number'] = df['EC number'].replace(values_to_replace, '1.14.1120')
+    # Replace 'EC number' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
+    # df['EC number'] = df['EC number'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
+    df['EC number'] = df['EC number'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec number of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
+    logging.info(f"{(df['EC number'] != '0.0.0.0').sum()} EC numbers are found.")
+    logging.info(f"{(df['EC number'] != '').sum()} Brenda entries are found.")
+
     # build Brenda URLs
     df['BRENDA URL'] = [
         f"https://www.brenda-enzymes.org/enzyme.php?ecno={ec.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
         if pd.notna(ec)
         else pd.NA  # Fill with NaN for rows where BRENDA is NaN
-        for ec, entry, organism in zip(df['BRENDA'].values_host, df['Entry'].values_host, df['Organism (ID)'].values_host)
-    ]
-    
+        for ec, entry, organism in zip(df['BRENDA'].values, df['Entry'].values, df['Organism (ID)'].values)  # values_host with cudf
+    ]        
+
+    # define markers for the plot
+    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
+        condition = (df['BRENDA'].to_pandas() != '') 
+        condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
+    else:  # pandas DataFrame
+        condition = (df['BRENDA'] != '') 
+        condition2 = (df['EC number'] != '0.0.0.0')
+    df['marker_size'] = 5
+    df['marker_symbol'] = 'circle'
+    df.loc[condition2, 'marker_size'] = 10  # Set to other value for data points that meet the condition
+    df.loc[condition2, 'marker_symbol'] = 'diamond'
+    df.loc[condition, 'marker_size'] = 18
+    df.loc[condition, 'marker_symbol'] = 'cross'
+    # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
+
     # alphabetically sort df based on EC numbers (for nicer legend)
-    df = df.sort_values(by=['EC number'])
+    # df = df.sort_values(by=['EC number'])  # Todo: need triage!: embeddings always need to be in same order as df!
+
+    # line breaks for long entries that hover template can still show all information
+    df['Sequence'] = df['Sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
+    df['PDB'] = df['PDB'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
+    df['PDB'] = df['PDB'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
+
+    # put long columns at the end of the df
+    cols_at_end = ['BRENDA URL', 'PDB', 'Sequence']
+    df = df[[c for c in df if c not in cols_at_end] 
+        + [c for c in cols_at_end if c in df]]
 
     return df
 
@@ -142,9 +183,9 @@ def plot_2d(df, X_red, collection_name: str, method: str):
     :param collection_name: name of the collection/dataset
     :param method: dimensionality reduction method used"""
     cols = df.columns.values.tolist()
-    # cols = cols[0:-2]  # do not provide sequence
+    cols = cols[0:-2]  # do not provide markers in hover template
     fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
-                     color='EC number', # color='cluster'
+                     color='cluster', # color='EC number'
                  title=f'2D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,
@@ -166,7 +207,7 @@ def plot_3d(df, X_red, collection_name: str, method: str):
     cols = df.columns.values.tolist()
     # cols = cols[0:-2]  # do not provide sequence
     fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],  # X_umap[0].to_numpy()?
-                        color='EC number', # color='cluster'
+                        color='cluster', # color='EC number'
                  title=f'3D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,

@@ -1,4 +1,7 @@
 # GPU torch and CuDF, CuML, * installed via conda
+tqdm
 fair-esm
 qdrant-client
 hdbscan  # required by CuML HDBScan for plotting
+h5py
+taxoniq

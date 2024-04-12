@@ -7,14 +7,17 @@ dependencies:
   - cudf=23.12
   - cuml=23.12
   - python=3.10
-  - cuda-version=11.2
+  - cuda-version=12.1  # 11.2
   - pytorch
   - cugraph=23.12
   - dash
   - pip
   - pip:
+    - tqdm
     - fair-esm
     - qdrant-client
     - hdbscan
+    - h5py
+    - taxoniq
     # - -r file:requirements.txt
     
