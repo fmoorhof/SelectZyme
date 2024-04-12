@@ -1,6 +1,8 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
+# if OS out of memory comes again, continue with these steps: https://github.com/actions/runner-images/issues/709
+
 name: Python application
 
 on:
@@ -26,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install --user --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118; fi
-        pip install --user --no-cache-dir --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.2.* cuml-cu12==24.2.*
+        pip install --user --no-cache-dir --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
         pip install pytest pytest-cov        
         # todo: try next to install from pyproject.toml
     - name: Test with pytest

@@ -20,7 +20,7 @@ conda env create -f environment.yml
 ### Pip
 ```
 pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118
-pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12==24.2.* cuml-cu12==24.2.*
+pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
 ```
 Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed and that causes the CI runner to exit on: `OSError: [Errno 28] No space left on device`  
 
