@@ -1,103 +1,35 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-# todo: try miniconda 3 from here instead, think about versions and OSes https://github.com/conda-incubator/setup-miniconda#example-1-basic-usage
-
-# todo: caching produces caches that are too small
-# tests are failing because of imports
 name: Python application
 
 on:
   push:
-    branches: ["main", "other_branch"]
+    branches: [ "main", "7-CI-fix" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 permissions:
   contents: read
-              
+
 jobs:
-  build:  # cached build is 2mins vs. 11mins
-    runs-on: ubuntu-latest  # todo: change chaching path when modifying this (- name: Cache my dependencies)
-    # runs-on: self-hosted
+  build:
+
+    runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v3
-    - name: Setup Mambaforge
-      uses: conda-incubator/setup-miniconda@v2
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
       with:
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          activate-environment: my-env
-          use-mamba: true
-          # environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
-
-    - name: Define cache environment
-      id: cache
-      uses: actions/cache@v3
-      with:
-        path: /usr/share/miniconda3/envs/my-env  # Github Actions
-        # path: /home/fmoorhof/actions-runner/_work/ec/ec/3/envs/my-env  # self-hosted
-        key: ${{ runner.os }}-conda-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-conda-
-
-    - name: Set cache
-      uses: conda-incubator/setup-miniconda@v2
-      if: steps.cache.outputs.cache-hit != 'true'
-      with:
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          activate-environment: my-env
-          use-mamba: true
-          environment-file: environment.yml  # speed up by not installing all dependencies before if cache check exists
-
-    - name: Tests
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        pip install pytest pytest-cov
+        if [ -f requirements.txt ]; then pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extra-index-url https://download.pytorch.org/whl/cu118; fi
+        # todo: try next to install from pyproject.toml
+    - name: Test with pytest
       run: |
         python --version
-        pip list
-        conda activate my-env
-        pip install pytest pytest-cov
-        pip list
         python -m pytest --cov=src/ -v tests/test_stack.py
         python -m pytest --cov=src/ -v tests/test_*
-
-  # tests-shell:
-  #   name: test shell
-  #   runs-on: "ubuntu-latest"
-  #   needs: build
-  #   defaults:
-  #     run:
-  #       shell: bash -el {0}
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: conda-incubator/setup-miniconda@v2
-  #       with:
-  #         activate-environment: my-env
-  #         # environment-file: environment.yml
-  #     - run: pip list
-  #     - run: pip install pytest pytest-cov
-  #     - run: python -m pytest --cov=src/ -v tests/test_stack.py  # python -m needed to import correctly
-  #     - run: python -m pytest --cov=src/ -v tests/test_*   
-
-  # test:
-  #   runs-on: ubuntu-latest
-  #   # runs-on: self-hosted
-  #   needs: build
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - uses: conda-incubator/setup-miniconda@v2
-  #     with:
-  #         miniforge-variant: Mambaforge
-  #         miniforge-version: latest
-  #         activate-environment: my-env
-  #         use-mamba: true
-  #         # environment-file: environment.yml  # use from cache anyways 
-
-  #   - shell: bash -el {0}  # use activated shell, not dependent on conda init
-  #     run: |
-  #         pip list
-  #         pip install pytest
-  #         # pip install .[test]
-  #         pip list
-  #         python -m pytest tests/test_stack.py
-  #         python -m pytest tests/test_*
