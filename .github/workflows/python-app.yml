@@ -54,7 +54,10 @@ jobs:
     - name: Tests
       run: |
         python --version
+        pip list
+        conda activate my-env
         pip install pytest pytest-cov
+        pip list
         python -m pytest --cov=src/ -v tests/test_stack.py
         python -m pytest --cov=src/ -v tests/test_*
 
