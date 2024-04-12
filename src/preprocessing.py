@@ -8,7 +8,7 @@ import pandas as pd
 
 class Parsing():
     """This class should assist in the parsing of the data."""
-    def parse_fasta(filepath) -> pd.DataFrame:
+    def parse_fasta(filepath: str) -> pd.DataFrame:
         """Parse a fasta file and return a df with the header and sequences in columns.
         params: filepath: path to the fasta file
         return: headers: list of headers
@@ -30,14 +30,14 @@ class Parsing():
         df = pd.DataFrame({'Entry': headers, 'Sequence': sequences})
         return df
     
-    def parse_tsv(filepath):
+    def parse_tsv(filepath: str) -> pd.DataFrame:
         """Parse a tsv file and return a dataframe.
         params: filepath: path to the tsv file
         return: df: dataframe containing the sequences"""
         df = pd.read_csv(filepath, sep='\t')
         return df    
     
-    def parse_csv(filepath):
+    def parse_csv(filepath: str) -> pd.DataFrame:
         """Parse a tsv file and return a dataframe.
         params: filepath: path to the tsv file
         return: df: dataframe containing the sequences"""
@@ -51,7 +51,7 @@ class Preprocessing:
         self.df = df
         self.length = df.shape[0]  # original length of the dataframe
 
-    def remove_long_sequences(self):
+    def remove_long_sequences(self) -> None:
         """
         This function removes too long sequences from the dataset. Sequences > 1024 amino acids cause the esm embedding to fail.
         params: df: dataframe containing the sequences
@@ -64,7 +64,7 @@ class Preprocessing:
         self.df = df  # update df instead of returning it
         # return df
 
-    def remove_sequences_without_Metheonin(self):
+    def remove_sequences_without_Metheonin(self) -> None:
         """
         This function removes sequences without a Methionine at the beginning.
         params: df: dataframe containing the sequences
@@ -76,7 +76,7 @@ class Preprocessing:
         self.df = df
         # return df
     
-    def remove_sequences_with_undertermined_amino_acids(self):
+    def remove_sequences_with_undertermined_amino_acids(self) -> None:
         """
         This function removes sequences with undertermined amino acids 'X'.
         params: df: dataframe containing the sequences
@@ -88,7 +88,7 @@ class Preprocessing:
         self.df = df
         # return df
 
-    def remove_duplicate_entries(self):
+    def remove_duplicate_entries(self) -> None:
         """
         This function removes duplicate entries from the dataframe.
         params: df: dataframe containing the sequences
@@ -100,7 +100,7 @@ class Preprocessing:
         self.df = df
         # return df
 
-    def remove_duplicate_sequences(self):
+    def remove_duplicate_sequences(self) -> None:
         """
         This function removes duplicate entries from the dataframe.
         params: df: dataframe containing the sequences
