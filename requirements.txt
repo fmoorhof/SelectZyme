@@ -1,7 +1,14 @@
-# GPU torch and CuDF, CuML, * installed via conda
+# --extra-index-url ${PIP_EXTRA_INDEX_URL}
 tqdm
+plotly
+requests
 fair-esm
 qdrant-client
-hdbscan  # required by CuML HDBScan for plotting
 h5py
 taxoniq
+torch==2.2.1+cu118  # cu118 requires --extra-index-url https://download.pytorch.org/whl/cu118
+torchaudio==2.2.1+cu118
+torchvision==0.17.1+cu118
+hdbscan
+# cudf-cu11==24.2.*  # do manually for fixing: OSError: [Errno 28] No space left on device
+# cuml-cu11==24.2.*

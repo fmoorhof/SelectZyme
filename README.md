@@ -19,6 +19,13 @@ conda env create -f environment.yml
 
 ### Pip
 ```
+pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118
+pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
+```
+Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed and that causes the CI runner to exit on: `OSError: [Errno 28] No space left on device`  
+
+Outlook: pass extra-index-url in pyproject.toml. Doesnt work for me yet!
+```
 # local installation of the package:
 pip install .
 
@@ -27,18 +34,10 @@ pip install -e .
 
 # editable install with optional dependencies:
 pip install -e `.[full]`
+
+# on failure, provide extra package indices manually:
+pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extra-index-url https://download.pytorch.org/whl/cu118
 ```
-
-Warning GPU support with CuDF and CuML are unfortunately only available (stable) via conda :/
-However, you could still try to install it seperately by:
-```
-pip install \
-    --extra-index-url=https://pypi.nvidia.com \
-    cudf-cu11==23.12.* cuml-cu11==23.12.* cugraph-cu11==23.12.*
-```
-
-
-
 
 #### Development tools
 This project uses the following tools to improve code quality:

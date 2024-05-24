@@ -21,7 +21,7 @@ requires-python = ">= 3.10"
 dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
+dependencies = { file = ["requirements.txt"] }  # extra-index-url are defined in [build]
 
 
 [project.urls]
@@ -36,6 +36,16 @@ package-dir = {"" = "src"}
 [build-system]
 requires = ["setuptools>=0.61.0"]
 build-backend = "setuptools.build_meta"
+
+# todo: not working yet. install manually!
+# either pip reads this
+extra-index-url = ["https://download.pytorch.org/whl/cu118", "https://pypi.nvidia.com"]  # Pytorch, RAPIDS
+# or this
+[tool.env]
+PIP_EXTRA_INDEX_URL = [
+    "https://download.pytorch.org/whl/cu118",
+    "https://pypi.nvidia.com"
+]
 
 [project.optional-dependencies]
 test = [
