@@ -119,38 +119,45 @@ def umap(X, dimension: int = 2, n_neighbors: int = 15):
     return X_umap
 
 
-def custom_plotting(df):
-    """Modify the df before plotting."""
-    # Create new columns 'marker_size' and 'marker_symbol' based on a condition
-    df['BRENDA'] = df['BRENDA'].fillna('')  # replace empty ECs because they will not get plottet (if color='EC number')
-    values_to_replace = ['NA', '0']
-    df['BRENDA'] = df['BRENDA'].replace(values_to_replace, '')
-    
-    df['EC number'] = df['EC number'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='EC number')
-    df['EC number'] = df['EC number'].str.replace(r'\..\..\..\.-;', '0.0.0.0', regex=True)  # 1.1.1.- to 0.0.0.0    
-    # values_to_replace = ['1.14.11.-', '1.14.20.-']
-    # df['EC number'] = df['EC number'].replace(values_to_replace, '1.14.1120')
-    # Replace 'EC number' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
-    # df['EC number'] = df['EC number'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
-    df['EC number'] = df['EC number'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec number of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
-    logging.info(f"{(df['EC number'] != '0.0.0.0').sum()} EC numbers are found.")
-    logging.info(f"{(df['EC number'] != '').sum()} Brenda entries are found.")
+def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Modify the given DataFrame before plotting to make values look nicer.
 
+    Args:
+        df (pd.DataFrame): The DataFrame to be modified.
+
+    Returns:
+        pd.DataFrame: The modified DataFrame.
+    """
+    # Create new columns 'marker_size' and 'marker_symbol' based on a condition
+    df['xref_brenda'] = df['xref_brenda'].fillna('')  # replace empty ECs because they will not get plottet (if color='ec')
+    values_to_replace = ['NA', '0']
+    df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
+    
+    df['ec'] = df['ec'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='ec')
+    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', '0.0.0.0', regex=True)  # 1.1.1.- to 0.0.0.0    
+    # values_to_replace = ['1.14.11.-', '1.14.20.-']
+    # df['ec'] = df['ec'].replace(values_to_replace, '1.14.1120')
+    # Replace 'ec' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
+    # df['ec'] = df['ec'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
+    df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
+    logging.info(f"{(df['ec'] != '0.0.0.0').sum()} EC numbers are found.")
+    logging.info(f"{(df['ec'] != '').sum()} Brenda entries are found.")
     # build Brenda URLs
     df['BRENDA URL'] = [
         f"https://www.brenda-enzymes.org/enzyme.php?ecno={ec.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
         if pd.notna(ec)
         else pd.NA  # Fill with NaN for rows where BRENDA is NaN
-        for ec, entry, organism in zip(df['BRENDA'].values, df['Entry'].values, df['Organism (ID)'].values)  # values_host with cudf
+        for ec, entry, organism in zip(df['xref_brenda'].values, df['accession'].values, df['organism_id'].values)  # values_host with cudf
     ]        
 
     # define markers for the plot
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = (df['BRENDA'].to_pandas() != '') 
-        condition2 = (df['EC number'].to_pandas() != '0.0.0.0')
+        condition = (df['xref_brenda'].to_pandas() != '') 
+        condition2 = (df['ec'].to_pandas() != '0.0.0.0')
     else:  # pandas DataFrame
-        condition = (df['BRENDA'] != '') 
-        condition2 = (df['EC number'] != '0.0.0.0')
+        condition = (df['xref_brenda'] != '') 
+        condition2 = (df['ec'] != '0.0.0.0')
     df['marker_size'] = 5
     df['marker_symbol'] = 'circle'
     df.loc[condition2, 'marker_size'] = 10  # Set to other value for data points that meet the condition
@@ -160,15 +167,15 @@ def custom_plotting(df):
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
 
     # alphabetically sort df based on EC numbers (for nicer legend)
-    # df = df.sort_values(by=['EC number'])  # Todo: need triage!: embeddings always need to be in same order as df!
+    # df = df.sort_values(by=['ec'])  # Todo: need triage!: embeddings always need to be in same order as df!
 
     # line breaks for long entries that hover template can still show all information
-    df['Sequence'] = df['Sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
-    df['PDB'] = df['PDB'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
-    df['PDB'] = df['PDB'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
+    df['sequence'] = df['sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
+    df['xref_pdb'] = df['xref_pdb'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
+    df['xref_pdb'] = df['xref_pdb'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
 
     # put long columns at the end of the df
-    cols_at_end = ['BRENDA URL', 'PDB', 'Sequence']
+    cols_at_end = ['BRENDA URL', 'xref_pdb', 'sequence']
     df = df[[c for c in df if c not in cols_at_end] 
         + [c for c in cols_at_end if c in df]]
 
@@ -185,7 +192,7 @@ def plot_2d(df, X_red, collection_name: str, method: str):
     cols = df.columns.values.tolist()
     cols = cols[0:-2]  # do not provide markers in hover template
     fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
-                     color='cluster', # color='EC number'
+                     color='cluster', # color='ec'
                  title=f'2D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,
@@ -207,7 +214,7 @@ def plot_3d(df, X_red, collection_name: str, method: str):
     cols = df.columns.values.tolist()
     # cols = cols[0:-2]  # do not provide sequence
     fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],  # X_umap[0].to_numpy()?
-                        color='cluster', # color='EC number'
+                        color='cluster', # color='ec'
                  title=f'3D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,

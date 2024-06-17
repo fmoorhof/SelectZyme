@@ -89,7 +89,7 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
 
     :param qdrant: qdrant object
     :param collection_name: name of the vector database
-    return: annotation: list of 'Entry'
+    return: annotation: list of 'accession'
     return: embeddings: numpy array containing the embeddings"""
     logging.info(f"Retrieving data from Qdrant DB. This may take a while.")
     collection = qdrant.get_collection(collection_name)
@@ -104,10 +104,10 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     annotation = []
     for i in tqdm(records[0]):  # access only the Records: [0]
         vector = i.vector
-        id = i.payload.get('Entry')
+        id = i.payload.get('accession')
         id_embed[id] = vector
         # annotation.append(i.payload)  # theoretically more information than only 'Entry' could be stored/retrieved
-        annotation.append(i.payload['Entry'])
+        annotation.append(i.payload['accession'])
     embeddings = np.array(list(id_embed.values()))  # dimension error if dataset has duplicates
     # df = pd.DataFrame(annotation)
     return annotation, embeddings
@@ -124,7 +124,7 @@ def load_or_createDB(qdrant: QdrantClient, df, collection_name: str):
     collections_info = qdrant.get_collections()
     collection_names = [collection.name for collection in collections_info.collections]
     if collection_name not in collection_names:
-        embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
+        embeddings = gen_embedding(df['sequence'].tolist(), device='cuda:1')
         annotation, embeddings = create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
     else:
         annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
@@ -148,6 +148,6 @@ if __name__=='__main__':
     collection_name='pytest'
 
     # start testing my code:
-    embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
+    embeddings = gen_embedding(df['sequence'].tolist(), device='cuda:1')
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name)
