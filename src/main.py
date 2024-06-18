@@ -44,7 +44,7 @@ def main(input_file: str, project_name: str, app):
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
     labels = visualizer.clustering_HDBSCAN(X, min_samples=1)  # 50
-    df = visualizer.custom_plotting(df, labels)
+    df = visualizer.custom_plotting(df)
 
     iter_methods = ['PCA', 'TSNE', 'UMAP']
     for method in iter_methods:
@@ -65,5 +65,5 @@ if __name__ == "__main__":
     # todo: fix that the app is constantly re-starting itself and calling the main() function again:/
     app = dash.Dash(__name__)
     # main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
-    main(input_file='tests/head_10.tsv', project_name='swiss-prot2024-01-14_testing', app=app)
+    main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)
     app.run_server(host='0.0.0.0', port=8051, debug=True)  # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8051/
