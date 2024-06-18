@@ -31,7 +31,7 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             figure=px.scatter(df,
                             x=X_red[:, 0],
                             y=X_red[:, 0],
-                            color='EC number',  # color='cluster'
+                            color='ec',  # color='cluster'
                             title=f'2D {method} on dataset {project_name}',
                             hover_data=cols,
                             opacity=0.2,
