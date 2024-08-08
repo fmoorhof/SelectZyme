@@ -58,13 +58,23 @@ def get_batch(batch_url):
         batch_url = get_next_link(response.headers)
 
 
+def load_custom_csv(file_path: str, df_coi: list[str]) -> pd.DataFrame:
+    df = pd.read_csv(file_path, sep=',', header=None, names=df_coi, skiprows=1)
+    df['reviewed'] = True
+    if df['xref_brenda'].isnull().all():
+        df['xref_brenda'] = True
+    if df['ec'].isnull().all():
+        df['ec'] = True
+    return df
+
+
 
 if __name__ == '__main__':
     # define data to retrieve
-    ec_list = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87"]  # ec number and brenda retrieval
-    ipr_list = ["IPR037473", "IPR018713", "latex clearing protein"]
-    length = "200 TO 601"
-    out_dir = 'datasets/output/'  # save output here
+    query_terms = ["ec:2.3.1.304", "xref%3Abrenda-2.3.1.304", "IPR006862", "rhia"]  # define your query terms for UniProt here
+    length = "100 TO 1001"
+    out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "uniprot_rhia"
 
     # UniProt pagination to fetch more than 500 entries
     re_next_link = re.compile(r'<(.+)>; rel="next"')
@@ -77,10 +87,10 @@ if __name__ == '__main__':
     coi = str(df_coi).strip('[]').replace("'", "")
 
     raw_data = b''  # byte variable initialization
-    for ipr in ec_list+ipr_list:
+    for qry in query_terms:
         url = f"https://rest.uniprot.org/uniprotkb/search?" \
             f"&format=tsv" \
-            f"&query=({ipr}) AND (length:[{length}])" \
+            f"&query=({qry}) AND (length:[{length}])" \
             f"&fields={coi}" \
             f"&size=500"
         for batch, total in get_batch(url):
@@ -88,22 +98,26 @@ if __name__ == '__main__':
 
     df = pd.read_csv(io.StringIO(raw_data.decode('utf-8')), delimiter='\t')
     df.columns = df_coi  # UniProt sets column names differently, its easier to stick to keywords
-    print(df.shape)
+    df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')  # Set boolean values
+
+    # Load custom data
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/RhlA_mining/The_eight.csv'
+    custom_data = load_custom_csv(custom_data_location, df_coi)
+    df = pd.concat([custom_data, df], ignore_index=True)
+
+    # cleaning data
     df = df[df['accession'] != 'Entry']  # remove concatenated headers that are introduced by each query term
-    print(df.shape)
+    print(f'Total amount of retrieved entries: {df.shape}')
     df.drop_duplicates(subset='accession', keep='first', inplace=True)
     df.reset_index(drop=True, inplace=True)
-    print(df.shape)
-
-    # Set bool
-    df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')
+    print(f'Total amount of non redundant entries: {df.shape}')
 
     # save output
-    df.to_csv(out_dir + 'uniprot_lcp_annotated.tsv', sep='\t', index=False)
-    tsv_to_fasta_writer(in_file=out_dir + 'uniprot_lcp_annotated.tsv', out_file=out_dir + 'uniprot_lcp.fasta')
-    write_annotated_fasta(df=df, out_file=out_dir + 'uniprot_lcp_annotated.fasta')
+    df.to_csv(out_dir + out_filename + '_annotated.tsv', sep='\t', index=False)
+    tsv_to_fasta_writer(in_file=out_dir + out_filename + '_annotated.tsv', out_file=out_dir + out_filename + '.fasta')
+    write_annotated_fasta(df=df, out_file=out_dir + out_filename + '_annotated.fasta')
 
     # write again only thoose where Reviewed or EC number present
     df = df[(df['reviewed'] == True ) | (df['ec'].notnull())]  # | = OR
-    print(df.shape)
-    df.to_csv(out_dir + 'uniprot_lcp_SWISSProt.tsv', sep='\t', index=False)
+    print(f'Amount of SWISSProt reviewed entries: {df.shape}')
+    df.to_csv(out_dir + out_filename + '_SWISSProt.tsv', sep='\t', index=False)
