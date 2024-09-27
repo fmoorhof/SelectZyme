@@ -17,14 +17,7 @@ logging.basicConfig(
 )
 
 
-def main(input_file: str, project_name: str, app):
-
-    if input_file.endswith('.fasta'):
-        headers, sequences = Parsing.parse_fasta(input_file)
-        df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
-    else:
-        df = Parsing.parse_tsv(input_file)
-
+def preprocessing(df: pd.DataFrame):
     # df needs to contain a column 'Sequence' with the sequences
     pp = Preprocessing(df)
     pp.remove_long_sequences()
@@ -32,8 +25,19 @@ def main(input_file: str, project_name: str, app):
     pp.remove_sequences_with_undertermined_amino_acids()
     pp.remove_duplicate_entries()
     pp.remove_duplicate_sequences()
-    df = pp.df
+    return pp.df
 
+
+def main(input_file: str, project_name: str, app):
+
+    # data parsing
+    if input_file.endswith('.fasta'):
+        headers, sequences = Parsing.parse_fasta(input_file)
+        df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
+    else:
+        df = Parsing.parse_tsv(input_file)
+
+    df = preprocessing(df)
 
     # Create a collection in Qdrant DB with embedded sequences
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
