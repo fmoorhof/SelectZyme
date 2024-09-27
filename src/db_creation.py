@@ -58,9 +58,7 @@ collections_info = qdrant.get_collections()
 if collection_name not in str(
     collections_info
 ):  # todo: implement this nicely: access the 'name' field of the object
-    logging.info(
-        f"Vector DB doesnt exist yet. Your .fasta will be embedded and a vector DB created under path=Vector_db/"
-    )
+    logging.info("Vector DB doesnt exist yet. Your .fasta will be embedded and a vector DB created under path=Vector_db/")
 
     # todo: not tested yet the .fasta parsing!
     # read sequences either from .fasta or .tsv
@@ -120,9 +118,7 @@ if collection_name not in str(
 
 # Retrieve all points of a collection with defined return fields (payload e.g.)
 # A point is a record consisting of a vector and an optional payload
-logging.info(
-    f"Retrieving data from Qdrant vector DB. This may take a while for some 100k sequences."
-)
+logging.info("Retrieving data from Qdrant vector DB. This may take a while for some 100k sequences.")
 collection = qdrant.get_collection(collection_name)
 records = qdrant.scroll(
     collection_name=collection_name,
@@ -148,9 +144,7 @@ df = pd.DataFrame(annotation)
 
 # Visualization: Dimensionality reduction
 # todo: outsource this part into real analysis; todo: annotate plot with EC number
-logging.info(
-    f"Starting 2D UMAP projection. This may take a while for some 100k sequences."
-)
+logging.info("Starting 2D UMAP projection. This may take a while for some 100k sequences.")
 umap = UMAP(
     n_components=2,
     densmap=True,
@@ -195,7 +189,7 @@ import plotly.graph_objects as go
 from sklearn.cluster import DBSCAN
 
 X = embeddings
-logging.info(f"Starting DBSCAN. This may take a while for some 100k sequences.")
+logging.info("Starting DBSCAN. This may take a while for some 100k sequences.")
 dbscan = DBSCAN(eps=1.0, min_samples=1)
 labels = dbscan.fit_predict(X)
 df["cluster"] = labels

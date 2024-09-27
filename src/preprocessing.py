@@ -57,7 +57,7 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a length <= 1024 amino acids
         """
-        df = self.df[self.df['Sequence'].str.len() <= 1024]  # update df instead of returning it
+        df = self.df[self.df['sequence'].str.len() <= 1024]  # update df instead of returning it
         # df.drop_duplicates(inplace=True)
         df.reset_index(drop=True, inplace=True)  # todo: with removed index log which sequences were excluded?
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of exaggerated size (>=1024 amino acids)')
@@ -70,7 +70,7 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a Methionine at the beginning
         """
-        df = self.df[self.df['Sequence'].str.startswith('M')]
+        df = self.df[self.df['sequence'].str.startswith('M')]
         df.reset_index(drop=True, inplace=True)
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of missing Methionins.')
         self.df = df
@@ -82,7 +82,7 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences without undertermined amino acids
         """
-        df = self.df[~self.df['Sequence'].str.contains('X')]
+        df = self.df[~self.df['sequence'].str.contains('X')]
         df.reset_index(drop=True, inplace=True)
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of undertermined amino acids.')
         self.df = df
@@ -94,7 +94,7 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only unique sequences
         """
-        df = self.df.drop_duplicates(subset='Entry', keep='first')
+        df = self.df.drop_duplicates(subset='accession', keep='first')
         df.reset_index(drop=True, inplace=True)
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of duplicates.')
         self.df = df
@@ -106,7 +106,7 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only unique sequences
         """
-        df = self.df.drop_duplicates(subset='Sequence', keep='first')
+        df = self.df.drop_duplicates(subset='sequence', keep='first')
         df.reset_index(drop=True, inplace=True)
         logging.info(f'{self.length-df.shape[0]} sequences were excluded because of duplicates.')
         self.df = df

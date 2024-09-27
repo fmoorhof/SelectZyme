@@ -35,20 +35,20 @@ def create_db_from_5h(filename: str, collection_name: str) -> list:
     collections_info = qdrant.get_collections()
     collection_names = [collection.name for collection in collections_info.collections]
     if collection_name not in collection_names:
-        logging.info(f"Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=/scratch/global_1/fmoorhof/Databases/Vector_db/")
+        logging.info("Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=/scratch/global_1/fmoorhof/Databases/Vector_db/")
         qdrant.create_collection(collection_name=collection_name, vectors_config=models.VectorParams(
                 size=vector_size,
                 distance=models.Distance.COSINE
             ))
     else:  # todo: define loading instead, and make use of embed.py! to recycle code
-        logging.info(f"Vector DB collection exists already and will be read.")
+        logging.info("Vector DB collection exists already and will be read.")
         annotations, X = load_collection_from_vector_db(qdrant, collection_name=collection_name)
         return annotations, X
 
     X = []
     annotations = []
     records = []
-    logging.info(f"Creating Qdrant records. This may take a while.")
+    logging.info("Creating Qdrant records. This may take a while.")
     for i, entry in enumerate(tqdm(entries)):  # see embed.create_vector_db_collection() for an alternative implementation
         vector = f[entry][:].tolist()
         annotation = f.get(entry).attrs["original_id"]
@@ -56,7 +56,7 @@ def create_db_from_5h(filename: str, collection_name: str) -> list:
         records.append(record)
         annotations.append(annotation)
 
-    logging.info(f"Uploading data to Qdrant DB. This may take a while.")
+    logging.info("Uploading data to Qdrant DB. This may take a while.")
     qdrant.upload_records(
         collection_name=collection_name,
         records=records

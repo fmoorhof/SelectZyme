@@ -53,7 +53,7 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
     :param collection_name: name of the vector database
     return: annotation: list of 'Entry'
     """
-    logging.info(f"Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=Vector_db/")
+    logging.info("Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=Vector_db/")
 
     # Create empty collection to store sequences
     qdrant.recreate_collection(
@@ -66,13 +66,13 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
     
     records = []
     annotation = df.iloc[:, 0:2].to_dict(orient='index')  # only use 'Entry' as key (0:1)  # (0, {'Entry': 'Q9NWT6', 'Reviewed': True})
-    logging.info(f"Creating Qdrant records. This may take a while.")
+    logging.info("Creating Qdrant records. This may take a while.")
     for i, anno in tqdm(annotation.items()):
         vector = embeddings[i].tolist()
         record = models.Record(id=i, vector=vector, payload=anno)  # {'Entry': 'Q9NWT6', 'Reviewed': True}
         records.append(record)
 
-    logging.info(f"Uploading data to Qdrant DB. This may take a while.")
+    logging.info("Uploading data to Qdrant DB. This may take a while.")
     qdrant.upload_records(
         collection_name=collection_name,
         records=records
@@ -89,9 +89,9 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
 
     :param qdrant: qdrant object
     :param collection_name: name of the vector database
-    return: annotation: list of 'Entry'
+    return: annotation: list of 'accession'
     return: embeddings: numpy array containing the embeddings"""
-    logging.info(f"Retrieving data from Qdrant DB. This may take a while.")
+    logging.info("Retrieving data from Qdrant DB. This may take a while.")
     collection = qdrant.get_collection(collection_name)
     records = qdrant.scroll(collection_name=collection_name,
                             with_payload=True,  # If List of string - include only specified fields
@@ -104,10 +104,10 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     annotation = []
     for i in tqdm(records[0]):  # access only the Records: [0]
         vector = i.vector
-        id = i.payload.get('Entry')
+        id = i.payload.get('accession')
         id_embed[id] = vector
         # annotation.append(i.payload)  # theoretically more information than only 'Entry' could be stored/retrieved
-        annotation.append(i.payload['Entry'])
+        annotation.append(i.payload['accession'])
     embeddings = np.array(list(id_embed.values()))  # dimension error if dataset has duplicates
     # df = pd.DataFrame(annotation)
     return annotation, embeddings
@@ -124,7 +124,7 @@ def load_or_createDB(qdrant: QdrantClient, df, collection_name: str):
     collections_info = qdrant.get_collections()
     collection_names = [collection.name for collection in collections_info.collections]
     if collection_name not in collection_names:
-        embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
+        embeddings = gen_embedding(df['sequence'].tolist(), device='cuda:1')
         annotation, embeddings = create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
     else:
         annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
@@ -148,6 +148,6 @@ if __name__=='__main__':
     collection_name='pytest'
 
     # start testing my code:
-    embeddings = gen_embedding(df['Sequence'].tolist(), device='cuda:1')
+    embeddings = gen_embedding(df['sequence'].tolist(), device='cuda:1')
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name)
