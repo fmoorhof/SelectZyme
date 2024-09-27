@@ -30,12 +30,12 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             id='plot',
             figure=px.scatter(df,
                             x=X_red[:, 0],
-                            y=X_red[:, 0],
-                            color='ec',  # color='cluster'
+                            y=X_red[:, 1],
+                            color='cluster',  # color='ec'
                             title=f'2D {method} on dataset {project_name}',
                             hover_data=cols,
                             opacity=0.2,
-                            color_continuous_scale=px.colors.cyclical.Edge,  # px.colors.sequential.Viridis,
+                            color_continuous_scale=px.colors.sequential.Viridis,  # px.colors.sequential.Viridis, px.colors.cyclical.Edge
                             symbol=df['marker_symbol'],
                             size=df['marker_size'],
         ),        
@@ -65,30 +65,32 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
 
     # Define the callback function
     @app.callback(
-        Output('data-table', 'data'),
-        Input('plot', 'clickData'),
-        [dash.dependencies.State('data-table', 'data')]
-    )
-
+            Output('data-table', 'data'),
+            Input('plot', 'clickData'),
+            [dash.dependencies.State('data-table', 'data')]
+        )
     def update_table(clickData, existing_table):
+        """This function updates the table with the data of the selected points in the plot. There is several functionalities integrated that can be looked up in the Dash documentation (like removal of datapoints, changing values etc.)"""
         if clickData is None:
             return existing_table
-    
+
         selected_feature = clickData['points'][0]['customdata']
         logging.info(selected_feature)
         print(selected_feature)
-    
+
         # Create a new row for the table
-        new_row = {col: value for col, value in zip(df.columns, selected_feature)}
-    
+        new_row = dict(zip(df.columns, selected_feature))
+
         # If the existing_table is None (first time), use an empty table
         if existing_table is None:
             existing_table = []
-    
+
         # Append the new row to the existing table
         return existing_table + [new_row]
+
     return app
- 
+
+
  
 if __name__ == '__main__':
     NotImplementedError('This script is not meant to be run as main.')
