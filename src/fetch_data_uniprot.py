@@ -59,6 +59,10 @@ def get_batch(batch_url):
 
 
 def load_custom_csv(file_path: str, df_coi: list[str]) -> pd.DataFrame:
+    """load custom csv file and add it to the dataframe. The custom data need to be in the same format (column names) as the internal data.
+    :param file_path: path to the custom csv file
+    :param df_coi: columns of interest
+    :return: df: dataframe with custom data added"""
     df = pd.read_csv(file_path, sep=',', header=None, names=df_coi, skiprows=1)
     df['reviewed'] = True
     if df['xref_brenda'].isnull().all():

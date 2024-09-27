@@ -39,14 +39,16 @@ def main(input_file: str, project_name: str, app):
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
     if df.shape[0] != embeddings.shape[0]:
-        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. Something went wrong.")
+        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. If you provided more sequences you might need to embed again and delete the collection")
+        # qdrant.delete_collection(collection_name)  # delete a collection
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
     labels = visualizer.clustering_HDBSCAN(X, min_samples=1)  # 50
+    df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
-    iter_methods = ['PCA', 'TSNE', 'UMAP']
+    iter_methods = ['TSNE']  # ['PCA', 'TSNE', 'UMAP']
     for method in iter_methods:
         if method == 'PCA':
             X_red = visualizer.pca(X)
@@ -56,14 +58,16 @@ def main(input_file: str, project_name: str, app):
             X_red = visualizer.umap(X)
         visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
 
-
+    method = 'TSNE'
+    X_red = visualizer.tsne(X)
     app = run_dash_app(df, X_red, method, project_name, app)
 
 
 
 if __name__ == "__main__":
-    # todo: fix that the app is constantly re-starting itself and calling the main() function again:/
     app = dash.Dash(__name__)
     # main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
     main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)
-    app.run_server(host='0.0.0.0', port=8051, debug=True)  # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8051/
+    app.run_server(host='0.0.0.0', port=8050, debug=False)  # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/ # debug=True triggers main() execution twice
+    # http://10.10.142.201:8050/
+    # http://127.0.0.1:8050

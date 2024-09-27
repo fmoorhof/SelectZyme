@@ -141,15 +141,16 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     # Replace 'ec' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
     # df['ec'] = df['ec'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
     df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
-    logging.info(f"{(df['ec'] != '0.0.0.0').sum()} EC numbers are found.")
-    logging.info(f"{(df['ec'] != '').sum()} Brenda entries are found.")
+    logging.info(f"{(df['ec'] != '0.0.0.0').sum()} UniProt EC numbers are found.")
+    logging.info(f"{(df['xref_brenda'] != '').sum()} Brenda entries are found.")
+
     # build Brenda URLs
     df['BRENDA URL'] = [
-        f"https://www.brenda-enzymes.org/enzyme.php?ecno={ec.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
-        if pd.notna(ec)
-        else pd.NA  # Fill with NaN for rows where BRENDA is NaN
-        for ec, entry, organism in zip(df['xref_brenda'].values, df['accession'].values, df['organism_id'].values)  # values_host with cudf
-    ]        
+        f"https://www.brenda-enzymes.org/enzyme.php?ecno={brenda.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
+        if brenda != ''  # Only build URL if BRENDA is not empty
+        else ''
+        for brenda, entry, organism in zip(df['xref_brenda'].values, df['accession'].values, df['organism_id'].values)  # values_host with cudf
+    ]
 
     # define markers for the plot
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
@@ -192,7 +193,7 @@ def plot_2d(df, X_red, collection_name: str, method: str):
     cols = df.columns.values.tolist()
     cols = cols[0:-2]  # do not provide markers in hover template
     fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
-                     color='cluster', # color='ec'
+                     color='ec', # color='cluster'
                  title=f'2D {method} on dataset {collection_name}',
                  hover_data=cols,
                  opacity=0.5,
