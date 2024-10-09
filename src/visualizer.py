@@ -49,7 +49,7 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250):
     
     hdbscan = HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, gen_min_span_tree=True)
     labels = hdbscan.fit_predict(X)
-    logging.info(f"HDBSCAN done")
+    logging.info("HDBSCAN done")
     return labels
 
 
@@ -64,7 +64,7 @@ def clustering_DBSCAN(X, eps: float = 1.0, min_samples: int = 1):
     """
     dbscan = DBSCAN(eps, min_samples=min_samples)
     labels = dbscan.fit_predict(X)
-    logging.info(f"DBSCAN done")
+    logging.info("DBSCAN done")
     return labels
 
 
@@ -75,7 +75,7 @@ def pca(X, dimension: int = 2):
     variance = pca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
-    logging.info(f"PCA done")
+    logging.info("PCA done")
     return X_pca
 
 
@@ -88,7 +88,7 @@ def incremental_pca(X, dimension: int = 2):
     variance = ipca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
-    logging.info(f"Incremental PCA done")
+    logging.info("Incremental PCA done")
     return X_ipca
 
 
@@ -96,7 +96,7 @@ def truncated_svd(X, dimension: int = 2):
     """Dimensionality reduction with Truncated SVD."""
     svd = TruncatedSVD(n_components=dimension, output_type="numpy")
     X_svd = svd.fit_transform(X)
-    logging.info(f"Truncated SVD done")
+    logging.info("Truncated SVD done")
     return X_svd
 
 
@@ -106,7 +106,7 @@ def tsne(X, dimension: int = 2):
     """
     tsne = TSNE(n_components=dimension, random_state=42)
     X_tsne = tsne.fit_transform(X)
-    logging.info(f"tSNE done")
+    logging.info("tSNE done")
     return X_tsne
 
 
@@ -115,13 +115,13 @@ def umap(X, dimension: int = 2, n_neighbors: int = 15):
     """Dimensionality reduction with UMAP."""
     umap = UMAP(n_neighbors=n_neighbors, n_components=dimension, random_state=42)  # unittest params: n_neighbors=10, min_dist=0.01
     X_umap = umap.fit_transform(X)
-    logging.info(f"UMAP done")
+    logging.info("UMAP done")
     return X_umap
 
 
 def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Modify the given DataFrame before plotting to make values look nicer.
+    Modify the given DataFrame before plotting to make values look nicer/custom.
 
     Args:
         df (pd.DataFrame): The DataFrame to be modified.
@@ -129,8 +129,8 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The modified DataFrame.
     """
-    # Create new columns 'marker_size' and 'marker_symbol' based on a condition
-    df['xref_brenda'] = df['xref_brenda'].fillna('')  # replace empty ECs because they will not get plottet (if color='ec')
+    # replace empty ECs because they will not get plottet (if color='ec' or 'xref_brenda')
+    df['xref_brenda'] = df['xref_brenda'].fillna('')
     values_to_replace = ['NA', '0']
     df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
     
@@ -191,7 +191,7 @@ def plot_2d(df, X_red, collection_name: str, method: str):
     :param collection_name: name of the collection/dataset
     :param method: dimensionality reduction method used"""
     cols = df.columns.values.tolist()
-    cols = cols[0:-2]  # do not provide markers in hover template
+    cols = cols[0:-3]  # do not provide sequence and markers in hover template
     fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
                      color='ec', # color='cluster'
                  title=f'2D {method} on dataset {collection_name}',
