@@ -43,8 +43,8 @@ def main(input_file: str, project_name: str, app):
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
     if df.shape[0] != embeddings.shape[0]:
-        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. If you provided more sequences you might need to embed again and delete the collection")
-        # qdrant.delete_collection(collection_name)  # delete a collection
+        qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
+        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
@@ -62,8 +62,6 @@ def main(input_file: str, project_name: str, app):
             X_red = visualizer.umap(X)
         visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
 
-    method = 'TSNE'
-    X_red = visualizer.tsne(X)
     app = run_dash_app(df, X_red, method, project_name, app)
 
 
