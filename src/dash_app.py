@@ -33,7 +33,7 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
                             y=X_red[:, 1],
                             color='ec',  # color='cluster'
                             title=f'2D {method} on dataset {project_name}',
-                            hover_data=cols[0:-3],  # do not provide sequence and markers in hover template
+                            hover_data=cols,
                             opacity=0.4,
                             color_continuous_scale=px.colors.sequential.Viridis,  # px.colors.sequential.Viridis, px.colors.cyclical.Edge
                             symbol=df['marker_symbol'],

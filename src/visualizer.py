@@ -33,6 +33,9 @@ from cuml.manifold import (
     UMAP
 )
 
+from ncbi_taxonomy_resolver import lineage_resolver
+
+
 
 def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250):
     """
@@ -166,6 +169,13 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     df.loc[condition, 'marker_size'] = 18
     df.loc[condition, 'marker_symbol'] = 'cross'
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
+
+    # provide taxonomic names and lineages from taxid
+    taxa = [lineage_resolver(i) for i in df['organism_id'].values]
+    df['species'] = [tax[0] for tax in taxa]
+    df['domain'] = [tax[1] for tax in taxa]
+    df['kingdom'] = [tax[2] for tax in taxa]
+    df['lineage'] = [tax[3] for tax in taxa]
 
     # alphabetically sort df based on EC numbers (for nicer legend)
     # df = df.sort_values(by=['ec'])  # Todo: need triage!: embeddings always need to be in same order as df!
