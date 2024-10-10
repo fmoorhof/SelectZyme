@@ -170,7 +170,7 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     df.loc[condition, 'marker_symbol'] = 'cross'
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
 
-    # provide taxonomic names and lineages from taxid
+    # provide taxonomic names and lineages from taxid (organism_id)
     taxa = [lineage_resolver(i) for i in df['organism_id'].values]
     df['species'] = [tax[0] for tax in taxa]
     df['domain'] = [tax[1] for tax in taxa]
