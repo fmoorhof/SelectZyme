@@ -1,6 +1,23 @@
 from io import StringIO
 
+import pytest
+import torch
 import cudf, requests
+
+
+@pytest.mark.tryfirst  # dont stop testing if this fails
+def test_torch_cuda_availability():
+    """
+    This test asserts if PyTorch can detect CUDA-enabled GPUs.
+    """
+    if torch.cuda.is_available():
+        print(f"GPUs are available. Number of GPUs: {torch.cuda.device_count()}")
+        for i in range(torch.cuda.device_count()):
+            print(f"GPU {i}: {torch.cuda.get_device_name(i)}")
+        assert torch.cuda.device_count() > 0
+    else:
+        print("GPUs are not available.")
+        assert False, "CUDA-enabled GPUs are not available."
 
 
 def test_cuml_usage():
