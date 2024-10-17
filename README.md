@@ -39,6 +39,12 @@ pip install -e `.[full]`
 pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extra-index-url https://download.pytorch.org/whl/cu118
 ```
 
+### Docker
+```
+docker build -t my_dash_app .
+docker run --gpus all -it --entrypoint /bin/bash my_dash_app
+```
+
 #### Development tools
 This project uses the following tools to improve code quality:
 - [black](https://black.readthedocs.io/) for code formatting
