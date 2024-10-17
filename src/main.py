@@ -11,7 +11,6 @@ from embed import load_or_createDB
 import visualizer
 from dash_app import run_dash_app
 
-
 logging.basicConfig(
     format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG
 )
@@ -48,7 +47,7 @@ def main(input_file: str, project_name: str, app):
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
-    labels = visualizer.clustering_HDBSCAN(X, min_samples=1)  # 50
+    labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=250)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
@@ -57,9 +56,9 @@ def main(input_file: str, project_name: str, app):
         if method == 'PCA':
             X_red = visualizer.pca(X)
         elif method == 'TSNE':
-            X_red = visualizer.tsne(X)
+            X_red = visualizer.tsne(X, random_state=42)
         elif method == 'UMAP':
-            X_red = visualizer.umap(X)
+            X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
         visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
 
     app = run_dash_app(df, X_red, method, project_name, app)
@@ -69,7 +68,8 @@ def main(input_file: str, project_name: str, app):
 if __name__ == "__main__":
     app = dash.Dash(__name__)
     # main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
-    main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)
-    app.run_server(host='0.0.0.0', port=8050, debug=False)  # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/ # debug=True triggers main() execution twice
+    main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)  # uniprot_lcp_annotated
+    # main(input_file='/raid/data/fmoorhof/PhD/Data/SKD001_Literature_Mining/Batch5/batch5_annotated.tsv', project_name='batch5', app=app)
+    app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
+    # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/
     # http://10.10.142.201:8050/
-    # http://127.0.0.1:8050

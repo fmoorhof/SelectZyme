@@ -37,7 +37,7 @@ from ncbi_taxonomy_resolver import lineage_resolver
 
 
 
-def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250):
+def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -50,29 +50,31 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250):
         logging.error("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
         raise ValueError("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
     
-    hdbscan = HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, gen_min_span_tree=True)
+    hdbscan = HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, gen_min_span_tree=True, **kwargs)
     labels = hdbscan.fit_predict(X)
     logging.info("HDBSCAN done")
     return labels
 
 
-def clustering_DBSCAN(X, eps: float = 1.0, min_samples: int = 1):
+def clustering_DBSCAN(X, eps: float = 1.0, min_samples: int = 1, **kwargs):
     """
     Clustering of the embeddings with a Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
 
     :param X: embeddings
     :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
+    :param kwargs: Additional parameters
     return: labels: cluster labels for each point
     """
-    dbscan = DBSCAN(eps, min_samples=min_samples)
+    dbscan = DBSCAN(eps, min_samples=min_samples, **kwargs)
     labels = dbscan.fit_predict(X)
     logging.info("DBSCAN done")
     return labels
 
 
-def pca(X, dimension: int = 2):
-    """Dimensionality reduction with PCA."""
+def pca(X, dimension: int = 2, **kwargs):
+    """Dimensionality reduction with PCA.
+    :param kwargs: Additional parameters"""
     pca = PCA(n_components=dimension, output_type="numpy")
     X_pca = pca.fit_transform(X)
     variance = pca.explained_variance_ratio_ * 100
@@ -82,11 +84,12 @@ def pca(X, dimension: int = 2):
     return X_pca
 
 
-def incremental_pca(X, dimension: int = 2):
+def incremental_pca(X, dimension: int = 2, **kwargs):
     """Dimensionality reduction with Incremental PCA.
     Incremental PCA (Principal Component Analysis) is a variant of PCA that is designed to handle very large datasets that may not fit into memory.
-    Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently."""
-    ipca = IncrementalPCA(n_components=dimension, output_type="numpy")
+    Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently.
+    :param kwargs: Additional parameters"""
+    ipca = IncrementalPCA(n_components=dimension, output_type="numpy", **kwargs)
     X_ipca = ipca.fit_transform(X)
     variance = ipca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
@@ -95,28 +98,35 @@ def incremental_pca(X, dimension: int = 2):
     return X_ipca
 
 
-def truncated_svd(X, dimension: int = 2):
-    """Dimensionality reduction with Truncated SVD."""
-    svd = TruncatedSVD(n_components=dimension, output_type="numpy")
+def truncated_svd(X, dimension: int = 2, **kwargs):
+    """Dimensionality reduction with Truncated SVD.
+    
+    :param kwargs: Additional parameters
+    """
+    svd = TruncatedSVD(n_components=dimension, output_type="numpy", **kwargs)
     X_svd = svd.fit_transform(X)
     logging.info("Truncated SVD done")
     return X_svd
 
 
-def tsne(X, dimension: int = 2):
+def tsne(X, dimension: int = 2, **kwargs):
     """Dimensionality reduction with tSNE.
     Currently TSNE supports n_components = 2; so only 2D plots are possible in May 2024!
+
+    :param kwargs: Additional parameters for sklearn.manifold.TSNE
     """
-    tsne = TSNE(n_components=dimension, random_state=42)
+    tsne = TSNE(n_components=dimension, **kwargs)
     X_tsne = tsne.fit_transform(X)
     logging.info("tSNE done")
     return X_tsne
 
 
 # Dim reduced visualization with UMAP: super slow!! and .5GB output files wtf.
-def umap(X, dimension: int = 2, n_neighbors: int = 15):
-    """Dimensionality reduction with UMAP."""
-    umap = UMAP(n_neighbors=n_neighbors, n_components=dimension, random_state=42)  # unittest params: n_neighbors=10, min_dist=0.01
+def umap(X, dimension: int = 2, **kwargs):
+    """Dimensionality reduction with UMAP.
+    :param kwargs: Additional parameters
+    """
+    umap = UMAP(n_components=dimension, **kwargs)  # unittest params: n_neighbors=10, min_dist=0.01
     X_umap = umap.fit_transform(X)
     logging.info("UMAP done")
     return X_umap
@@ -211,7 +221,8 @@ def plot_2d(df, X_red, collection_name: str, method: str):
                  )
  
     fig.update_traces(marker=dict(size=df['marker_size'].to_numpy(), symbol=df['marker_symbol'].to_numpy()))
-    fig.write_html(f'datasets/output/{collection_name}_2d_{method}.html')
+    # todo: rather provide HTML export option in dash
+    # fig.write_html(f'datasets/output/{collection_name}_2d_{method}.html')
     logging.info(f'{method} 2D plot completed.')
 
 
