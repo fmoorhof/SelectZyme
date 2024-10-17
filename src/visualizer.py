@@ -190,6 +190,8 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     # alphabetically sort df based on EC numbers (for nicer legend)
     # df = df.sort_values(by=['ec'])  # Todo: need triage!: embeddings always need to be in same order as df!
 
+    df['selected'] = False
+
     # line breaks for long entries that hover template can still show all information
     df['sequence'] = df['sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
     df['xref_pdb'] = df['xref_pdb'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'

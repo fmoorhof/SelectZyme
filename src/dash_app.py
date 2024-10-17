@@ -92,6 +92,13 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
         logging.info(selected_feature)
         print(selected_feature)
 
+        # Rueckpicking: change df['selected'] to True
+        identifier_column = df.columns[0]
+        row_index = df[df[identifier_column] == selected_feature[0]].index
+        # If the row exists, update the 'selected' column to True
+        if not row_index.empty:
+            df.at[row_index[0], 'selected'] = True
+            
         # Create a new row for the table
         new_row = dict(zip(df.columns, selected_feature))
 
