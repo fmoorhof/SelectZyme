@@ -23,9 +23,22 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
     :param app: dash app
     return: dash app"""
     cols = df.columns.values.tolist()
+
     # Define the layout of the Dash app
     # app = dash.Dash(__name__)
     app.layout = html.Div([
+        # Dropdown to select legend attribute of df columns
+        html.Div([
+            dcc.Dropdown(
+                id='legend-attribute',
+                options = [{'label': col, 'value': col} for col in cols],  # cols[:12]
+                value=cols[2]
+                # options=[{'label': 'Cluster', 'value': 'cluster'},],
+                # value='cluster'  # Default color by 'cluster'
+            )
+        ], style={'width': '30%', 'display': 'inline-block'}),
+
+        # Scatter plot
         dcc.Graph(
             id='plot',
             figure=px.scatter(df,
@@ -44,6 +57,7 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             },
             style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
         ),
+
         # Define appearance of the table
         dash_table.DataTable(
         id='data-table',
@@ -78,6 +92,13 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
         logging.info(selected_feature)
         print(selected_feature)
 
+        # Rueckpicking: change df['selected'] to True
+        identifier_column = df.columns[0]
+        row_index = df[df[identifier_column] == selected_feature[0]].index
+        # If the row exists, update the 'selected' column to True
+        if not row_index.empty:
+            df.at[row_index[0], 'selected'] = True
+            
         # Create a new row for the table
         new_row = dict(zip(df.columns, selected_feature))
 
@@ -88,11 +109,49 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
         # Append the new row to the existing table
         return existing_table + [new_row]
 
+
+    # Callback to update the plot based on the selected legend attribute
+    @app.callback(
+        Output('plot', 'figure'),
+        [Input('legend-attribute', 'value')]
+    )
+    def update_plot(legend_attribute):
+        fig = px.scatter(
+            df,
+            x=X_red[:, 0],
+            y=X_red[:, 1],
+            color=df[legend_attribute],  # Update color by selected attribute
+            title=f'2D {method} on dataset {project_name}',
+            hover_data=df.columns,
+            opacity=0.8,
+            symbol=df['marker_symbol'],
+            size=df['marker_size'],
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
+        fig.update_layout(margin={'l': 40, 'b': 40, 't': 50, 'r': 0})
+        return fig
+
     return app
 
 
  
 if __name__ == '__main__':
-    NotImplementedError('This script is not meant to be run as main.')
-    # app.run_server(debug=True, port=8050)  # make available to localhost    
-    # app.run_server(host='0.0.0.0', port=8050, debug=False)  # from ocean to local machine
+    import pandas as pd
+    
+    # Dummy dataset and dimensionality reduced data for testing
+    df = pd.DataFrame({
+        'cluster': ['A', 'B', 'A', 'C'],
+        'taxid': [1, 2, 3, 4],
+        'taxid_name': ['abc', 'def', 'ghi', 'abc'],
+        'marker_symbol': ['circle', 'square', 'diamond', 'triangle-up'],
+        'marker_size': [10, 20, 30, 40]
+    })
+    
+    import numpy as np
+    X_red = np.random.rand(4, 2)  # Simulate some 2D reduced data
+    
+    # Initialize Dash app
+    app = dash.Dash(__name__)
+    
+    # Run the app
+    run_dash_app(df, X_red, 'PCA', 'Project name', app).run_server(debug=True)
