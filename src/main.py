@@ -67,8 +67,8 @@ def main(input_file: str, project_name: str, app):
 
 if __name__ == "__main__":
     app = dash.Dash(__name__)
-    # main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
-    main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)  # uniprot_lcp_annotated
+    main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
+    # main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)  # uniprot_lcp_annotated
     # main(input_file='/raid/data/fmoorhof/PhD/Data/SKD001_Literature_Mining/Batch5/batch5_annotated.tsv', project_name='batch5', app=app)
     app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
     # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/

@@ -62,9 +62,14 @@ def load_custom_csv(file_path: str, df_coi: list[str]) -> pd.DataFrame:
     """load custom csv file and add it to the dataframe. The custom data need to be in the same format (column names) as the internal data.
     :param file_path: path to the custom csv file
     :param df_coi: columns of interest
-    :return: df: dataframe with custom data added"""
-    df = pd.read_csv(file_path, sep=',', header=None, names=df_coi, skiprows=1)
+    :return: df: dataframe with custom data added
+    
+    Problems: MS excel is using ; instead ,
+    also encoding might be a problem: not utf-8 encoded -> fix: encoding='ISO-8859-1"""
+    df = pd.read_csv(file_path, sep=';', header=None, names=df_coi, skiprows=1, encoding='ISO-8859-1')
+    # stylistic changes and data type conversions
     df['reviewed'] = True
+    df['sequence'] = df['sequence'].str.upper()
     if df['xref_brenda'].isnull().all():
         df['xref_brenda'] = True
     if df['ec'].isnull().all():
@@ -74,11 +79,17 @@ def load_custom_csv(file_path: str, df_coi: list[str]) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    # define data to retrieve
+    # define data to retrieve rhia
     query_terms = ["ec:2.3.1.304", "xref%3Abrenda-2.3.1.304", "IPR006862", "rhia"]  # define your query terms for UniProt here
     length = "100 TO 1001"
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "uniprot_rhia"
+
+    # define data to retrieve lcp
+    query_terms = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
+    length = "200 TO 601"
+    out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "uniprot_lcp_no_signals"    
 
     # UniProt pagination to fetch more than 500 entries
     re_next_link = re.compile(r'<(.+)>; rel="next"')
@@ -105,7 +116,7 @@ if __name__ == '__main__':
     df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')  # Set boolean values
 
     # Load custom data
-    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/RhlA_mining/The_eight.csv'
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'  # custom_seqs_full
     custom_data = load_custom_csv(custom_data_location, df_coi)
     df = pd.concat([custom_data, df], ignore_index=True)
 

@@ -1,4 +1,4 @@
-"""Perform a statistical analysis on the data."""
+"""Perform a statistical analysis on the data. Explanatory data analysis (EDA)"""
 import logging
 
 import taxoniq

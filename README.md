@@ -46,3 +46,7 @@ This project uses the following tools to improve code quality:
 - [flake8](https://flake8.pycqa.org/) for style guide enforcement
 - [pytest](https://docs.pytest.org/) for testing
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov) for measuring code coverage
+
+
+# License
+OpenGPL 3.0 License
