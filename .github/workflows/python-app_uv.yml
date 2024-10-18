@@ -45,14 +45,12 @@ jobs:
     - name: Run tests
       run: |
         which python
-        source .venv/bin/activate  # fix: pytest not found
+        source .venv/bin/activate  # fix: pytest not found (use uv venv!)
         python --version
         which python
         uv pip list
-        uv pip install pytest pytest-cov
-        uv pytest -v tests/test_stack.py
         python -m pytest -v tests/test_stack.py
-        # python -m pytest --cov=src/ -v tests/test_stack.py
+        python -m pytest --cov=src/ -v tests/test_stack.py
         # python -m pytest --cov=src/ -v tests/test_*
-        pytest --cov=src/ -v tests/test_stack.py  # python -m causes no pytest found but its listed with uv pip list
+        # pytest --cov=src/ -v tests/test_stack.py  # python -m causes no pytest found but its listed with uv pip list
         # pytest --cov=src/ -v tests/test_*
