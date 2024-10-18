@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "7-CI-fix" ]
+    branches: [ "main", "12-CI-fix" ]
   pull_request:
     branches: [ "main" ]
 
@@ -33,6 +33,7 @@ jobs:
         uv venv  # Create a virtual environment at .venv.
         source .venv/bin/activate
         python --version
+        uv pip install pytest pytest-cov 
 
     - name: Install dependencies
       run: |
@@ -46,5 +47,7 @@ jobs:
       run: |
         python --version
         uv pip list
+        uv pip install pytest pytest-cov
         pytest --cov=src/ -v tests/test_stack.py  # python -m causes no pytest found but its listed with uv pip list
         pytest --cov=src/ -v tests/test_*
+        python -m pytest --cov=src/ -v tests/test_stack.py
