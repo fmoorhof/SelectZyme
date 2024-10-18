@@ -50,6 +50,7 @@ jobs:
         which python
         uv pip list
         uv pip install pytest pytest-cov
+        uv pytest -v tests/test_stack.py
         python -m pytest -v tests/test_stack.py
         # python -m pytest --cov=src/ -v tests/test_stack.py
         # python -m pytest --cov=src/ -v tests/test_*
