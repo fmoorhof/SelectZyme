@@ -1,24 +1,17 @@
 import pytest
 import pandas as pd
-# from qdrant_client import QdrantClient
+import numpy as np
 
 from visualizer import clustering_HDBSCAN
-# from embed import load_collection_from_vector_db
-from embed import gen_embedding
-from preprocessing import Preprocessing, Parsing
 
 
 class TestVisualizer:
-    # todo: make this ideally independent from Preprocessing modules
     def setup_method(self):
-        # qdrant = QdrantClient(path="datasets/Vector_db/")  # OR write them to disk
-        # self.annotation, self.X = load_collection_from_vector_db(qdrant, collection_name='pytest')  # X = embeddings
-        df = Parsing.parse_tsv('tests/head_10.tsv')
-        pp = Preprocessing(df)
-        pp.remove_long_sequences()
-        self.df = pp.df
-        self.X = gen_embedding(self.df['sequence'].tolist(), device='cuda')
-        self.annotation = 'not needed here'
+        mock_sequences = ['ACGT', 'TGCA', 'GACT', 'CTAG', 'ATGC']
+        mock_df = pd.DataFrame({'sequence': mock_sequences})
+        self.df = mock_df
+        self.X = np.random.rand(len(mock_sequences), 1280)  # Mock embeddings
+        self.annotation = 'mock_annotation'
 
     def test_load_datasets(self):
         """Test the loading of the datasets."""
