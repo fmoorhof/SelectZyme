@@ -51,6 +51,4 @@ jobs:
         uv pip list
         python -m pytest -v tests/test_stack.py
         python -m pytest --cov=src/ -v tests/test_stack.py
-        # python -m pytest --cov=src/ -v tests/test_*
-        # pytest --cov=src/ -v tests/test_stack.py  # python -m causes no pytest found but its listed with uv pip list
-        # pytest --cov=src/ -v tests/test_*
+        python -m pytest --cov=src/ -v tests/test_*
