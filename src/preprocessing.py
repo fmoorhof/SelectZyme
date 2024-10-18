@@ -27,7 +27,7 @@ class Parsing():
                     sequence += line.strip()
             sequences.append(sequence)  # Append the last sequence
 
-        df = pd.DataFrame({'Entry': headers, 'Sequence': sequences})
+        df = pd.DataFrame({'accession': headers, 'sequence': sequences})
         return df
     
     def parse_tsv(filepath: str) -> pd.DataFrame:
