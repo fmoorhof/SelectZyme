@@ -1,17 +1,17 @@
 import pytest
 import pandas as pd
-from qdrant_client import QdrantClient
+import numpy as np
 
 from visualizer import clustering_HDBSCAN
-from embed import load_collection_from_vector_db
 
 
 class TestVisualizer:
     def setup_method(self):
-        self.df = pd.read_csv('tests/head_10.tsv')
-        # todo: also test the embeddings ProtT5 from UniProt
-        qdrant = QdrantClient(path="datasets/Vector_db/")  # OR write them to disk
-        self.annotation, self.X = load_collection_from_vector_db(qdrant, collection_name='pytest')  # X = embeddings
+        mock_sequences = ['ACGT', 'TGCA', 'GACT', 'CTAG', 'ATGC']
+        mock_df = pd.DataFrame({'sequence': mock_sequences})
+        self.df = mock_df
+        self.X = np.random.rand(len(mock_sequences), 1280)  # Mock embeddings
+        self.annotation = 'mock_annotation'
 
     def test_load_datasets(self):
         """Test the loading of the datasets."""
