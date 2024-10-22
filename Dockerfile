@@ -7,8 +7,11 @@ WORKDIR /app
 # Copy the environment file into the container
 COPY environment_docker.yml /app/environment_docker.yml
 
+# Install the required Python packages and create the environment
 RUN conda env create -f environment_docker.yml
-RUN conda activate my-env
+
+# Set the PATH to use the newly created conda environment (conda activate not possible since conda init <SHELL_NAME> problem)
+ENV PATH /opt/conda/envs/my-env/bin:$PATH
 RUN python --version
 
 # Copy the rest of the app code into the container
