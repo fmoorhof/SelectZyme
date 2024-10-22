@@ -9,6 +9,7 @@ COPY requirements.txt /app/requirements.txt
 
 # Install the required Python packages
 RUN pip install --no-cache-dir -r /app/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118
+RUN pip install -e .
 
 # Copy the rest of the app code into the container
 COPY . /app
