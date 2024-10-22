@@ -1,0 +1,17 @@
+name: my-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - tqdm
+    - plotly
+    - requests
+    - fair-esm
+    - qdrant-client
+    - hdbscan
+    - h5py
+    - taxoniq
+    # - -r file:requirements.txt
+    

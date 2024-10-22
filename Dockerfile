@@ -1,15 +1,15 @@
-# Use an official Python runtime as a base image
+# more modern containers use cuda 12 and not 11.8. this will cause incompabilities with ocean server - use conda to create python3.10 environment
 FROM nvcr.io/nvidia/pytorch:22.08-py3
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt /app/requirements.txt
+# Copy the environment file into the container
+COPY environment_docker.yml /app/environment_docker.yml
 
-# Install the required Python packages
-RUN pip install --no-cache-dir -r /app/requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118
-RUN pip install -e .
+RUN conda env create -f environment_docker.yml
+RUN conda activate my-env
+RUN python --version
 
 # Copy the rest of the app code into the container
 COPY . /app
