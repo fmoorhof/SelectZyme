@@ -1,10 +1,14 @@
 name: my-env
 channels:
   - conda-forge
+  - nvidia  
 dependencies:
   - python=3.10
+  - pytorch
   - pip
   - pip:
+    - pytest
+    - pandas==1.5.3
     - tqdm
     - plotly
     - requests
