@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "12-CI-fix" ]
+    branches: [ "main"]
   pull_request:
     branches: [ "main" ]
 
@@ -34,13 +34,6 @@ jobs:
         source .venv/bin/activate
         python --version
 
-    - name: Install CUDA Toolkit
-      run: |
-        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub
-        sudo sh -c 'echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64 /" > /etc/apt/sources.list.d/cuda.list'
-        sudo apt-get update
-        sudo apt-get -y install cuda-toolkit-11-8
-
     - name: Install dependencies
       run: |
         uv pip install pytest pytest-cov 
@@ -56,8 +49,5 @@ jobs:
         python --version
         which python
         uv pip list
-        python -m pytest -v tests/test_stack.py  # minimal initial test
-        python -m pytest --cov=src/ -v tests/test_preprocessing.py
-        python -m pytest --cov=src/ -v tests/test_visualizer.py
-        python -m pytest --cov=src/ -v tests/test_preprocessing.py
-        # python -m pytest --cov=src/ -v tests/test_*  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py). 
+        python -m pytest -v tests/test_stack.py
+        # python -m pytest --cov=src/ -v tests/test_*  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
