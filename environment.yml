@@ -7,7 +7,7 @@ dependencies:
   - python=3.10
   - cudf=23.12
   - cuml=23.12
-  - cuda-version=11.1  # 12.1
+  # - cuda-version=11.1  # 12.1
   - pytorch
   - dash
   - pip
