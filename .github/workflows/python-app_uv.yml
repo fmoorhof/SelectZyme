@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "7-CI-fix" ]
+    branches: [ "main"]
   pull_request:
     branches: [ "main" ]
 
@@ -37,14 +37,17 @@ jobs:
     - name: Install dependencies
       run: |
         uv pip install pytest pytest-cov 
-        uv pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*     
+        uv pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.10.* dask-cudf-cu11==24.10.* cuml-cu11==24.10.*
         if [ -f requirements.txt ]; then uv pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118; fi
         # todo: try next to install from pyproject.toml
         python --version
 
     - name: Run tests
       run: |
+        which python
+        source .venv/bin/activate  # fix: pytest not found (use uv venv!)
         python --version
+        which python
         uv pip list
-        pytest --cov=src/ -v tests/test_stack.py  # python -m causes no pytest found but its listed with uv pip list
-        pytest --cov=src/ -v tests/test_*
+        python -m pytest -v tests/test_stack.py
+        # python -m pytest --cov=src/ -v tests/test_*  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
