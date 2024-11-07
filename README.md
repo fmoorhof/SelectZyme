@@ -41,13 +41,13 @@ pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extr
 
 ### Docker
 ```
-docker build -t my_dash_app .
-docker run --gpus all -it --entrypoint /bin/bash my_dash_app
+docker build -t fmoorhof/enzynavi .
+docker run --gpus all -it --entrypoint /bin/bash fmoorhof/enzynavi
 
 # optional: re-start your container later
 docker start CONTAINERID (find CONTAINERID with `docker ps` or `docker ps -a`)
 docker exec -it CONTAINERID
-docker exec -it ad39883b36f5 /bin/bash
+docker exec -it CONTAINERID /bin/bash
 ```
 
 #### Development tools

@@ -1,21 +1,25 @@
 name: my-env
 channels:
-  - conda-forge
-  - nvidia  
-dependencies:
-  - python=3.10
+  - nvidia
   - pytorch
+  - conda-forge  # needs to be lowest hierarchy (last channel)
+dependencies:
+  - cudatoolkit=11.8
+  - python=3.10
+  - pytorch::pytorch
   - pip
   - pip:
     - pytest
+    - fair-esm==2.0.0
+    - h5py==3.10.0
+    - hdbscan==0.8.39  # ==0.8.33  # error: command 'gcc' failed: No such file or directory [is indeed not installed in container]
+    - matplotlib==3.8.4
     - pandas==1.5.3
-    - tqdm
-    - plotly
-    - requests
-    - fair-esm
-    - qdrant-client
-    - hdbscan
-    - h5py
-    - taxoniq
+    - qdrant-client==1.7.1
+    - scikit-learn==1.4.0
+    - taxoniq==1.0.1
+    - tqdm==4.66.1
+    - requests==2.31.0
+    - plotly==5.18.0
     # - -r file:requirements.txt
     
