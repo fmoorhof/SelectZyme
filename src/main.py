@@ -24,6 +24,7 @@ def preprocessing(df: pd.DataFrame):
     pp.remove_sequences_with_undertermined_amino_acids()
     pp.remove_duplicate_entries()
     pp.remove_duplicate_sequences()
+    logging.info(f'Final amount of sequences: {pp.df.shape[0]}.')
     return pp.df
 
 
@@ -39,7 +40,7 @@ def main(input_file: str, project_name: str, app):
     df = preprocessing(df)
 
     # Create a collection in Qdrant DB with embedded sequences
-    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
+    qdrant = QdrantClient(path="/data/tmp/EnzyNavi")
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
     if df.shape[0] != embeddings.shape[0]:
         qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
@@ -47,7 +48,7 @@ def main(input_file: str, project_name: str, app):
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
-    labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=250)  # min samples for batches: 50
+    labels = visualizer.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=250)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
@@ -68,8 +69,14 @@ def main(input_file: str, project_name: str, app):
 if __name__ == "__main__":
     app = dash.Dash(__name__)
     main(input_file='tests/head_10.tsv', project_name='test_project', app=app)
-    # main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)  # uniprot_lcp_annotated
     # main(input_file='/raid/data/fmoorhof/PhD/Data/SKD001_Literature_Mining/Batch5/batch5_annotated.tsv', project_name='batch5', app=app)
+
+    # main(input_file='datasets/output/uniprot_lcp_no_signals_annotated.tsv', project_name='lcp_no_signals', app=app)
+    # main(input_file='datasets/output/uniprot_lcp_annotated.tsv', project_name='lcp', app=app)
+    # main(input_file='datasets/output/uniprot_lefos_no_signals_annotated.tsv', project_name='lefos_no_signals', app=app)
+    # main(input_file='datasets/output/uniprot_lefos_annotated.tsv', project_name='lefos', app=app)
+    # main(input_file='datasets/output/uniprot_PapE_annotated.tsv', project_name='PapE', app=app)
+    
     app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
     # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/
     # http://10.10.142.201:8050/

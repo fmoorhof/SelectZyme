@@ -57,12 +57,9 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a length <= 1024 amino acids
         """
-        df = self.df[self.df['sequence'].str.len() <= 1024]  # update df instead of returning it
-        # df.drop_duplicates(inplace=True)
-        df.reset_index(drop=True, inplace=True)  # todo: with removed index log which sequences were excluded?
-        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of exaggerated size (>=1024 amino acids)')
-        self.df = df  # update df instead of returning it
-        # return df
+        mask = self.df['sequence'].str.len() < 1024
+        self.df = self.df[mask].reset_index(drop=True)
+        logging.info(f'{(~mask).sum()} sequences were excluded because of exaggerated size (>=1024 amino acids)')
 
     def remove_sequences_without_Metheonin(self) -> None:
         """

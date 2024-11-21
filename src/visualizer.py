@@ -191,6 +191,7 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     # df = df.sort_values(by=['ec'])  # Todo: need triage!: embeddings always need to be in same order as df!
 
     df['selected'] = False
+    df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
 
     # line breaks for long entries that hover template can still show all information
     df['sequence'] = df['sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
