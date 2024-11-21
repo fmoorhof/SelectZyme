@@ -5,7 +5,7 @@ channels:
   - conda-forge  # needs to be lowest hierarchy (last channel)
 dependencies:
   - cudatoolkit=11.8
-  - python=3.10
+  - python=3.10  # todo: can i remove this since RAPIDSai container anyways ships with python 3.10?
   - pytorch::pytorch
   - pip
   - pip:

@@ -41,7 +41,7 @@ pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extr
 
 ### Docker
 ```
-docker build -t fmoorhof/enzynavi .
+docker build -t fmoorhof/enzynavi:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
 docker run --gpus all -it --entrypoint /bin/bash fmoorhof/enzynavi
 
 # optional: re-start your container later

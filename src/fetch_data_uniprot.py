@@ -88,8 +88,24 @@ if __name__ == '__main__':
     # define data to retrieve lcp
     query_terms = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
     length = "200 TO 601"
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "uniprot_lcp_no_signals"    
+
+    # define data to retrieve leFOS
+    query_terms = ["ec:3.2.1.64", "xref%3Abrenda-3.2.1.64", "ec:3.2.1.65", "xref%3Abrenda-3.2.1.65", "ec:3.2.1.154", "xref%3Abrenda-3.2.1.154", "ec:3.2.1.80", "xref%3Abrenda-3.2.1.80", "IPR001362", "levanase", "levan"]  # define your query terms for UniProt here
+    length = "300 TO 1020"
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LeFOS/custom_seqs_no_signals.csv'
+    out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "uniprot_lefos_no_signals"
+
+    # define data to retrieve for exonucleases (hydrolases)
+    query_terms = ["IPR001616", "IPR034720", "PF01771", "IPR011335"]
+    length = "200 TO 1020"
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv'
+    out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "uniprot_PapE"
+
 
     # UniProt pagination to fetch more than 500 entries
     re_next_link = re.compile(r'<(.+)>; rel="next"')
@@ -116,9 +132,9 @@ if __name__ == '__main__':
     df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')  # Set boolean values
 
     # Load custom data
-    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'  # custom_seqs_full
-    custom_data = load_custom_csv(custom_data_location, df_coi)
-    df = pd.concat([custom_data, df], ignore_index=True)
+    if custom_data_location != '':
+        custom_data = load_custom_csv(custom_data_location, df_coi)
+        df = pd.concat([custom_data, df], ignore_index=True)
 
     # cleaning data
     df = df[df['accession'] != 'Entry']  # remove concatenated headers that are introduced by each query term
@@ -133,6 +149,6 @@ if __name__ == '__main__':
     write_annotated_fasta(df=df, out_file=out_dir + out_filename + '_annotated.fasta')
 
     # write again only thoose where Reviewed or EC number present
-    df = df[(df['reviewed'] == True ) | (df['ec'].notnull())]  # | = OR
+    df = df[(df['reviewed'] == True ) | (df['xref_brenda'].notnull())]  # | = OR
     print(f'Amount of SWISSProt reviewed entries: {df.shape}')
     df.to_csv(out_dir + out_filename + '_SWISSProt.tsv', sep='\t', index=False)
