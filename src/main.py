@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 
 import pandas as pd
 from qdrant_client import QdrantClient
@@ -10,7 +11,7 @@ from preprocessing import Preprocessing
 from embed import load_or_createDB
 import visualizer
 from dash_app import run_dash_app
-from fetch_data_uniprot import query_uniprot, load_custom_csv, clean_data, save_data
+from fetch_data_uniprot import UniProtFetcher
 
 logging.basicConfig(
     format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG
@@ -33,39 +34,29 @@ def parse_data():
     # define data to retrieve lcp
     query_terms = ["ec:1.13.11.85", "latex clearing protein"]  # , "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
     length = "200 TO 601"
-    out_filename = "uniprot_lcp"
     custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'  # custom_seqs_full
     out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "uniprot_lcp"
     df_coi = ['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence']  # xref_alphafolddb == accession
 
-    df = query_uniprot(query_terms, df_coi, length)
-
-    # Load custom data
-    custom_data = load_custom_csv(custom_data_location, df_coi)
-    df = pd.concat([custom_data, df], ignore_index=True)
-
-    df = clean_data(df)
-    # save_data(df, out_dir, out_filename)
-
-    # data parsing
+    # Parse data or read it from file
     input_file = out_dir+out_filename+'_annotated.tsv'
-    if input_file.endswith('.fasta'):
+    if not os.path.isfile(input_file):  # generate it
+        fetcher = UniProtFetcher(df_coi, out_dir)
+        df = fetcher.query_uniprot(query_terms, length)
+        custom_data = fetcher.load_custom_csv(custom_data_location)
+        df = pd.concat([custom_data, df], ignore_index=True)
+        df = fetcher.clean_data(df)
+        # fetcher.save_data(df_lcp, out_filename_lcp)
+    elif input_file.endswith('.fasta'):
         headers, sequences = Parsing.parse_fasta(input_file)
         df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
     else:
         df = Parsing.parse_tsv(input_file)
 
 
-def main(input_file: str, project_name: str, app):
+def main(project_name: str, app):
     df = parse_data()
-
-    # data parsing
-    if input_file.endswith('.fasta'):
-        headers, sequences = Parsing.parse_fasta(input_file)
-        df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
-    else:
-        df = Parsing.parse_tsv(input_file)
-
     df = preprocessing(df)
 
     # Create a collection in Qdrant DB with embedded sequences
