@@ -1,14 +1,12 @@
-# ec
-EC number prediction tool
+# EnzyNavi
+Explore and navigate protein sequence space interactively.
 
-## Directory structure
-├── LICENSE
-├── README.md
-├── setup.py
-├── src
-      ├── __init__.py
-      ├── logic.py
-      └── main.py
+## Install
+For optimal GPU support, the conda installation is reccomended.
+Please clone the repository:
+```
+git clone https://github.com/fmoorhof/ec.git
+```
 
 ## Install
 For optimal GPU support, the conda installation is reccomended.
@@ -49,6 +47,19 @@ docker start CONTAINERID (find CONTAINERID with `docker ps` or `docker ps -a`)
 docker exec -it CONTAINERID
 docker exec -it CONTAINERID /bin/bash
 ```
+
+## Usage
+```
+conda activate ec
+python src/main.py -p 'argparse_test' -q="ec:1.13.11.85" -q "ec:1.13.11.84" --length '200 TO 601' -loc "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv" -o 'argparse_test'
+```
+Please pay attention if using multiple query words to repeat the `-p` the argument. Please also specify protein sequence length filters in the mentioned format 'from TO to'
+
+Additional information about the parsing options can be displayed by:
+```
+python src/main.py -h
+```
+
 
 #### Development tools
 This project uses the following tools to improve code quality:
