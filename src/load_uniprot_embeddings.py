@@ -1,4 +1,6 @@
-"""This file should assist in loading .h5 files from the uniprot embeddings project. The script has mainly the functionality of embed.py but
+"""This file can de deleted i guess. UniProt only offers SwissProt pre-calculated embeddings which is to little for my project scope.
+
+This file should assist in loading .h5 files from the uniprot embeddings project. The script has mainly the functionality of embed.py but
 is acting on 5h files and not on a dataframe. That is why i want to keep it seperate from embed.py.
 
 vectors are 1024-dimensional float16 vectors, e.g.:
@@ -6,7 +8,7 @@ array([], dtype=float16)
 """
 import logging
 
-import h5py  # todo: not yet appended to requirements.txt
+import h5py
 from qdrant_client import QdrantClient, models
 from tqdm import tqdm
 
@@ -29,9 +31,10 @@ def create_db_from_5h(filename: str, collection_name: str) -> list:
     # entries = entries[0:6]  # small test dataset for debugging (same size like head_10.tsv after preprocessing)
     vector_size = f[entries[0]].shape[0]
     logging.info(f"The vectors are of dimension: {vector_size}")
+    logging.info(f"The vectors are of dtype: {f[entries[0]].dtype.name}")
     logging.info(f"Got {len(entries)} entries from {filename}.")
 
-    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # host="http://localhost:6333")
+    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")
     collections_info = qdrant.get_collections()
     collection_names = [collection.name for collection in collections_info.collections]
     if collection_name not in collection_names:
@@ -67,6 +70,6 @@ def create_db_from_5h(filename: str, collection_name: str) -> list:
 
 
 if __name__ == '__main__':
-    filename = '/scratch/global_1/fmoorhof/Databases/per-protein.h5'
+    filename = '/data/tmp/EnzyNavi/per-protein.h5'
     collection_name='swiss-prot2024-01-14_testing'
     create_db_from_5h(filename, collection_name)
