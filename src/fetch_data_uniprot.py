@@ -86,6 +86,7 @@ class UniProtFetcher:
         df.drop_duplicates(subset='accession', keep='first', inplace=True)
         df.reset_index(drop=True, inplace=True)
         logging.info(f'Total amount of non redundant entries: {df.shape}')
+        logging.info(f'Amount of BRENDA reviewed entries: {df['xref_brenda'].notnull().shape[0]}')
         return df
 
     def save_data(self, df: pd.DataFrame, out_filename: str):
@@ -93,9 +94,9 @@ class UniProtFetcher:
         self.tsv_to_fasta_writer(in_file=self.out_dir + out_filename + '_annotated.tsv', out_file=self.out_dir + out_filename + '.fasta')
         self.write_annotated_fasta(df=df, out_file=self.out_dir + out_filename + '_annotated.fasta')
 
-        df = df[(df['reviewed'] == True) | (df['ec'].notnull())]  # | = OR
-        logging.info(f'Amount of SWISSProt reviewed entries: {df.shape}')
-        df.to_csv(self.out_dir + out_filename + '_SWISSProt.tsv', sep='\t', index=False)
+        df = df[(df['reviewed'] == True) | (df['xref_brenda'].notnull())]  # | = OR
+        logging.info(f'Amount of BRENDA reviewed entries: {df.shape[0]}')
+        df.to_csv(self.out_dir + out_filename + '_BRENDA.tsv', sep='\t', index=False)
 
 
 if __name__ == '__main__':
