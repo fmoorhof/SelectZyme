@@ -11,8 +11,10 @@ from preprocessing import Parsing
 from preprocessing import Preprocessing
 from embed import load_or_createDB
 import visualizer
-from dash_app import run_dash_app
 from fetch_data_uniprot import UniProtFetcher
+# from dash_app import run_dash_app
+from dash_app_network import run_dash_app
+import networkx as nx
 
 
 logging.basicConfig(
@@ -93,7 +95,7 @@ def database_access(df, project_name):
 
 
 def dimred_clust(df, X, dim_method):
-    labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=5)  # min samples for batches: 50
+    labels, G, Gsl = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=5)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
@@ -105,7 +107,7 @@ def dimred_clust(df, X, dim_method):
     elif dim_method == 'UMAP':
         X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
 
-    return df, X_red
+    return df, X_red, G, Gsl
 
 
 def main(app):
@@ -113,9 +115,14 @@ def main(app):
     df = preprocessing(df)
 
     X = database_access(df, args.project_name)
-    df, X_red = dimred_clust(df, X, args.dim_red)
+    df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
 
-    app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)
+    pos = nx.spring_layout(G)  # Generate positions for visualization
+    nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
+    app = run_dash_app(G, df, app)  # network and table
+    # todo: table selection not working, different graph layout to partition nodes more clearly
+
+    # app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)  # plot and table: from dash_app import run_dash_app
 
 
 
