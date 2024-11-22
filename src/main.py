@@ -79,10 +79,7 @@ def parse_data(args):
     return df
 
 
-def main(project_name: str, app):
-    df = parse_data(args)
-    df = preprocessing(df)
-
+def database_access(df, project_name):
     # Create a collection in Qdrant DB with embedded sequences
     qdrant = QdrantClient(path="/data/tmp/EnzyNavi")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
@@ -91,21 +88,32 @@ def main(project_name: str, app):
         raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
-    X = embeddings
+
+    return embeddings
 
 
+def dimred_clust(df, X, dim_method):
     labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=5)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
-    iter_methods = ['TSNE']  # ['PCA', 'TSNE', 'UMAP']
-    for method in iter_methods:
-        if method == 'PCA':
-            X_red = visualizer.pca(X)
-        elif method == 'TSNE':
-            X_red = visualizer.tsne(X, random_state=42)
-        elif method == 'UMAP':
-            X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
+    dim_method = dim_method.upper()
+    if dim_method == 'PCA':
+        X_red = visualizer.pca(X)
+    elif dim_method == 'TSNE':
+        X_red = visualizer.tsne(X, random_state=42)
+    elif dim_method == 'UMAP':
+        X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
+
+    return df, X_red
+
+
+def main(app):
+    df = parse_data(args)
+    df = preprocessing(df)
+
+    X = database_access(df, args.project_name)
+    df, X_red = dimred_clust(df, X, args.dim_red)
 
     app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)
 
@@ -116,7 +124,7 @@ if __name__ == "__main__":
     args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", out_filename='argparse_test', dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = parse_args()  # comment for debugging
 
-    main(project_name=args.project_name, app=app)
+    main(app=app)
     app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
     
     # old project names to remember: batch5, test_project, lcp, lcp_no_signals, lefos, lefos_no_signals
