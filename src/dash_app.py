@@ -142,6 +142,7 @@ if __name__ == '__main__':
     df = pd.DataFrame({
         'cluster': ['A', 'B', 'A', 'C'],
         'taxid': [1, 2, 3, 4],
+        'ec': [1, 2, 3, 4],
         'taxid_name': ['abc', 'def', 'ghi', 'abc'],
         'marker_symbol': ['circle', 'square', 'diamond', 'triangle-up'],
         'marker_size': [10, 20, 30, 40]
