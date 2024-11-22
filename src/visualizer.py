@@ -17,7 +17,7 @@ import logging
 
 import pandas as pd
 import plotly.express as px
-
+import matplotlib.pyplot as plt
 import cudf
 from cuml.cluster import (
     HDBSCAN,
@@ -52,6 +52,22 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **
     
     hdbscan = HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, gen_min_span_tree=True, **kwargs)
     labels = hdbscan.fit_predict(X)
+
+    mst = hdbscan.minimum_spanning_tree_
+    nw = mst.to_networkx()
+
+    # plotting (remove when interactive plots enabled)
+    hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
+                                      edge_alpha=0.6,
+                                      node_size=80,
+                                      edge_linewidth=2)
+    plt.savefig(f"datasets/mst.png", bbox_inches='tight')
+    plt.close()
+
+    hdbscan.single_linkage_tree_.plot(cmap='viridis', colorbar=True)
+    plt.savefig(f"datasets/slt.png", bbox_inches='tight')
+    plt.close()
+
     logging.info("HDBSCAN done")
     return labels
 
