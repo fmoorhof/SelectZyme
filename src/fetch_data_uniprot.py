@@ -82,11 +82,11 @@ class UniProtFetcher:
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df[df['accession'] != 'Entry']  # remove concatenated headers that are introduced by each query term
-        logging.info(f'Total amount of retrieved entries: {df.shape}')
+        logging.info(f'Total amount of retrieved entries: {df.shape[0]}')
         df.drop_duplicates(subset='accession', keep='first', inplace=True)
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'Total amount of non redundant entries: {df.shape}')
-        logging.info(f'Amount of BRENDA reviewed entries: {df['xref_brenda'].notnull().shape[0]}')
+        logging.info(f'Total amount of non redundant entries: {df.shape[0]}')
+        logging.info(f"Amount of BRENDA reviewed entries: {df['xref_brenda'].notna().sum()}")
         return df
 
     def save_data(self, df: pd.DataFrame, out_filename: str):

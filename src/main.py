@@ -68,7 +68,7 @@ def parse_data(args):
         custom_data = fetcher.load_custom_csv(args.custom_data_location)
         df = pd.concat([custom_data, df], ignore_index=True)
         df = fetcher.clean_data(df)
-        # fetcher.save_data(df, args.out_filename)
+        fetcher.save_data(df, args.out_filename)
     elif input_file.endswith('.fasta'):
         headers, sequences = Parsing.parse_fasta(input_file)
         df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
@@ -104,7 +104,7 @@ def main(project_name: str, app):
             X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
         visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
 
-    # app = run_dash_app(df, X_red, method, project_name, app)
+    app = run_dash_app(df, X_red, method, project_name, app)
 
 
 
@@ -114,11 +114,9 @@ if __name__ == "__main__":
     args = parse_args()  # comment for debugging
 
     main(project_name=args.project_name, app=app)
-    # app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
+    app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
     
     # old project names to remember: batch5, test_project, lcp, lcp_no_signals, lefos, lefos_no_signals
     # main(input_file='/raid/data/fmoorhof/PhD/Data/SKD001_Literature_Mining/Batch5/batch5_annotated.tsv', project_name='batch5', app=app)    
     # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/
     # http://10.10.142.201:8050/
-
-    # python src/main.py -p 'argparse_test' -q="ec:1.13.11.85" -q "ec:1.13.11.84" --length '200 TO 601' -loc "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv" -o 'argparse_test'
