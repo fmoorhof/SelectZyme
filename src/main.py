@@ -29,6 +29,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-o', '--out_filename', required=True, help='Output filename')
 
     # Optional arguments with defaults
+    parser.add_argument('--dim_red', default='TSNE', 
+                        help='Dimensionality reduction technique (default: TSNE)')
     parser.add_argument('--out_dir', default='datasets/output/', 
                         help='Output directory (default: datasets/output/)')
     parser.add_argument('--df_coi', nargs='+', default=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'], 
@@ -90,7 +92,9 @@ def main(project_name: str, app):
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
     X = embeddings
-    labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=250)  # min samples for batches: 50
+
+
+    labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=5)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
@@ -102,16 +106,15 @@ def main(project_name: str, app):
             X_red = visualizer.tsne(X, random_state=42)
         elif method == 'UMAP':
             X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
-        visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
 
-    app = run_dash_app(df, X_red, method, project_name, app)
+    app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)
 
 
 
 if __name__ == "__main__":
     app = dash.Dash(__name__)
-    args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", out_filename='argparse_test', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    args = parse_args()  # comment for debugging
+    args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", out_filename='argparse_test', dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    # args = parse_args()  # comment for debugging
 
     main(project_name=args.project_name, app=app)
     app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
