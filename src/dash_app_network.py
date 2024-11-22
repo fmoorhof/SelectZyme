@@ -16,43 +16,12 @@ communities = list(label_propagation_communities(mst_nx))
 
     Shortest Paths, Betweenness Centrality, critical nodes
 """
-import logging
- 
 import dash
+from dash import dcc, html, dash_table
+from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 import networkx as nx
-
-
-def run_dash_app(app: dash.Dash, edge_trace, node_trace):
-    """Run a Dash app to visualize the results of the dimensionality reduction.
-    app.layout is setting my custom layout with plotly express.
-    app.callback is setting the callback function to show the data of the selected points in the plot. 
-    update_table is the callback function, filling the table with the data of the selected points.
-    
-    :param df: dataframe containing the annoattions
-    :param X_red: dimensionality reduced embeddings
-    :param method: dimensionality reduction method used
-    :param project_name: name of the collection/dataset
-    :param app: dash app
-    return: dash app"""
-    # Network graph
-    fig = go.Figure(data=[edge_trace, node_trace],
-                layout=go.Layout(
-                    title=dict(
-                        text="Minimal Spanning Tree with objective xy coloring",
-                        font=dict(
-                            size=16
-                        )
-                    ),
-                    showlegend=False,
-                    hovermode='closest',
-                    margin=dict(b=20,l=5,r=5,t=40),
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                    )
-    fig.show()
-
-    return app
+import pandas as pd
 
 
 def modify_graph_data(G: nx.Graph):
@@ -69,65 +38,120 @@ def modify_graph_data(G: nx.Graph):
         edge_y.append(None)
 
     edge_trace = go.Scatter(
-    x=edge_x, y=edge_y,
-    line=dict(width=0.5, color='#888'),
-    hoverinfo='none',
-    mode='lines')
+        x=edge_x, y=edge_y,
+        line=dict(width=0.5, color='#888'),
+        hoverinfo='none',
+        mode='lines'
+    )
 
     node_x = []
     node_y = []
+    node_text = []
     for node in G.nodes():
         x, y = G.nodes[node]['pos']
         node_x.append(x)
         node_y.append(y)
+        node_text.append(str(node))  # Add node identifier for hover
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode='markers',
         hoverinfo='text',
+        text=node_text,
         marker=dict(
             showscale=True,
-            # colorscale options
-            #'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
-            #'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
-            #'Hot' | 'Blackbody' | 'Earth' | 'Electric' | 'Viridis' |
             colorscale='YlGnBu',
             reversescale=True,
             color=[],
             size=10,
             colorbar=dict(
                 thickness=15,
-                title=dict(
-                text='Node Connections',
-                side='right'
-                ),
+                title='Node Connections',
                 xanchor='left',
             ),
-            line_width=2))
-    
-    node_adjacencies = []
-    node_text = []
-    for node, adjacencies in enumerate(G.adjacency()):
-        node_adjacencies.append(len(adjacencies[1]))
-        node_text.append('# of connections: '+str(len(adjacencies[1])))
+            line_width=2
+        )
+    )
 
+    node_adjacencies = [len(list(G.adj[node])) for node in G.nodes()]
     node_trace.marker.color = node_adjacencies
-    node_trace.text = node_text
-    
+
     return edge_trace, node_trace
 
 
- 
+def run_dash_app(G, df, app: dash.Dash):
+    # Modify graph data for visualization
+    edge_trace, node_trace = modify_graph_data(G)
+
+    # Create initial figure
+    fig = go.Figure(
+        data=[edge_trace, node_trace],
+        layout=go.Layout(
+            title="Minimal Spanning Tree with Objective xy Coloring",
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=20, l=5, r=5, t=40),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        )
+    )
+
+    # Define app layout
+    app.layout = html.Div([
+        # Graph plot
+        dcc.Graph(id='network-plot', figure=fig),
+        
+        # Table to show selected node data
+        dash_table.DataTable(
+            id='data-table',
+            columns=[{'id': col, 'name': col} for col in df.columns],
+            data=[],  # Start with an empty table
+            style_cell={'textAlign': 'left'},
+            editable=False,
+            row_deletable=False,
+            export_format='xlsx',
+            export_headers='display',
+            merge_duplicate_headers=True,
+        )
+    ])
+
+    # Callback to update the table based on selected nodes
+    @app.callback(
+        Output('data-table', 'data'),
+        Input('network-plot', 'clickData')
+    )
+    def update_table(clickData):
+        if clickData is None:
+            return []
+
+        # Get the selected node
+        selected_node = int(clickData['points'][0]['text'])  # Node identifier as an integer
+
+        # Find the corresponding row in the DataFrame
+        row = df[df['node_id'] == selected_node]
+
+        # Return the row as a list of dictionaries for the table
+        return row.to_dict('records')
+
+    return app
+
+
+
 if __name__ == '__main__':
-    # generate minimal example data (network)
-    import networkx as nx
-    G = nx.random_geometric_graph(200, 0.125, seed=42)
+    # Generate minimal example data (network)
+    G = nx.random_geometric_graph(10, 0.5, seed=42)
+    pos = nx.spring_layout(G)  # Generate positions for visualization
+    nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
     G = nx.minimum_spanning_tree(G)
 
-    edge_trace, node_trace = modify_graph_data(G)
-    
-    # Initialize Dash app
+    # Create a DataFrame with minimal node information
+    df = pd.DataFrame({
+        'node_id': list(G.nodes()),  # Node identifiers
+        'x': [G.nodes[node]['pos'][0] for node in G.nodes()],  # x-coordinates
+        'y': [G.nodes[node]['pos'][1] for node in G.nodes()],  # y-coordinates
+        '# connections': [len(list(G.adj[node])) for node in G.nodes()]  # Number of connections
+    })
+
+
     app = dash.Dash(__name__)
-    
-    # Run the app
-    run_dash_app(app, edge_trace, node_trace).run_server(debug=False)
+    run_dash_app(G, df, app).run_server(debug=True)
