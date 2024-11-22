@@ -10,6 +10,7 @@ dependencies:
   # - cuda-version=11.1  # 12.1
   - pytorch
   - dash
+  - pygraphviz  # conda-forge
   - pip
   - pip:
     - tqdm
