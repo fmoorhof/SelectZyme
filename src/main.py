@@ -117,12 +117,12 @@ def main(app):
     X = database_access(df, args.project_name)
     df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
 
-    pos = nx.nx_agraph.graphviz_layout(G)  # nohup time conda install --channel conda-forge pygraphviz  # todo see output and try to run it
+    pos = nx.nx_agraph.graphviz_layout(G)  # alternative layout: pos = nx.nx_pydot.graphviz_layout(G)  # conda install anaconda::pydot
     nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
     app = run_dash_app(G, df, app)  # network and table setting
-    # todo mst: table selection not working, different graph layout to partition nodes more clearly WIP: fix install issues for nx.nx_agraph.graphviz_layout(G) and 
-    # maybe also try:  conda install anaconda::pydot for the pos = nx.nx_pydot.graphviz_layout(G)
+    # todo mst: table selection not working
 
+    # todo: try Gsl with graphviz_layout as well
     # pos = nx.spring_layout(Gsl)
     # nx.set_node_attributes(Gsl, pos, 'pos')  # Assign positions as attributes
     # app = run_dash_app(Gsl, df, app)  # network and table setting    

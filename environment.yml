@@ -10,7 +10,7 @@ dependencies:
   # - cuda-version=11.1  # 12.1
   - pytorch
   - dash
-  - pygraphviz  # conda-forge
+  - pygraphviz  # conda-forge  # nohup time conda install -y --channel conda-forge pygraphviz  
   - pip
   - pip:
     - tqdm
