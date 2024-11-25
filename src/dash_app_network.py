@@ -79,22 +79,22 @@ def modify_graph_data(G: nx.Graph):
     return edge_trace, node_trace
 
 
-def run_dash_app(G, df, app: dash.Dash):
+def run_dash_app(G, df, app: dash.Dash, fig):
     # Modify graph data for visualization
-    edge_trace, node_trace = modify_graph_data(G)
+    #edge_trace, node_trace = modify_graph_data(G)
 
     # Create initial figure
-    fig = go.Figure(
-        data=[edge_trace, node_trace],
-        layout=go.Layout(
-            title="Minimal Spanning Tree with Objective xy Coloring",
-            showlegend=False,
-            hovermode='closest',
-            margin=dict(b=20, l=5, r=5, t=40),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        )
-    )
+    # fig = go.Figure(
+    #     data=[edge_trace, node_trace],
+    #     layout=go.Layout(
+    #         title="Minimal Spanning Tree with Objective xy Coloring",
+    #         showlegend=False,
+    #         hovermode='closest',
+    #         margin=dict(b=20, l=5, r=5, t=40),
+    #         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #     )
+    # )
 
     # Define app layout
     app.layout = html.Div([
@@ -138,11 +138,16 @@ def run_dash_app(G, df, app: dash.Dash):
 
 
 if __name__ == '__main__':
+    from phylogenetic_tree import g_to_newick, create_tree
+
     # Generate minimal example data (network)
     G = nx.random_geometric_graph(10, 0.5, seed=42)
     pos = nx.spring_layout(G)  # Generate positions for visualization
     nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
     G = nx.minimum_spanning_tree(G)
+
+    G_nw = g_to_newick(G)
+    fig = create_tree(G_nw)
 
     # Create a DataFrame with minimal node information
     df = pd.DataFrame({
@@ -154,4 +159,4 @@ if __name__ == '__main__':
 
 
     app = dash.Dash(__name__)
-    run_dash_app(G, df, app).run_server(debug=True)
+    run_dash_app(G, df, app, fig).run_server(debug=True)
