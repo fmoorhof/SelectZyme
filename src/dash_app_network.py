@@ -25,6 +25,7 @@ import pandas as pd
 
 
 def modify_graph_data(G: nx.Graph):
+    """only needed for minimal spanning tree"""
     edge_x = []
     edge_y = []
     for edge in G.edges():

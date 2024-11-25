@@ -7,9 +7,8 @@ from Bio import Phylo
 import plotly.graph_objs as go
 
 
-def g_to_newick_malfunction(g, root=None):
+def g_to_newick(g, root=None):
     """
-    todo: fix malfunction: root node not found. is it because of example data or mal-implementation?
     Convert a directed graph to Newick format.
 
     Parameters:
@@ -23,16 +22,16 @@ def g_to_newick_malfunction(g, root=None):
     AssertionError: If the graph does not have exactly one root node.
     """
     if root is None:
-        roots = list(filter(lambda p: p[1] == 0, g.degree()))
+        roots = list(filter(lambda p: p[1] == 0, g.in_degree()))
         assert 1 == len(roots)
         root = roots[0][0]
     subgs = []
     for child in g[root]:
         if len(g[child]) > 0:
-            subgs.append(g_to_newick_malfunction(g, root=child))
+            subgs.append(g_to_newick(g, root=child))
         else:
             subgs.append(child)
-    return "(" + ','.join(subgs) + ")"
+    return "(" + ','.join(map(str, subgs)) + ")"
 
 
 def create_tree(nw_tree):
@@ -191,88 +190,3 @@ def get_clade_lines(
         raise ValueError("Line type can be 'horizontal' or 'vertical'")
 
     return branch_line
-
-
-def recursive_search(dict, key):
-    """
-    Recursively searches for a key in a nested dictionary and returns its value if found.
-    Args:
-        dict (dict): The dictionary to search through. It can contain nested dictionaries.
-        key (str): The key to search for in the dictionary.
-    Returns:
-        The value associated with the key if found, otherwise None.
-    """
-
-    if key in dict:
-        return dict[key]
-    for k, v in dict.items():
-        item = recursive_search(v, key)
-        if item is not None:
-            return item
-
-
-def bfs_edge_lst(graph, n):
-    """
-    Perform a breadth-first search (BFS) on a graph starting from a given node and return the list of edges.
-    Parameters:
-    graph (networkx.Graph): The graph on which to perform BFS.
-    n (node): The starting node for the BFS.
-    Returns:
-    list: A list of edges in the order they were traversed in the BFS.
-    """
-    return list(nx.bfs_edges(graph, n))
-
-
-def tree_from_edge_lst(elst, n):
-    """
-    Constructs a tree from a list of edges.
-    Args:
-        elst (list of tuples): A list of edges where each edge is represented as a tuple (src, dst).
-        n (int or str): The root node of the tree.
-    Returns:
-        dict: A nested dictionary representing the tree structure.
-    """
-
-    tree = {n: {}}
-    for src, dst in elst:
-        subt = recursive_search(tree, src)
-        subt[dst] = {}
-    return tree
-
-
-def tree_to_newick(tree):
-    """
-    Convert a phylogenetic tree represented as a nested dictionary to a Newick format string.
-    Args:
-        tree (dict): A nested dictionary representing the phylogenetic tree. Each key is a node, and its value is another dictionary representing its children.
-    Returns:
-        str: A string representing the tree in Newick format.
-    """
-    items = []
-    for k in tree.keys():
-        s = ''
-        if len(tree[k].keys()) > 0:
-            subt = tree_to_newick(tree[k])
-            if subt != '':
-                s += '(' + subt + ')'
-        s += k
-        items.append(s)
-    return ','.join(items)
-
-
-def g_to_newick(g):
-    """
-    Convert a graph to Newick format.
-    This function takes a graph `g` and converts it to a Newick formatted string.
-    The graph is assumed to have '1' as the root node.
-    Args:
-        g (networkx.Graph): The input graph to be converted.
-    Returns:
-        str: The Newick formatted string representation of the graph.
-    """
-
-    elst = bfs_edge_lst(g, '1')  #'1' being the root node of the graph
-    tree = tree_from_edge_lst(elst, '1')
-    newick = tree_to_newick(tree) + ';'
-
-    return newick

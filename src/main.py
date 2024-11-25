@@ -6,6 +6,7 @@ import argparse
 import pandas as pd
 from qdrant_client import QdrantClient
 import dash
+import networkx as nx
 
 from preprocessing import Parsing
 from preprocessing import Preprocessing
@@ -14,7 +15,8 @@ import visualizer
 from fetch_data_uniprot import UniProtFetcher
 # from dash_app import run_dash_app
 from dash_app_network import run_dash_app
-import networkx as nx
+from phylogenetic_tree import create_tree, g_to_newick
+
 
 
 logging.basicConfig(
@@ -117,16 +119,23 @@ def main(app):
     X = database_access(df, args.project_name)
     df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
 
-    pos = nx.nx_agraph.graphviz_layout(G)  # alternative layout: pos = nx.nx_pydot.graphviz_layout(G)  # conda install anaconda::pydot
-    nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
-    app = run_dash_app(G, df, app)  # network and table setting
+    # pos = nx.nx_agraph.graphviz_layout(G)  # alternative layout: pos = nx.nx_pydot.graphviz_layout(G)  # conda install anaconda::pydot
+    # nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
+    # app = run_dash_app(G, df, app)  # network and table setting
     # todo mst: table selection not working
 
-    # todo: try Gsl with graphviz_layout as well
     # pos = nx.spring_layout(Gsl)
     # nx.set_node_attributes(Gsl, pos, 'pos')  # Assign positions as attributes
     # app = run_dash_app(Gsl, df, app)  # network and table setting    
     # todo slt: make graph layout phylogenetic tree-like, perf: graph creation quite slow
+    # convert slt to another format usable for cytoscape and use dash-phylogeny
+    if nx.is_tree(Gsl):
+        newick_str = g_to_newick(Gsl)  # if wrong root got selected, fewer datapoints are displayed
+        fig = create_tree(newick_str)
+    else:
+        ValueError("Graph is not a tree. Phylogenetic tree creation is only possible for trees.")
+    app = run_dash_app(Gsl, df, app, fig)  # network and table setting 
+    # todo: tree is not displayed properly
 
     # app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)  # plot and table: from dash_app import run_dash_app
 
@@ -135,6 +144,7 @@ def main(app):
 if __name__ == "__main__":
     app = dash.Dash(__name__)
     args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", out_filename='argparse_test', dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", out_filename='argparse_test_minimal', dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = parse_args()  # comment for debugging
 
     main(app=app)
