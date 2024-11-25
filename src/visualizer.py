@@ -67,6 +67,15 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **
     # hdbscan.single_linkage_tree_.plot(cmap='viridis', colorbar=True)
     # plt.savefig(f"datasets/slt.png", bbox_inches='tight')
     # plt.close()
+    from scipy.cluster.hierarchy import dendrogram
+
+    plt.figure(figsize=(10, 8))
+    dendrogram(hdbscan.single_linkage_tree_.to_numpy())
+    plt.title("Dendrogram of Single Linkage Tree")
+    plt.xlabel("Sample Index")
+    plt.ylabel("Distance")
+    plt.savefig('datasets/dendrogram.png', dpi=300, bbox_inches='tight')
+    plt.close()
 
     logging.info("HDBSCAN done")
     return labels, G, Gsl
