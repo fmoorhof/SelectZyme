@@ -2,7 +2,6 @@
 networkx graph to newick format implementation is taken from: https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format"""
 import io
 
-import networkx as nx
 from Bio import Phylo
 import plotly.graph_objs as go
 
@@ -70,11 +69,13 @@ def create_tree(nw_tree):
             )
         ],
         layout=go.Layout(
-            title="Minimal Tree Plot",
+            title="Single linkage tree",
+            dragmode="select",
             showlegend=False,
             hovermode="closest",
             xaxis=dict(showgrid=True, zeroline=False, showticklabels=True, title="Branch Length"),
             yaxis=dict(showline=False, zeroline=False, showgrid=False, showticklabels=False),
+            shapes=line_shapes,  # Add line shapes to the layout
         )
     )
 
@@ -190,3 +191,10 @@ def get_clade_lines(
         raise ValueError("Line type can be 'horizontal' or 'vertical'")
 
     return branch_line
+
+
+
+if __name__=="__main__":
+    newick_tree = "((A:1,B:1):2,(C:1,D:1):2);"
+    fig = create_tree(newick_tree)
+    fig.write_image("datasets/dendrogram_with_lines.png")
