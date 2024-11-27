@@ -1,5 +1,9 @@
 """Implementations inspired and mostly taken from: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-phylogeny/utils.py
-networkx graph to newick format implementation is taken from: https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format"""
+networkx graph to newick format implementation is taken from: https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format
+todo: 
+- distances missing at tree (replace distance by branch length)
+- add annotations on node level from df
+"""
 import io
 
 from Bio import Phylo

@@ -10,4 +10,5 @@ taxoniq==1.0.1
 tqdm==4.66.1
 requests==2.31.0
 plotly==5.18.0
-# pydot==3.0.2  # apt-get install graphviz  # needed on system
+# dash-cytoscape==1.0.2
+biopython==1.84
