@@ -39,15 +39,21 @@ class UniProtFetcher:
                 fasta = '>', '|'.join(row.iloc[:-1].map(str)), '\n', row.loc["sequence"], '\n'
                 f_out.writelines(fasta)
 
-    def load_custom_csv(self, file_path: str) -> pd.DataFrame:
-        df = pd.read_csv(file_path, sep=';', header=None, names=self.df_coi, skiprows=1, encoding='ISO-8859-1')
-        df['reviewed'] = True
-        df['sequence'] = df['sequence'].str.upper()
-        if df['xref_brenda'].isnull().all():
-            df['xref_brenda'] = True
-        if df['ec'].isnull().all():
-            df['ec'] = True
-        return df
+    def load_custom_csv(self, file_path: str, sep: str=';') -> pd.DataFrame:
+        try:
+            df = pd.read_csv(file_path, sep=sep)
+            df['reviewed'] = True
+            df['sequence'] = df['sequence'].str.upper()
+            df['sequence'] = df['sequence'].str.replace('<BR>', '', regex=False)  # if from tool output, replace new line characters
+            if df['xref_brenda'].isnull().all():
+                df['xref_brenda'] = True
+            if df['ec'].isnull().all():
+                df['ec'] = True
+            return df
+        except Exception as e:
+            logging.error(f"Error loading custom CSV file: {e}")
+            logging.error("Please check the custom data file provided and ensure it follows the template, avoiding characters such as tabs or ';'")
+            raise
 
     def get_next_link(self, headers):
         if "Link" in headers:
@@ -95,7 +101,6 @@ class UniProtFetcher:
         self.write_annotated_fasta(df=df, out_file=self.out_dir + out_filename + '_annotated.fasta')
 
         df = df[(df['reviewed'] == True) | (df['xref_brenda'].notnull())]  # | = OR
-        logging.info(f'Amount of BRENDA reviewed entries: {df.shape[0]}')
         df.to_csv(self.out_dir + out_filename + '_BRENDA.tsv', sep='\t', index=False)
 
 

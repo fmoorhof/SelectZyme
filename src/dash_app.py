@@ -98,7 +98,7 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             df.at[row_index[0], 'selected'] = True
 
         selected_feature[df.columns.get_loc('selected')] = True  # Rueckpicking: change df['selected'] to True in table
-
+        selected_feature[df.columns.get_loc('sequence')] = selected_feature[df.columns.get_loc('sequence')].replace('<br>', '')  # replace line break character in table
         logging.info(selected_feature)
         print(selected_feature)
             
