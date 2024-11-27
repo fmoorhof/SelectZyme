@@ -6,13 +6,16 @@ import argparse
 import pandas as pd
 from qdrant_client import QdrantClient
 import dash
+import networkx as nx
 
 from preprocessing import Parsing
 from preprocessing import Preprocessing
 from embed import load_or_createDB
 import visualizer
-from dash_app import run_dash_app
 from fetch_data_uniprot import UniProtFetcher
+from dash_app import run_dash_app
+# from dash_app_network import run_dash_app
+# from phylogenetic_tree import create_tree, g_to_newick
 
 
 logging.basicConfig(
@@ -26,9 +29,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-q', '--query_terms', nargs='+', required=True, help='Query terms for UniProt')
     parser.add_argument('--length', required=True, help='Length range for sequences')
     parser.add_argument('-loc', '--custom_data_location', required=True, help='Location of your custom data CSV')
-    parser.add_argument('-o', '--out_filename', required=True, help='Output filename')
 
     # Optional arguments with defaults
+    parser.add_argument('--dim_red', default='TSNE', 
+                        help='Dimensionality reduction technique (default: TSNE)')
     parser.add_argument('--out_dir', default='datasets/output/', 
                         help='Output directory (default: datasets/output/)')
     parser.add_argument('--df_coi', nargs='+', default=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'], 
@@ -41,7 +45,6 @@ def parse_args() -> argparse.Namespace:
     logging.debug(f"Query terms: {args.query_terms}")
     logging.debug(f"Length range: {args.length}")
     logging.debug(f"Custom data location: {args.custom_data_location}")
-    logging.debug(f"Output filename: {args.out_filename}")
     logging.debug(f"Output directory: {args.out_dir}")
     logging.debug(f"Dataframe columns of interest: {args.df_coi}")
 
@@ -60,15 +63,16 @@ def preprocessing(df: pd.DataFrame):
 
 
 def parse_data(args):
-    """Parse data or read it from file"""
-    input_file = args.out_dir+args.out_filename+'_annotated.tsv'
+    """Parse data or read it from file
+    todo: implement .xlsx reader with spreadsheet name"""
+    input_file = args.out_dir+args.project_name+'_annotated.tsv'
     if not os.path.isfile(input_file):  # generate it
         fetcher = UniProtFetcher(args.df_coi, args.out_dir)
         df = fetcher.query_uniprot(args.query_terms, args.length)
-        custom_data = fetcher.load_custom_csv(args.custom_data_location)
+        custom_data = fetcher.load_custom_csv(args.custom_data_location, sep=';')
         df = pd.concat([custom_data, df], ignore_index=True)
         df = fetcher.clean_data(df)
-        # fetcher.save_data(df, args.out_filename)
+        fetcher.save_data(df, args.project_name)
     elif input_file.endswith('.fasta'):
         headers, sequences = Parsing.parse_fasta(input_file)
         df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
@@ -77,10 +81,7 @@ def parse_data(args):
     return df
 
 
-def main(project_name: str, app):
-    df = parse_data(args)
-    df = preprocessing(df)
-
+def database_access(df, project_name):
     # Create a collection in Qdrant DB with embedded sequences
     qdrant = QdrantClient(path="/data/tmp/EnzyNavi")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
@@ -89,36 +90,68 @@ def main(project_name: str, app):
         raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
-    X = embeddings
-    labels = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=250)  # min samples for batches: 50
+
+    return embeddings
+
+
+def dimred_clust(df, X, dim_method):
+    labels, G, Gsl = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=50)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
-    iter_methods = ['TSNE']  # ['PCA', 'TSNE', 'UMAP']
-    for method in iter_methods:
-        if method == 'PCA':
-            X_red = visualizer.pca(X)
-        elif method == 'TSNE':
-            X_red = visualizer.tsne(X, random_state=42)
-        elif method == 'UMAP':
-            X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
-        visualizer.plot_2d(df, X_red, collection_name=project_name, method=method)
+    dim_method = dim_method.upper()
+    if dim_method == 'PCA':
+        X_red = visualizer.pca(X)
+    elif dim_method == 'TSNE':
+        X_red = visualizer.tsne(X, random_state=42)
+    elif dim_method == 'UMAP':
+        X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
 
-    # app = run_dash_app(df, X_red, method, project_name, app)
+    return df, X_red, G, Gsl
+
+
+def main(app):
+    df = parse_data(args)
+    df = preprocessing(df)
+
+    X = database_access(df, args.project_name)
+    df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
+
+    # # minimal spanning tree app
+    # pos = nx.nx_agraph.graphviz_layout(G)  # alternative layout: pos = nx.nx_pydot.graphviz_layout(G)  # conda install anaconda::pydot
+    # nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
+    # app = run_dash_app(G, df, app)  # network and table setting
+    # # todo mst: table selection not working: use same table from landscape, no new one. also annotation from table data or df - color selections in tree
+
+    # # single linkage tree app
+    # # pos = nx.spring_layout(Gsl)
+    # # nx.set_node_attributes(Gsl, pos, 'pos')  # Assign positions as attributes
+    # # app = run_dash_app(Gsl, df, app)  # network and table setting    
+    # # todo slt: make graph layout phylogenetic tree-like, perf: graph creation quite slow
+    # # convert slt to another format usable for cytoscape and use dash-phylogeny
+    # if nx.is_tree(Gsl):
+    #     newick_str = g_to_newick(Gsl)  # if wrong root got selected, fewer datapoints are displayed
+    #     fig = create_tree(newick_str)
+    # else:
+    #     ValueError("Graph is not a tree. Phylogenetic tree creation is only possible for trees.")
+    # app = run_dash_app(Gsl, df, app, fig)  # network and table setting 
+    # # todo: tree is not displayed properly
+
+    # TSNE plot and table app
+    app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)  # plot and table: from dash_app import run_dash_app
 
 
 
 if __name__ == "__main__":
     app = dash.Dash(__name__)
-    args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", out_filename='argparse_test', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    args = parse_args()  # comment for debugging
+    args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    # args = parse_args()  # comment for debugging
 
-    main(project_name=args.project_name, app=app)
-    # app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
+    main(app=app)
+    app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
     
     # old project names to remember: batch5, test_project, lcp, lcp_no_signals, lefos, lefos_no_signals
     # main(input_file='/raid/data/fmoorhof/PhD/Data/SKD001_Literature_Mining/Batch5/batch5_annotated.tsv', project_name='batch5', app=app)    
     # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/
     # http://10.10.142.201:8050/
-
-    # python src/main.py -p 'argparse_test' -q="ec:1.13.11.85" -q "ec:1.13.11.84" --length '200 TO 601' -loc "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv" -o 'argparse_test'

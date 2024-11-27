@@ -89,15 +89,18 @@ def run_dash_app(df, X_red, method: str, project_name: str, app: dash.Dash):
             return existing_table
 
         selected_feature = clickData['points'][0]['customdata']
-        logging.info(selected_feature)
-        print(selected_feature)
 
-        # Rueckpicking: change df['selected'] to True
+        # Rueckpicking: change df['selected'] to True in plot
         identifier_column = df.columns[0]
         row_index = df[df[identifier_column] == selected_feature[0]].index
         # If the row exists, update the 'selected' column to True
         if not row_index.empty:
             df.at[row_index[0], 'selected'] = True
+
+        selected_feature[df.columns.get_loc('selected')] = True  # Rueckpicking: change df['selected'] to True in table
+        selected_feature[df.columns.get_loc('sequence')] = selected_feature[df.columns.get_loc('sequence')].replace('<br>', '')  # replace line break character in table
+        logging.info(selected_feature)
+        print(selected_feature)
             
         # Create a new row for the table
         new_row = dict(zip(df.columns, selected_feature))
@@ -140,9 +143,12 @@ if __name__ == '__main__':
     
     # Dummy dataset and dimensionality reduced data for testing
     df = pd.DataFrame({
+        'uid': [1, 2, 3, 4],
         'cluster': ['A', 'B', 'A', 'C'],
         'taxid': [1, 2, 3, 4],
+        'ec': [1, 2, 3, 4],
         'taxid_name': ['abc', 'def', 'ghi', 'abc'],
+        'selected': ['False', 'False', 'False', 'False'],
         'marker_symbol': ['circle', 'square', 'diamond', 'triangle-up'],
         'marker_size': [10, 20, 30, 40]
     })
