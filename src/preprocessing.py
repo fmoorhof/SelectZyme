@@ -1,9 +1,13 @@
 """
-This file provides basic functionalites for preprocessing sequences e.g. file parsing
+This file provides basic functionalites for preprocessing sequences and file parsing from .fasta, .tsv and .csv files.
 """
 import logging
 
 import pandas as pd
+
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 
 class Parsing():
@@ -46,10 +50,9 @@ class Parsing():
     
 
 class Preprocessing:
-    """This class should assist in the preprocessing of the data."""
+    """This class should assist in the preprocessing of the data. Instead of returning the df, the self.df gets updated"""
     def __init__(self, df: pd.DataFrame):
         self.df = df
-        self.length = df.shape[0]  # original length of the dataframe
 
     def remove_long_sequences(self) -> None:
         """
@@ -69,9 +72,8 @@ class Preprocessing:
         """
         df = self.df[self.df['sequence'].str.startswith('M')]
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of missing Methionins.')
+        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of missing Methionins.')
         self.df = df
-        # return df
     
     def remove_sequences_with_undertermined_amino_acids(self) -> None:
         """
@@ -81,21 +83,19 @@ class Preprocessing:
         """
         df = self.df[~self.df['sequence'].str.contains('X')]
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of undertermined amino acids.')
+        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of undertermined amino acids.')
         self.df = df
-        # return df
 
     def remove_duplicate_entries(self) -> None:
         """
-        This function removes duplicate entries from the dataframe.
+        This function removes duplicate entries from the dataframe. In fetch_data_uniprot.py, the function is already used to remove duplicates resulting from the query term. However, with custom data import there can still duplicates occur that will get removed with this function.
         params: df: dataframe containing the sequences
         return: df: dataframe containing only unique sequences
         """
         df = self.df.drop_duplicates(subset='accession', keep='first')
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of duplicates.')
+        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of duplicated accessions.')
         self.df = df
-        # return df
 
     def remove_duplicate_sequences(self) -> None:
         """
@@ -105,9 +105,8 @@ class Preprocessing:
         """
         df = self.df.drop_duplicates(subset='sequence', keep='first')
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.length-df.shape[0]} sequences were excluded because of duplicates.')
-        self.df = df
-        # return df        
+        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of duplicates.')
+        self.df = df      
 
 
 
