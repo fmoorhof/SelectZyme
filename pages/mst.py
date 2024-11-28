@@ -7,7 +7,7 @@ import pandas as pd
 from src.dash_app_network import modify_graph_data
 
 # Register page
-dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path
+# dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
 
 
 def layout(G: nx.Graph):
