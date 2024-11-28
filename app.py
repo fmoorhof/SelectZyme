@@ -4,6 +4,9 @@ import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 import networkx as nx
+# development only
+import argparse
+from src.main import parse_data, preprocessing, database_access, dimred_clust
 
 import pages.mst as mst
 import pages.single_linkage as sl
@@ -18,16 +21,23 @@ app = dash.Dash(
 )
 server = app.server
 
-# Define the graph G
-G = nx.random_geometric_graph(10, 0.5, seed=42)
-dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G))
-dash.register_page('single-linkage', layout=sl.layout(G))
+
+# load real minimal data
+args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+df = parse_data(args)
+df = preprocessing(df)
+X = database_access(df, args.project_name)
+df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
+
+
+dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df))
+dash.register_page('single-linkage', layout=sl.layout(Gsl, df))
 
 # Layout with navigation links and page container
 app.layout = dbc.Container(
     [
         dbc.NavbarSimple(
-            brand="Please see here the Analysis results",
+            brand="Analysis results",
             color="primary",
             dark=True,
         ),
@@ -40,9 +50,9 @@ app.layout = dbc.Container(
                         )
                         for page in dash.page_registry.values()
                     ],
-                    # pills=True,
+                    pills=True,
                 ),
-                # html.Hr(),
+                html.Hr(),
                 dash.page_container,  # Displays the content of the current page
             ]
         ),
@@ -51,4 +61,4 @@ app.layout = dbc.Container(
 )
 
 if __name__ == "__main__":
-    app.run_server(host="0.0.0.0", port=8050, debug=True)
+    app.run_server(host="0.0.0.0", port=8050, debug=False)

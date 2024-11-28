@@ -10,11 +10,12 @@ from src.dash_app_network import modify_graph_data
 # dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
 
 
-def layout(G: nx.Graph):
+def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     """
     Generates a Dash layout for visualizing a minimal spanning tree of a given graph.
     Parameters:
     G (nx.Graph): The input graph for which the minimal spanning tree layout is to be generated.
+    df (pd.DataFrame): A DataFrame containing node information such as node ID, x and y positions, and number of connections.
     Returns:
     html.Div: A Dash HTML Div containing the graph visualization and a data table.
     The function performs the following steps:
@@ -44,14 +45,6 @@ def layout(G: nx.Graph):
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         ),
     }
-
-    # Create DataFrame
-    df = pd.DataFrame({
-        'node_id': list(G.nodes()),
-        'x': [G.nodes[node]['pos'][0] for node in G.nodes()],
-        'y': [G.nodes[node]['pos'][1] for node in G.nodes()],
-        'connections': [len(list(G.adj[node])) for node in G.nodes()],
-    })
 
     # Layout
     layout = html.Div(
