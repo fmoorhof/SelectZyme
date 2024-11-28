@@ -21,7 +21,7 @@ dependencies:
     - hdbscan
     - h5py
     - taxoniq
-#    - dash-cytoscape==1.0.2
     - biopython==1.84
+    - dash-bootstrap-components==1.6.0
     # - -r file:requirements.txt
     
