@@ -49,7 +49,7 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     # Layout
     layout = html.Div(
         [
-            dcc.Graph(id="network-plot", figure=fig),
+            dcc.Graph(id="mst-plot", figure=fig),
             dash_table.DataTable(
                 id="data-table",
                 columns=[{"id": col, "name": col} for col in df.columns],
@@ -59,16 +59,16 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     )
 
     # Callbacks, populate table data
-    @dash.callback(
-        Output("data-table", "data"),
-        Input("network-plot", "clickData"),
-    )
-    def update_table(clickData):
-        if clickData is None:
-            return []
+    # @dash.callback(
+    #     Output("data-table", "data"),
+    #     Input("mst-plot", "clickData"),
+    # )
+    # def update_table(clickData):
+    #     if clickData is None:
+    #         return []
 
-        selected_node = int(clickData["points"][0]["text"])
-        row = df[df["node_id"] == selected_node]
-        return row.to_dict("records")
+    #     selected_node = int(clickData["points"][0]["text"])
+    #     row = df[df["node_id"] == selected_node]
+    #     return row.to_dict("records")
 
     return layout

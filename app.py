@@ -10,6 +10,7 @@ from src.main import parse_data, preprocessing, database_access, dimred_clust
 
 import pages.mst as mst
 import pages.single_linkage as sl
+import pages.dimred as dimred
 
 
 # Initialize the Dash app
@@ -32,6 +33,13 @@ df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
 
 dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df))
 dash.register_page('single-linkage', layout=sl.layout(Gsl, df))
+# dash.register_page('dim', name="Dimensionality reduction and clustering", layout=dimred.layout(df, X_red, 'TSNE', 'test'))
+
+# todo:? landscape is now not a separated tab but always below the tabs. also not too bad IMO
+# Get the layout and register_callbacks from dimred.py
+dimred_layout, dimred_register_callbacks = dimred.layout(df, X_red, 'TSNE', 'test')
+# Call the register_callbacks function to register the callbacks
+dimred_register_callbacks(app)
 
 # Layout with navigation links and page container
 app.layout = dbc.Container(
@@ -54,6 +62,7 @@ app.layout = dbc.Container(
                 ),
                 html.Hr(),
                 dash.page_container,  # Displays the content of the current page
+                dimred_layout
             ]
         ),
     ],
