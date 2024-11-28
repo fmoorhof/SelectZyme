@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import networkx as nx
 
 import pages.mst as mst
+import pages.single_linkage as sl
 
 
 # Initialize the Dash app
@@ -19,7 +20,8 @@ server = app.server
 
 # Define the graph G
 G = nx.random_geometric_graph(10, 0.5, seed=42)
-dash.register_page('mst', layout=mst.layout(G))
+dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G))
+dash.register_page('single-linkage', layout=sl.layout(G))
 
 # Layout with navigation links and page container
 app.layout = dbc.Container(

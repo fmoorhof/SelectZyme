@@ -1,15 +1,48 @@
+"""missing todo: parse df annotations to nodes of tree"""
 import dash
-from dash import html, dcc
+from dash import html, dcc, dash_table
+from dash.dependencies import Input, Output
+import networkx as nx
+import pandas as pd
 
-dash.register_page(__name__, path="/single_linkage")  # Register page with custom URL path
+from src.phylogenetic_tree import create_tree, g_to_newick
 
-def layout():
-    return html.Div(
+
+def layout(G: nx.Graph):
+    newick_str = g_to_newick(G)
+    fig = create_tree(newick_str)  # fig is created externally
+
+    # Create DataFrame
+    df = pd.DataFrame({
+        'node_id': list(G.nodes()),
+        'x': [G.nodes[node]['pos'][0] for node in G.nodes()],
+        'y': [G.nodes[node]['pos'][1] for node in G.nodes()],
+        'connections': [len(list(G.adj[node])) for node in G.nodes()],
+    })
+
+    # Layout
+    layout = html.Div(
         [
-            html.H1("Single Linkage Tree App"),
-            dcc.Graph(id="single-linkage-plot"),  # Add your plot here
-            dcc.Store(id="single-linkage-data"),  # Optional for storing data
+            dcc.Graph(id="linkage-plot", figure=fig),
+            dash_table.DataTable(
+                id="data-table",
+                columns=[{"id": col, "name": col} for col in df.columns],
+                data=[],  # Initially empty
+            ),
         ]
     )
 
-# Add callbacks here for Single Linkage functionality
+    # Callbacks, populate table data
+    @dash.callback(
+        Output("data-table", "data"),
+        Input("network-plot", "clickData"),
+    )
+    def update_table(clickData):
+        if clickData is None:
+            return []
+
+        selected_node = int(clickData["points"][0]["text"])
+        row = df[df["node_id"] == selected_node]
+        return row.to_dict("records")
+
+    return layout
