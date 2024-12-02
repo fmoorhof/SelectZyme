@@ -37,7 +37,7 @@ def g_to_newick(g, root=None):
     return "(" + ','.join(map(str, subgs)) + ")"
 
 
-def create_tree(nw_tree):
+def create_tree(nw_tree, df):
     tree = Phylo.read(io.StringIO(nw_tree), "newick")
     x_coords = get_x_coordinates(tree)
     y_coords = get_y_coordinates(tree)
@@ -70,6 +70,7 @@ def create_tree(nw_tree):
                 text=text,
                 marker=dict(color="rgb(100,100,100)", size=5),
                 hoverinfo="text",
+                # hover_data=df.columns.values.tolist(),
             )
         ],
         layout=go.Layout(

@@ -95,7 +95,7 @@ def database_access(df, project_name):
 
 
 def dimred_clust(df, X, dim_method):
-    labels, G, Gsl = visualizer.clustering_HDBSCAN(X, min_samples=1, min_cluster_size=50)  # min samples for batches: 50
+    labels, G, Gsl = visualizer.clustering_HDBSCAN(X, df, min_samples=1, min_cluster_size=50)  # min samples for batches: 50
     df['cluster'] = labels
     df = visualizer.custom_plotting(df)
 
@@ -131,7 +131,7 @@ def main(app):
     # # convert slt to another format usable for cytoscape and use dash-phylogeny
     # if nx.is_tree(Gsl):
     #     newick_str = g_to_newick(Gsl)  # if wrong root got selected, fewer datapoints are displayed
-    #     fig = create_tree(newick_str)
+    #     fig = create_tree(newick_str, df)
     # else:
     #     ValueError("Graph is not a tree. Phylogenetic tree creation is only possible for trees.")
     # app = run_dash_app(Gsl, df, app, fig)  # network and table setting 

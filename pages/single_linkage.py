@@ -10,7 +10,7 @@ from src.phylogenetic_tree import create_tree, g_to_newick
 
 def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     newick_str = g_to_newick(G)
-    fig = create_tree(newick_str)  # fig is created externally
+    fig = create_tree(newick_str, df)  # fig is created externally
 
     # Layout
     layout = html.Div(
@@ -27,7 +27,7 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     # Callbacks, populate table data
     # @dash.callback(
     #     Output("data-table", "data"),
-    #     Input("network-plot", "clickData"),
+    #     Input("linkage-plot", "clickData"),
     # )
     # def update_table(clickData):
     #     if clickData is None:

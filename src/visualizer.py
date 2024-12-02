@@ -17,7 +17,7 @@ import logging
 
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
+import networkx as nx
 import cudf
 from cuml.cluster import (
     HDBSCAN,
@@ -37,7 +37,7 @@ from ncbi_taxonomy_resolver import lineage_resolver
 
 
 
-def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def clustering_HDBSCAN(X, df, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -56,26 +56,13 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **
     G = hdbscan.minimum_spanning_tree_.to_networkx()
     Gsl = hdbscan.single_linkage_tree_.to_networkx()
 
-    # plotting (remove when interactive plots enabled)
-    # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',  # site package error on sample size <32: PCA(n_components=32) svd_solver error
-    #                                   edge_alpha=0.6,
-    #                                   node_size=80,
-    #                                   edge_linewidth=2)
-    # plt.savefig(f"datasets/mst.png", bbox_inches='tight')
-    # plt.close()
-
-    # hdbscan.single_linkage_tree_.plot(cmap='viridis', colorbar=True)
-    # plt.savefig(f"datasets/slt.png", bbox_inches='tight')
-    # plt.close()
-    # from scipy.cluster.hierarchy import dendrogram
-
-    # plt.figure(figsize=(10, 8))
-    # dendrogram(hdbscan.single_linkage_tree_.to_numpy())
-    # plt.title("Dendrogram of Single Linkage Tree")
-    # plt.xlabel("Sample Index")
-    # plt.ylabel("Distance")
-    # plt.savefig('datasets/dendrogram.png', dpi=300, bbox_inches='tight')
-    # plt.close()
+    # Annotate nodes with information from `df`
+    # Assuming node indices in the graph match the DataFrame index
+    # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
+    for node in G.nodes():
+        if node in df.index:
+            nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
+            nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
 
     logging.info("HDBSCAN done")
     return labels, G, Gsl

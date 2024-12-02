@@ -32,6 +32,12 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     # define graph layout and coordinates
     pos = nx.spring_layout(G)
     nx.set_node_attributes(G, pos, 'pos')
+
+    # # Map DataFrame information to nodes
+    # for index, row in df.iterrows():
+    #     if row['accession'] in G.nodes:
+    #         nx.set_node_attributes(G, {row['accession']: row.to_dict()})
+
     edge_trace, node_trace = modify_graph_data(G)
 
     # Create figure
