@@ -131,7 +131,7 @@ def main(app):
     # # convert slt to another format usable for cytoscape and use dash-phylogeny
     # if nx.is_tree(Gsl):
     #     newick_str = g_to_newick(Gsl)  # if wrong root got selected, fewer datapoints are displayed
-    #     fig = create_tree(newick_str, df)
+    #     fig = create_tree(newick_str)
     # else:
     #     ValueError("Graph is not a tree. Phylogenetic tree creation is only possible for trees.")
     # app = run_dash_app(Gsl, df, app, fig)  # network and table setting 
