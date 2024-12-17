@@ -5,10 +5,16 @@ Look here for UniProt API help: https://www.uniprot.org/help/api_queries
 """
 import io
 import logging
-import requests
+from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 import re
+import os
 import pandas as pd
+
+
+def sanitize_filename(filename: str) -> str:
+    """Remove any unsafe characters and limit to alphanumerics, underscores, or dashes"""
+    return re.sub(r'[^\w\-.]', '_', filename)
 
 
 class UniProtFetcher:
@@ -20,7 +26,7 @@ class UniProtFetcher:
 
     def _init_session(self):
         retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
-        session = requests.Session()
+        session = Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
         return session
 
@@ -96,12 +102,27 @@ class UniProtFetcher:
         return df
 
     def save_data(self, df: pd.DataFrame, out_filename: str):
-        df.to_csv(self.out_dir + out_filename + '_annotated.tsv', sep='\t', index=False)
-        self.tsv_to_fasta_writer(in_file=self.out_dir + out_filename + '_annotated.tsv', out_file=self.out_dir + out_filename + '.fasta')
-        self.write_annotated_fasta(df=df, out_file=self.out_dir + out_filename + '_annotated.fasta')
+        """
+        Save the given DataFrame to multiple file formats and apply specific filters.
+        Parameters:
+        df (pd.DataFrame): The DataFrame containing the data to be saved.
+        out_filename (str): The base name for the output files.
+        The method performs the following steps:
+        1. Sanitizes the output filename.
+        2. Saves the DataFrame to a TSV file with '_annotated.tsv' suffix.
+        3. Converts the TSV file to a FASTA file with '.fasta' suffix.
+        4. Writes an annotated FASTA file with '_annotated.fasta' suffix.
+        5. Filters the DataFrame to include only reviewed entries or entries with non-null 'xref_brenda'.
+        6. Saves the filtered DataFrame to a TSV file with '_BRENDA.tsv' suffix.
+        """
+        
+        out_filename = sanitize_filename(out_filename)
+        df.to_csv(os.path.join(self.out_dir, out_filename + "_annotated.tsv"), sep='\t', index=False)
+        self.tsv_to_fasta_writer(in_file=os.path.join(self.out_dir, out_filename + "_annotated.tsv"), out_file=os.path.join(self.out_dir, out_filename + '.fasta'))
+        self.write_annotated_fasta(df=df, out_file=os.path.join(self.out_dir, out_filename + '_annotated.fasta'))
 
         df = df[(df['reviewed'] == True) | (df['xref_brenda'].notnull())]  # | = OR
-        df.to_csv(self.out_dir + out_filename + '_BRENDA.tsv', sep='\t', index=False)
+        df.to_csv(os.path.join(self.out_dir + out_filename + '_BRENDA.tsv'), sep='\t', index=False)
 
 
 if __name__ == '__main__':
@@ -116,7 +137,7 @@ if __name__ == '__main__':
     # define data to retrieve lcp
     query_terms = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
     length = "200 TO 601"
-    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'  # custom_seqs_full
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "uniprot_lcp_no_signals"    
 
@@ -133,18 +154,13 @@ if __name__ == '__main__':
     custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv'
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "uniprot_PapE"
-    # define data to retrieve rhia
-    query_terms = ["ec:2.3.1.304", "xref%3Abrenda-2.3.1.304", "IPR006862", "rhia"]  # define your query terms for UniProt here
-    length = "100 TO 1001"
-    out_dir = 'datasets/output/'  # describe desired output location
-    out_filename = "uniprot_rhia"
 
-    # define data to retrieve lcp
-    query_terms = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
-    length = "200 TO 601"
+    # minimal test
+    query_terms = ["ec:3.2.1.64", "PF01771"]
+    length = "200 TO 1020"
+    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv'
     out_dir = 'datasets/output/'  # describe desired output location
-    out_filename = "uniprot_lcp_no_signals"    
-    custom_data_location = '/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv'  # custom_seqs_full
+    out_filename = "test_data"
 
     fetcher = UniProtFetcher(df_coi, out_dir)
 
@@ -154,4 +170,4 @@ if __name__ == '__main__':
         custom_data = fetcher.load_custom_csv(custom_data_location)
         df = pd.concat([custom_data, df], ignore_index=True)
     df = fetcher.clean_data(df)
-    # fetcher.save_data(df_lcp, out_filename_lcp)
+    fetcher.save_data(df, out_filename)
