@@ -30,7 +30,8 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     - The `modify_graph_data` function is assumed to be defined elsewhere and is responsible for creating the edge and node traces.
     """
     # define graph layout and coordinates
-    pos = nx.spring_layout(G)
+    # pos = nx.spring_layout(G)
+    pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
     nx.set_node_attributes(G, pos, 'pos')
 
     edge_trace, node_trace = modify_graph_data(G)
