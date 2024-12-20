@@ -15,7 +15,11 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     # Layout
     layout = html.Div(
         [
-            dcc.Graph(id="linkage-plot", figure=fig),
+            dcc.Graph(id="linkage-plot", 
+                      figure=fig,
+                      config={'scrollZoom': True},
+                      style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
+                      ),
             dash_table.DataTable(
                 id="data-table",
                 columns=[{"id": col, "name": col} for col in df.columns],

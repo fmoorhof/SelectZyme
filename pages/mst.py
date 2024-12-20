@@ -33,11 +33,6 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     pos = nx.spring_layout(G)
     nx.set_node_attributes(G, pos, 'pos')
 
-    # # Map DataFrame information to nodes
-    # for index, row in df.iterrows():
-    #     if row['accession'] in G.nodes:
-    #         nx.set_node_attributes(G, {row['accession']: row.to_dict()})
-
     edge_trace, node_trace = modify_graph_data(G)
 
     # Create figure
@@ -55,7 +50,11 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     # Layout
     layout = html.Div(
         [
-            dcc.Graph(id="mst-plot", figure=fig),
+            dcc.Graph(id="mst-plot", 
+                      figure=fig,
+                      config={'scrollZoom': True},
+                      style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
+                      ),
             dash_table.DataTable(
                 id="data-table",
                 columns=[{"id": col, "name": col} for col in df.columns],
