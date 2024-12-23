@@ -63,11 +63,9 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
 
     # todo: extract distances and weights for the mst and tree -> try to use plotting library directly for desired visualizations
     G = hdbscan.minimum_spanning_tree_.to_networkx()  # hdbscan.mst_dst, hdbscan.mst_weights
-    Gsl = hdbscan.single_linkage_tree_.to_networkx()
+    Gsl = hdbscan.single_linkage_tree_
     # todo: study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree: raw_tree = np.column_stack((self.mst_src_,self.mst_dst_, self.mst_weights_))
     
-    SingleLinkageTree(hdbscan.single_linkage_tree_._linkage, df).plot()  # plots instantly: todo: move this to layout
-
     # attempt with the plotly figure factory (not working, use SingleLinkageTree custom implementation)
     # import plotly.figure_factory as ff
     # fig = ff.create_dendrogram(hdbscan.single_linkage_tree_._linkage)  # hovertext=df
@@ -89,7 +87,7 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     for node in G.nodes():
         if node in df.index:
             nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
-            nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
+            # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
 
     logging.info("HDBSCAN done")
     return labels, G, Gsl

@@ -51,7 +51,7 @@ class SingleLinkageTree(object):
             color_array = np.log2(np.array(linewidths).flatten())
             fig.update_layout(coloraxis=dict(colorscale=cmap, colorbar=dict(title='log(Number of points)')))
 
-        fig.show()
+        return fig
 
 
 def _get_dendrogram_ordering(parent, linkage, root):
@@ -94,4 +94,5 @@ if __name__ == "__main__":
     clusterer = hdbscan.HDBSCAN(min_cluster_size=5, gen_min_span_tree=True)
     clusterer.fit(data)
 
-    SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot()
+    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot()
+    fig.show()

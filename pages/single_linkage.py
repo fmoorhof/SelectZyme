@@ -5,12 +5,15 @@ from dash.dependencies import Input, Output
 import networkx as nx
 import pandas as pd
 
-from src.phylogenetic_tree import create_tree, g_to_newick
+from src.hdbscan_plotting import SingleLinkageTree
+# from src.phylogenetic_tree import g_to_newick  #, create_tree
+# from src.phylogenetic_tree_circular import create_tree_circular as create_tree
 
 
-def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
-    newick_str = g_to_newick(G)
-    fig = create_tree(newick_str)  # fig is created externally
+def layout(G, df: pd.DataFrame) -> html.Div:
+    fig = SingleLinkageTree(G._linkage, df).plot()
+    # newick_str = g_to_newick(G)
+    # fig = create_tree(newick_str)  # fig is created externally
 
     # Layout
     layout = html.Div(
