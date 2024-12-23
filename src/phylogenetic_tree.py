@@ -10,31 +10,58 @@ from Bio import Phylo
 import plotly.graph_objs as go
 
 
-def g_to_newick(g, root=None):
+def g_to_newick(G, root=None):
     """
-    Convert a directed graph to Newick format.
+    Convert a directed graph to Newick format, including node attributes.
 
     Parameters:
-    g (networkx.DiGraph): A directed graph representing the tree.
+    G (networkx.DiGraph): A directed graph representing the tree.
     root (node, optional): The root node of the tree. If None, the root is determined automatically.
 
     Returns:
-    str: A string representing the tree in Newick format.
+    str: A string representing the tree in Newick format, including node attributes.
 
     Raises:
     AssertionError: If the graph does not have exactly one root node.
     """
     if root is None:
-        roots = list(filter(lambda p: p[1] == 0, g.in_degree()))
-        assert 1 == len(roots)
+        # Determine the root as a node with no incoming edges
+        roots = list(filter(lambda p: p[1] == 0, G.in_degree()))
+        assert len(roots) == 1, "Graph must have exactly one root node."
         root = roots[0][0]
+    
     subgs = []
-    for child in g[root]:
-        if len(g[child]) > 0:
-            subgs.append(g_to_newick(g, root=child))
-        else:
-            subgs.append(child)
-    return "(" + ','.join(map(str, subgs)) + ")"
+    for child in G.successors(root):  # Use successors for directed graphs
+        if G.out_degree(child) > 0:  # If the node has children
+            subgs.append(g_to_newick(G, root=child))
+        else:  # Leaf node
+            subgs.append(node_to_newick(G, child))
+    
+    root_label = node_to_newick(G, root)
+    return f"({','.join(subgs)}){root_label}"
+
+
+def node_to_newick(G, node):
+    """
+    Generate the Newick label for a node, including its attributes.
+
+    Parameters:
+    G (networkx.DiGraph): The graph containing the node.
+    node (hashable): The node for which to generate the label.
+
+    Returns:
+    str: A Newick-compatible string for the node.
+    """
+    # Start with the node's name or ID
+    node_label = str(node)
+
+    # If the node has attributes, append them in Newick-compatible format
+    attributes = G.nodes[node]
+    if attributes:  # Only include attributes if they exist
+        attr_str = ",".join(f"{key}={value}" for key, value in attributes.items())
+        node_label += f"[{attr_str}]"
+    
+    return node_label
 
 
 def create_tree(nw_tree):
@@ -59,7 +86,10 @@ def create_tree(nw_tree):
     for cl in my_tree_clades:
         X.append(x_coords[cl])
         Y.append(y_coords[cl])
-        text.append(cl.name)
+        if cl.name:  # revert this if G.attributes shall be read from G instead str(newick_tree)
+            text.append(cl.comment)
+        else: 
+            text.append(cl.name)  # non leaf nodes are not named
 
     fig = go.Figure(
         data=[

@@ -41,7 +41,7 @@ def modify_graph_data(G: nx.Graph):
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
         line=dict(width=0.5, color='#888'),
-        hoverinfo='none',
+        hoverinfo='none',  # todo: embedding distances can be shown here (take nodes as template how to do it: 1st: add information to nodes in visualizer HDBSCAN)
         mode='lines'
     )
 
@@ -52,7 +52,9 @@ def modify_graph_data(G: nx.Graph):
         x, y = G.nodes[node]['pos']
         node_x.append(x)
         node_y.append(y)
-        node_text.append(str(node))  # Add node identifier for hover
+        # G.nodes[node].pop(['data'])  # pop only 1280 dim embeddings
+        [G.nodes[node].pop(key) for key in ['data', 'pos']]
+        node_text.append(G.nodes[node])  # Add node attributes for hover (except removed 'data' and 'pos')
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
