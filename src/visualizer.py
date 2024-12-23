@@ -32,12 +32,14 @@ from cuml.manifold import (
     TSNE,
     UMAP
 )
+import matplotlib.pyplot as plt
 
 from ncbi_taxonomy_resolver import lineage_resolver
+from hdbscan_plotting import SingleLinkageTree
 
 
 
-def clustering_HDBSCAN(X, df, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -50,12 +52,37 @@ def clustering_HDBSCAN(X, df, min_samples: int = 30, min_cluster_size: int = 250
         logging.error("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
         raise ValueError("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
     
-    hdbscan = HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, gen_min_span_tree=True, **kwargs)
+    hdbscan = HDBSCAN(min_samples=min_samples, 
+                      min_cluster_size=min_cluster_size, 
+                      gen_min_span_tree=True, 
+                      gen_condensed_tree=True, 
+                      gen_single_linkage_tree_ = True,
+                      **kwargs)  # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
+
     labels = hdbscan.fit_predict(X)
 
-    G = hdbscan.minimum_spanning_tree_.to_networkx()
+    # todo: extract distances and weights for the mst and tree -> try to use plotting library directly for desired visualizations
+    G = hdbscan.minimum_spanning_tree_.to_networkx()  # hdbscan.mst_dst, hdbscan.mst_weights
     Gsl = hdbscan.single_linkage_tree_.to_networkx()
+    # todo: study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree: raw_tree = np.column_stack((self.mst_src_,self.mst_dst_, self.mst_weights_))
+    
+    SingleLinkageTree(hdbscan.single_linkage_tree_._linkage, df).plot()  # plots instantly: todo: move this to layout
 
+    # attempt with the plotly figure factory (not working, use SingleLinkageTree custom implementation)
+    # import plotly.figure_factory as ff
+    # fig = ff.create_dendrogram(hdbscan.single_linkage_tree_._linkage)  # hovertext=df
+    # fig.update_layout(width=800, height=500)
+    # plt.savefig(f"datasets/slc.png", bbox_inches='tight')
+
+    # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
+    # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
+    #                                   edge_alpha=0.6,
+    #                                   node_size=80,
+    #                                   edge_linewidth=2)
+    # plt.savefig(f"datasets/mst.png", bbox_inches='tight')
+    # plt.close()
+
+    # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
     # Annotate nodes with information from `df`
     # Assuming node indices in the graph match the DataFrame index
     # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
