@@ -6,14 +6,13 @@ import networkx as nx
 import pandas as pd
 
 from src.hdbscan_plotting import SingleLinkageTree
-# from src.phylogenetic_tree import g_to_newick  #, create_tree
-# from src.phylogenetic_tree_circular import create_tree_circular as create_tree
+from src.phylogenetic_tree import g_to_newick, create_tree, create_tree_circular
 
 
 def layout(G, df: pd.DataFrame) -> html.Div:
-    fig = SingleLinkageTree(G._linkage, df).plot()
-    # newick_str = g_to_newick(G)
-    # fig = create_tree(newick_str)  # fig is created externally
+    # fig = SingleLinkageTree(G._linkage, df).plot()
+    newick_str = g_to_newick(G)
+    fig = create_tree_circular(newick_str)  # create_tree(newick_str)
 
     # Layout
     layout = html.Div(

@@ -1,10 +1,8 @@
 """Implementations inspired and mostly taken from: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-phylogeny/utils.py
 networkx graph to newick format implementation is taken from: https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format
-todo: 
-- distances missing at tree (replace distance by branch length)
-- add annotations on node level from df
 """
 import io
+import math
 
 from Bio import Phylo
 import plotly.graph_objs as go
@@ -227,8 +225,135 @@ def get_clade_lines(
     return branch_line
 
 
+# circular implementation WIP: layout looks not nice
+def create_tree_circular(nw_tree):
+    tree = Phylo.read(io.StringIO(nw_tree), "newick")
+    polar_coords = assign_polar(tree)
+    line_shapes = []
+
+    draw_clade_circular(
+        tree.root,
+        line_shapes,
+        polar_coords=polar_coords,
+        line_color="rgb(25,25,25)",
+        line_width=1,
+    )
+
+    X = [radius * math.cos(theta) for radius, theta in polar_coords.values()]
+    Y = [radius * math.sin(theta) for radius, theta in polar_coords.values()]
+    text = [clade.name for clade in polar_coords.keys()]
+
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=X,
+                y=Y,
+                mode="markers+text",
+                text=text,
+                textposition="top center",
+                marker=dict(color="rgb(100,100,100)", size=5),
+                hoverinfo="text",
+            )
+        ],
+        layout=go.Layout(
+            title="Circular Phylogenetic Tree",
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            shapes=line_shapes,
+        ),
+    )
+
+    return fig
+
+
+def draw_clade_circular(
+    clade,
+    line_shapes,
+    polar_coords,
+    parent=None,
+    line_color="rgb(15,15,15)",
+    line_width=1,
+):
+    """Recursively draw the tree branches in circular layout."""
+    radius_curr, theta_curr = polar_coords[clade]
+
+    # Draw a line to the parent node if it exists
+    if parent is not None:
+        radius_parent, theta_parent = polar_coords[parent]
+        branch_line = get_clade_lines_circular(
+            theta_start=theta_parent,
+            theta_curr=theta_curr,
+            radius_start=radius_parent,
+            radius_curr=radius_curr,
+            line_color=line_color,
+            line_width=line_width,
+        )
+        line_shapes.append(branch_line)
+
+    # Recursively process child clades
+    for child in clade.clades:
+        draw_clade_circular(
+            child,
+            line_shapes,
+            polar_coords=polar_coords,
+            parent=clade,  # Pass the current clade as the parent for the child
+            line_color=line_color,
+            line_width=line_width,
+        )
+
+
+def get_clade_lines_circular(
+    theta_start, theta_curr, radius_start, radius_curr, line_color, line_width
+):
+    """Define a shape of type 'path' for a curved branch in circular layout."""
+    # Convert polar to Cartesian coordinates
+    x_start = radius_start * math.cos(theta_start)
+    y_start = radius_start * math.sin(theta_start)
+    x_end = radius_curr * math.cos(theta_curr)
+    y_end = radius_curr * math.sin(theta_curr)
+
+    # Create a path for the curved branch
+    path = f"M {x_start},{y_start} L {x_end},{y_end}"
+    return dict(
+        type="path",
+        path=path,
+        line=dict(color=line_color, width=line_width),
+        layer="below",
+    )
+
+
+def assign_polar(tree, radius_increment=1.0):
+    """Assign polar coordinates (radius, theta) to all nodes."""
+    polar_coords = {}
+    leaf_count = len(tree.get_terminals())
+    angle_increment = 2 * math.pi / leaf_count
+
+    def set_coords(clade, depth=0, angle_start=0, angle_end=2 * math.pi):
+        if clade.is_terminal():
+            theta = (angle_start + angle_end) / 2
+            radius = depth * radius_increment
+            polar_coords[clade] = (radius, theta)
+        else:
+            angle_span = (angle_end - angle_start) / len(clade.clades)
+            for i, child in enumerate(clade.clades):
+                child_angle_start = angle_start + i * angle_span
+                child_angle_end = child_angle_start + angle_span
+                set_coords(child, depth + 1, child_angle_start, child_angle_end)
+            # For internal nodes, use the midpoint of their children's coordinates
+            child_coords = [polar_coords[child] for child in clade.clades]
+            avg_radius = depth * radius_increment
+            avg_theta = sum(theta for _, theta in child_coords) / len(child_coords)
+            polar_coords[clade] = (avg_radius, avg_theta)
+
+    set_coords(tree.root)
+    return polar_coords
+
+
 
 if __name__=="__main__":
-    newick_tree = "((A:1,B:1):2,(C:1,D:1):2);"
+    newick_tree = "(((A:1,B:1):2,(C:1,D:1):2):3,((E:1,F:1):2,(G:1,H:1):2):3);"
     fig = create_tree(newick_tree)
     fig.write_image("datasets/dendrogram_with_lines.png")
+
+    fig = create_tree_circular(newick_tree)
+    fig.write_image("datasets/dendrogram_circular.png")
