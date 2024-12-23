@@ -4,8 +4,9 @@ import plotly.graph_objects as go
 
 
 class SingleLinkageTree(object):
-    def __init__(self, linkage):
+    def __init__(self, linkage, df):
         self._linkage = linkage
+        self.df = df
 
     def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True):
         dendrogram_data = dendrogram(self._linkage, p=p, truncate_mode=truncate_mode, no_plot=True)
@@ -20,7 +21,7 @@ class SingleLinkageTree(object):
 
         fig = go.Figure()
 
-        for x, y, lw in zip(X, Y, linewidths):
+        for i, (x, y, lw) in enumerate(zip(X, Y, linewidths)):
             left_x = x[:2]
             right_x = x[2:]
             left_y = y[:2]
@@ -28,12 +29,17 @@ class SingleLinkageTree(object):
             horizontal_x = x[1:3]
             horizontal_y = y[1:3]
 
+            hover_text = ', '.join([f"{col}: {self.df[col][i]}" for col in self.df.columns])
+
             fig.add_trace(go.Scatter(x=left_x, y=left_y, mode='lines',
-                                     line=dict(color='black', width=np.log2(1 + lw[0]))))
+                                     line=dict(color='black', width=np.log2(1 + lw[0])),
+                                     text=hover_text, hoverinfo='text'))
             fig.add_trace(go.Scatter(x=right_x, y=right_y, mode='lines',
-                                     line=dict(color='black', width=np.log2(1 + lw[1]))))
+                                     line=dict(color='black', width=np.log2(1 + lw[1])),
+                                     text=hover_text, hoverinfo='text'))
             fig.add_trace(go.Scatter(x=horizontal_x, y=horizontal_y, mode='lines',
-                                     line=dict(color='black', width=1.0)))
+                                     line=dict(color='black', width=1.0),
+                                     text=hover_text, hoverinfo='text'))
 
         fig.update_layout(
             xaxis=dict(showticklabels=False),
@@ -70,15 +76,22 @@ def _calculate_linewidths(ordering, linkage, root):
     return linewidths
 
 
-
 if __name__ == "__main__":
     import hdbscan
     import numpy as np
     from sklearn.datasets import make_blobs
+    import pandas as pd
 
-    data, _ = make_blobs(n_samples=50, n_features=2, centers=3, cluster_std=0.8)
+    df = pd.DataFrame({
+        'x': np.random.randn(50),
+        'y': np.random.randn(50),
+        'cluster': np.random.choice(['A', 'B', 'C'], 50),
+        'marker_symbol': np.random.choice(['circle', 'square', 'diamond', 'triangle-up'], 50),
+        'marker_size': np.random.randint(10, 50, 50)
+    })
+    data, _ = make_blobs(n_samples=50, n_features=2, centers=3, cluster_std=0.8, random_state=42)
 
     clusterer = hdbscan.HDBSCAN(min_cluster_size=5, gen_min_span_tree=True)
     clusterer.fit(data)
 
-    SingleLinkageTree(clusterer.single_linkage_tree_._linkage).plot()
+    SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot()
