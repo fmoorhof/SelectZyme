@@ -61,10 +61,8 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
 
     labels = hdbscan.fit_predict(X)
 
-    # todo: extract distances and weights for the mst and tree -> try to use plotting library directly for desired visualizations
-    G = hdbscan.minimum_spanning_tree_.to_networkx()  # hdbscan.mst_dst, hdbscan.mst_weights
+    G = hdbscan.minimum_spanning_tree_.to_networkx()  # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
     Gsl = hdbscan.single_linkage_tree_
-    # todo: study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree: raw_tree = np.column_stack((self.mst_src_,self.mst_dst_, self.mst_weights_))
 
     # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
     # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
@@ -75,8 +73,7 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     # plt.close()
 
     # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
-    # Annotate nodes with information from `df`
-    # Assuming node indices in the graph match the DataFrame index
+    # Annotate nodes with information from `df` (Assuming node indices in the graph match the DataFrame index)
     # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
     for node in G.nodes():
         if node in df.index:

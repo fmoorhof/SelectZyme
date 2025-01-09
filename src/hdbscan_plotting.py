@@ -1,6 +1,8 @@
+"""This implementation is inspired by the hdbscan plotting library to access the single linkage tree directly and not first converting it to a newick tree to later use it with a scatter plot (like done in phylogenetic_tree.py)"""
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
+import plotly.express as px
 
 
 class SingleLinkageTree(object):
@@ -9,6 +11,7 @@ class SingleLinkageTree(object):
         self.df = df
 
     def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True):
+        
         dendrogram_data = dendrogram(self._linkage, p=p, truncate_mode=truncate_mode, no_plot=True)
         X = dendrogram_data['icoord']
         Y = dendrogram_data['dcoord']
@@ -20,7 +23,10 @@ class SingleLinkageTree(object):
             linewidths = [(1.0, 1.0)] * len(Y)
 
         fig = go.Figure()
-
+        # plotly.express implementation, in case if needed for selection events, works seemlessly
+        # cols = self.df.columns.values.tolist()
+        # fig = px.scatter(self.df, hover_data=cols)
+        
         for i, (x, y, lw) in enumerate(zip(X, Y, linewidths)):
             left_x = x[:2]
             right_x = x[2:]
@@ -29,7 +35,7 @@ class SingleLinkageTree(object):
             horizontal_x = x[1:3]
             horizontal_y = y[1:3]
 
-            hover_text = ', '.join([f"{col}: {self.df[col][i]}" for col in self.df.columns])
+            hover_text = '<br>'.join([f"{col}: {self.df[col][i]}" for col in self.df.columns])
 
             fig.add_trace(go.Scatter(x=left_x, y=left_y, mode='lines',
                                      line=dict(color='black', width=np.log2(1 + lw[0])),
@@ -48,13 +54,22 @@ class SingleLinkageTree(object):
         )
 
         if colorbar:
-            color_array = np.log2(np.array(linewidths).flatten())
             fig.update_layout(coloraxis=dict(colorscale=cmap, colorbar=dict(title='log(Number of points)')))
 
         return fig
 
 
 def _get_dendrogram_ordering(parent, linkage, root):
+    """
+    Recursively computes the dendrogram ordering for hierarchical clustering.
+    Args:
+        parent (int): The current parent node index.
+        linkage (ndarray): The linkage matrix containing hierarchical clustering information.
+        root (int): The root node index.
+    Returns:
+        list: A list of node indices representing the dendrogram ordering.
+    """
+
     if parent < root:
         return []
     return _get_dendrogram_ordering(int(linkage[parent - root][0]), linkage, root) + \
@@ -62,6 +77,20 @@ def _get_dendrogram_ordering(parent, linkage, root):
 
 
 def _calculate_linewidths(ordering, linkage, root):
+    """
+    Calculate the linewidths for each node in the hierarchical clustering.
+    This function computes the linewidths for the left and right branches of each node
+    in the hierarchical clustering dendrogram based on the linkage matrix.
+    Args:
+        ordering (list): A list of node indices in the order they should be processed.
+        linkage (ndarray): The linkage matrix containing the hierarchical clustering.
+                           Each row corresponds to a merge, with the format [idx1, idx2, dist, sample_count].
+        root (int): The root node index from which to start the calculation.
+    Returns:
+        list: A list of tuples, where each tuple contains the linewidths for the left and right branches
+              of the corresponding node in the ordering.
+    """
+
     linewidths = []
     for x in ordering:
         if linkage[x - root][0] >= root:
