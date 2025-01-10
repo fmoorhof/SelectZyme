@@ -1,4 +1,8 @@
-"""This implementation is inspired by the hdbscan plotting library to access the single linkage tree directly and not first converting it to a newick tree to later use it with a scatter plot (like done in phylogenetic_tree.py)"""
+"""This implementation is inspired by the hdbscan plotting library to access the single linkage tree directly and not first converting it to a newick tree to later use it with a scatter plot (like done in phylogenetic_tree.py)
+https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L536
+based on this implementation, the df has been added for plot annotations.
+Additionally, plotting unrelated functionalities (such as other export formats) were removed.
+"""
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
@@ -11,7 +15,45 @@ class SingleLinkageTree(object):
         self.df = df
 
     def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True):
-        
+        """Plot a dendrogram of the single linkage tree.
+
+        Parameters
+        ----------
+        truncate_mode : str, optional
+                        The dendrogram can be hard to read when the original
+                        observation matrix from which the linkage is derived
+                        is large. Truncation is used to condense the dendrogram.
+                        There are several modes:
+
+        ``None/'none'``
+                No truncation is performed (Default).
+
+        ``'lastp'``
+                The last p non-singleton formed in the linkage are the only
+                non-leaf nodes in the linkage; they correspond to rows
+                Z[n-p-2:end] in Z. All other non-singleton clusters are
+                contracted into leaf nodes.
+
+        ``'level'/'mtica'``
+                No more than p levels of the dendrogram tree are displayed.
+                This corresponds to Mathematica(TM) behavior.
+
+        p : int, optional
+            The ``p`` parameter for ``truncate_mode``.
+
+        vary_line_width : boolean, optional
+            Draw downward branches of the dendrogram with line thickness that
+            varies depending on the size of the cluster.
+
+        cmap : string or matplotlib colormap, optional
+               The matplotlib colormap to use to color the cluster bars.
+               A value of 'none' will result in black bars.
+               (default 'viridis')
+
+        colorbar : boolean, optional
+                   Whether to draw a matplotlib colorbar displaying the range
+                   of cluster sizes as per the colormap. (default True)
+        """
         dendrogram_data = dendrogram(self._linkage, p=p, truncate_mode=truncate_mode, no_plot=True)
         X = dendrogram_data['icoord']
         Y = dendrogram_data['dcoord']
@@ -39,7 +81,7 @@ class SingleLinkageTree(object):
 
             fig.add_trace(go.Scatter(x=left_x, y=left_y, mode='lines',
                                      line=dict(color='black', width=np.log2(1 + lw[0])),
-                                     text=hover_text, hoverinfo='text'))
+                                     text=hover_text, hoverinfo='text'))  # hoverlabel_align='left'  # only working if multiline is too long=useless
             fig.add_trace(go.Scatter(x=right_x, y=right_y, mode='lines',
                                      line=dict(color='black', width=np.log2(1 + lw[1])),
                                      text=hover_text, hoverinfo='text'))

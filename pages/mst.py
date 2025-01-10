@@ -1,4 +1,3 @@
-"""missing todo: parse df annotations to nodes of tree"""
 import dash
 from dash import html, dcc, dash_table
 from dash.dependencies import Input, Output
@@ -40,7 +39,6 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     fig = {
         "data": [edge_trace, node_trace],
         "layout": dict(
-            title="Minimal Spanning Tree",
             hovermode="closest",
             margin=dict(b=20, l=5, r=5, t=40),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),

@@ -1,4 +1,6 @@
-"""Implementations inspired and mostly taken from: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-phylogeny/utils.py
+"""Deprecation warning: This file can be deleted if i stick to the hdbscan_plotting implementation!
+
+Implementations inspired and mostly taken from: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-phylogeny/utils.py
 networkx graph to newick format implementation is taken from: https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format
 """
 import io
@@ -225,7 +227,7 @@ def get_clade_lines(
     return branch_line
 
 
-# circular implementation WIP: layout looks not nice
+# circular implementation WIP: layout looks not nice (not really circular, looks unprofessional)
 def create_tree_circular(nw_tree):
     tree = Phylo.read(io.StringIO(nw_tree), "newick")
     polar_coords = assign_polar(tree)
