@@ -1,12 +1,21 @@
 """This implementation is inspired by the hdbscan plotting library to access the single linkage tree directly and not first converting it to a newick tree to later use it with a scatter plot (like done in phylogenetic_tree.py)
 https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L536
-based on this implementation, the df has been added for plot annotations.
+based on this implementation, the plotting function was modified to use plotly (instead of matplotlib). Also, df has been added for plot annotations.
 Additionally, plotting unrelated functionalities (such as other export formats) were removed.
+
+similarly, adaptations were integrated for the MST implementation:
+https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L760
 """
+from warnings import warn
+
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
 import plotly.express as px
+
+# todo: replace later by my projection!
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 
 class SingleLinkageTree(object):
@@ -147,6 +156,94 @@ def _calculate_linewidths(ordering, linkage, root):
     return linewidths
 
 
+class MinimumSpanningTree:
+    def __init__(self, mst, data, df):
+        self._mst = mst
+        self._data = data
+        self.df = df
+
+    def plot(self, node_size=4, node_color="black", node_alpha=0.5,
+             edge_alpha=0.3, edge_linewidth=1, vary_line_width=True, colorbar=True):
+        """
+        Plot the minimum spanning tree using Plotly Express.
+
+        :param node_size: Size of the nodes in the scatter plot.
+        :param node_color: Color of the nodes.
+        :param node_alpha: Opacity of the nodes.
+        :param edge_alpha: Opacity of the edges.
+        :param edge_linewidth: Base linewidth of edges.
+        :param vary_line_width: If True, vary edge widths by weights.
+        :param colorbar: If True, add a colorbar for edge weights.
+        :return: Plotly figure object.
+        """
+        if self._data.shape[0] > 32767:
+            warn("Too many data points for safe rendering of a minimum spanning tree!")
+            return None
+
+        # todo: replace by own created DimRed
+        # Compute 2D projection if needed
+        if self._data.shape[1] > 2:
+            if self._data.shape[1] > 32:
+                data_for_projection = PCA(n_components=32).fit_transform(self._data)
+            else:
+                data_for_projection = self._data.copy()
+            projection = TSNE().fit_transform(data_for_projection)
+        else:
+            projection = self._data.copy()
+
+        # Vary line width if enabled
+        if vary_line_width:
+            line_width = edge_linewidth * (np.log(self._mst.T[2].max() / self._mst.T[2]) + 1.0)
+        else:
+            line_width = edge_linewidth
+
+        # Edge coordinates and weights
+        line_coords = projection[self._mst[:, :2].astype(int)]
+        edge_x, edge_y, edge_weights = [], [], []
+        for (x1, y1), (x2, y2), weight, lw in zip(line_coords[:, 0], line_coords[:, 1], self._mst[:, 2], line_width):
+            edge_x.extend([x1, x2, None])
+            edge_y.extend([y1, y2, None])
+            edge_weights.append(weight)
+
+        # Create the figure
+        fig = go.Figure()
+
+        # Add edges
+        fig.add_trace(go.Scatter(
+            x=edge_x,
+            y=edge_y,
+            mode="lines",
+            line=dict(color="rgba(0,0,0,{})".format(edge_alpha), width=line_width.mean()),
+            hoverinfo="none"
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=projection[:, 0],
+            y=projection[:, 1],
+            mode="markers",
+            marker=dict(
+                size=node_size,
+                color=node_color,
+                opacity=node_alpha
+            ),
+            hovertext=[
+                "<br>".join(f"{col}: {self.df[col][i]}" for col in self.df.columns)
+                for i in range(len(self.df))
+            ],
+            hoverinfo="text"
+        ))
+
+        # Layout adjustments
+        fig.update_layout(
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            showlegend=False
+        )
+
+        return fig
+
+
+
 if __name__ == "__main__":
     import hdbscan
     import numpy as np
@@ -165,5 +262,7 @@ if __name__ == "__main__":
     clusterer = hdbscan.HDBSCAN(min_cluster_size=5, gen_min_span_tree=True)
     clusterer.fit(data)
 
+    # debug and develop here
     fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot()
+    fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, df).plot()
     fig.show()

@@ -3,13 +3,16 @@ from dash import html, dcc, dash_table
 from dash.dependencies import Input, Output
 import networkx as nx
 import pandas as pd
+
 from src.dash_app_network import modify_graph_data
+from hdbscan_plotting import MinimumSpanningTree
+
 
 # Register page
 # dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
 
 
-def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
+def layout(G, df: pd.DataFrame) -> html.Div:
     """
     Generates a Dash layout for visualizing a minimal spanning tree of a given graph.
     Parameters:
@@ -30,21 +33,25 @@ def layout(G: nx.Graph, df: pd.DataFrame) -> html.Div:
     """
     # define graph layout and coordinates
     # pos = nx.spring_layout(G)
-    pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
-    nx.set_node_attributes(G, pos, 'pos')
+    # pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
+    # nx.set_node_attributes(G, pos, 'pos')
 
-    edge_trace, node_trace = modify_graph_data(G)
+    # edge_trace, node_trace = modify_graph_data(G)
 
-    # Create figure
-    fig = {
-        "data": [edge_trace, node_trace],
-        "layout": dict(
-            hovermode="closest",
-            margin=dict(b=20, l=5, r=5, t=40),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        ),
-    }
+    # # Create figure
+    # fig = {
+    #     "data": [edge_trace, node_trace],
+    #     "layout": dict(
+    #         hovermode="closest",
+    #         margin=dict(b=20, l=5, r=5, t=40),
+    #         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #     ),
+    # }
+
+    # hdbscan_plotting implementation
+    mst = MinimumSpanningTree(G._mst, G._data, df)
+    fig = mst.plot()
 
     # Layout
     layout = html.Div(
