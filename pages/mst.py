@@ -12,7 +12,7 @@ from hdbscan_plotting import MinimumSpanningTree
 # dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
 
 
-def layout(G, df: pd.DataFrame) -> html.Div:
+def layout(G, df, X_red) -> html.Div:
     """
     Generates a Dash layout for visualizing a minimal spanning tree of a given graph.
     Parameters:
@@ -50,7 +50,7 @@ def layout(G, df: pd.DataFrame) -> html.Div:
     # }
 
     # hdbscan_plotting implementation
-    mst = MinimumSpanningTree(G._mst, G._data, df)
+    mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
     fig = mst.plot()
 
     # Layout

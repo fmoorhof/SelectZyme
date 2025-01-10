@@ -13,10 +13,6 @@ from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
 import plotly.express as px
 
-# todo: replace later by my projection!
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-
 
 class SingleLinkageTree(object):
     def __init__(self, linkage, df):
@@ -157,9 +153,10 @@ def _calculate_linewidths(ordering, linkage, root):
 
 
 class MinimumSpanningTree:
-    def __init__(self, mst, data, df):
+    def __init__(self, mst, data, X_red, df):
         self._mst = mst
         self._data = data
+        self.X_red = X_red
         self.df = df
 
     def plot(self, node_size=4, node_color="black", node_alpha=0.5,
@@ -180,17 +177,6 @@ class MinimumSpanningTree:
             warn("Too many data points for safe rendering of a minimum spanning tree!")
             return None
 
-        # todo: replace by own created DimRed
-        # Compute 2D projection if needed
-        if self._data.shape[1] > 2:
-            if self._data.shape[1] > 32:
-                data_for_projection = PCA(n_components=32).fit_transform(self._data)
-            else:
-                data_for_projection = self._data.copy()
-            projection = TSNE().fit_transform(data_for_projection)
-        else:
-            projection = self._data.copy()
-
         # Vary line width if enabled
         if vary_line_width:
             line_width = edge_linewidth * (np.log(self._mst.T[2].max() / self._mst.T[2]) + 1.0)
@@ -198,14 +184,13 @@ class MinimumSpanningTree:
             line_width = edge_linewidth
 
         # Edge coordinates and weights
-        line_coords = projection[self._mst[:, :2].astype(int)]
+        line_coords = self.X_red[self._mst[:, :2].astype(int)]
         edge_x, edge_y, edge_weights = [], [], []
         for (x1, y1), (x2, y2), weight, lw in zip(line_coords[:, 0], line_coords[:, 1], self._mst[:, 2], line_width):
             edge_x.extend([x1, x2, None])
             edge_y.extend([y1, y2, None])
             edge_weights.append(weight)
 
-        # Create the figure
         fig = go.Figure()
 
         # Add edges
@@ -218,8 +203,8 @@ class MinimumSpanningTree:
         ))
 
         fig.add_trace(go.Scatter(
-            x=projection[:, 0],
-            y=projection[:, 1],
+            x=self.X_red[:, 0],
+            y=self.X_red[:, 1],
             mode="markers",
             marker=dict(
                 size=node_size,
@@ -233,7 +218,6 @@ class MinimumSpanningTree:
             hoverinfo="text"
         ))
 
-        # Layout adjustments
         fig.update_layout(
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
