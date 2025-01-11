@@ -40,8 +40,9 @@ class SingleLinkageTree(object):
                 contracted into leaf nodes.
 
         ``'level'/'mtica'``
-                No more than p levels of the dendrogram tree are displayed.
-                This corresponds to Mathematica(TM) behavior.
+                No more than ``p`` levels of the dendrogram tree are displayed.
+                A "level" includes all nodes with ``p`` merges from the final merge (root).
+                This corresponds to Mathematica(TM) behavior. Show p levels from bottom=narrow search.
 
         p : int, optional
             The ``p`` parameter for ``truncate_mode``.
@@ -234,6 +235,7 @@ if __name__ == "__main__":
     from sklearn.datasets import make_blobs
     import pandas as pd
 
+    np.random.seed(42)
     df = pd.DataFrame({
         'x': np.random.randn(50),
         'y': np.random.randn(50),
@@ -247,6 +249,6 @@ if __name__ == "__main__":
     clusterer.fit(data)
 
     # debug and develop here
-    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot()
-    fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, df).plot()
+    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(truncate_mode='lastp', p=10)
+    # fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, df).plot()
     fig.show()

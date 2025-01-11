@@ -5,7 +5,7 @@ import networkx as nx
 import pandas as pd
 
 from src.dash_app_network import modify_graph_data
-from hdbscan_plotting import MinimumSpanningTree
+from src.hdbscan_plotting import MinimumSpanningTree
 
 
 # Register page

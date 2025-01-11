@@ -12,7 +12,8 @@ from src.phylogenetic_tree import g_to_newick, create_tree, create_tree_circular
 
 
 def layout(G, df: pd.DataFrame) -> html.Div:
-    fig = SingleLinkageTree(G._linkage, df).plot()  # latest implementation sing the hdbscan_plotting
+    sl = SingleLinkageTree(G._linkage, df)
+    fig = sl.plot(truncate_mode='lastp', p=10)  # latest implementation using the hdbscan_plotting
     
     newick_str = g_to_newick(G.to_networkx())
     # fig = create_tree_circular(newick_str)  # create_tree(newick_str)
