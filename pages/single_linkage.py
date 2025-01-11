@@ -11,9 +11,9 @@ from src.phylogenetic_tree import g_to_newick, create_tree, create_tree_circular
 # from src.phylogenetic_tree_circular import circos_dendrogram
 
 
-def layout(G, df: pd.DataFrame) -> html.Div:
+def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
     sl = SingleLinkageTree(G._linkage, df)
-    fig = sl.plot(truncate_mode='lastp', p=10)  # latest implementation using the hdbscan_plotting
+    fig = sl.plot(polar=polar)  # latest implementation using the hdbscan_plotting
     
     newick_str = g_to_newick(G.to_networkx())
     # fig = create_tree_circular(newick_str)  # create_tree(newick_str)

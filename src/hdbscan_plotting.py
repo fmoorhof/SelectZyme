@@ -2,6 +2,8 @@
 https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L536
 based on this implementation, the plotting function was modified to use plotly (instead of matplotlib). Also, df has been added for plot annotations.
 Additionally, plotting unrelated functionalities (such as other export formats) were removed.
+polar coordinates were inspired by this stackoverflow post:
+https://stackoverflow.com/questions/51936574/how-to-plot-scipy-hierarchy-dendrogram-using-polar-coordinates
 
 similarly, adaptations were integrated for the MST implementation:
 https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L760
@@ -19,138 +21,91 @@ class SingleLinkageTree(object):
         self._linkage = linkage
         self.df = df
 
-    def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True):
+    def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True, polar=False):
         """Plot a dendrogram of the single linkage tree.
 
         Parameters
         ----------
         truncate_mode : str, optional
-                        The dendrogram can be hard to read when the original
-                        observation matrix from which the linkage is derived
-                        is large. Truncation is used to condense the dendrogram.
-                        There are several modes:
-
-        ``None/'none'``
-                No truncation is performed (Default).
-
-        ``'lastp'``
-                The last p non-singleton formed in the linkage are the only
-                non-leaf nodes in the linkage; they correspond to rows
-                Z[n-p-2:end] in Z. All other non-singleton clusters are
-                contracted into leaf nodes.
-
-        ``'level'/'mtica'``
-                No more than ``p`` levels of the dendrogram tree are displayed.
-                A "level" includes all nodes with ``p`` merges from the final merge (root).
-                This corresponds to Mathematica(TM) behavior. Show p levels from bottom=narrow search.
+            Truncation mode ('none', 'lastp', or 'level') for the dendrogram.
 
         p : int, optional
-            The ``p`` parameter for ``truncate_mode``.
+            The `p` parameter for `truncate_mode`.
 
         vary_line_width : boolean, optional
-            Draw downward branches of the dendrogram with line thickness that
-            varies depending on the size of the cluster.
+            Whether to vary line width based on cluster size.
 
-        cmap : string or matplotlib colormap, optional
-               The matplotlib colormap to use to color the cluster bars.
-               A value of 'none' will result in black bars.
-               (default 'viridis')
+        cmap : str, optional
+            Color scale to use for the clusters.
 
         colorbar : boolean, optional
-                   Whether to draw a matplotlib colorbar displaying the range
-                   of cluster sizes as per the colormap. (default True)
+            Whether to include a colorbar in the plot.
+
+        polar : boolean, optional
+            Whether to plot a circular (polar) dendrogram.
         """
         dendrogram_data = dendrogram(self._linkage, p=p, truncate_mode=truncate_mode, no_plot=True)
-        X = dendrogram_data['icoord']
-        Y = dendrogram_data['dcoord']
+        X = np.array(dendrogram_data['icoord'])
+        Y = np.array(dendrogram_data['dcoord'])
+        leaf_indices = dendrogram_data['leaves']
 
-        if vary_line_width:
-            dendrogram_ordering = _get_dendrogram_ordering(2 * len(self._linkage), self._linkage, len(self._linkage) + 1)
-            linewidths = _calculate_linewidths(dendrogram_ordering, self._linkage, len(self._linkage) + 1)
-        else:
-            linewidths = [(1.0, 1.0)] * len(Y)
+        if polar:
+            # Transform for polar coordinates
+            Y = -np.log(Y + 1)
+            X_min, X_max = X.min(), X.max()
+            X = ((X - X_min) / (X_max - X_min) * 0.8 + 0.1) * 2 * np.pi
+            X = np.apply_along_axis(self._smooth_segment, 1, X)
+            Y = np.apply_along_axis(self._smooth_segment, 1, Y)
 
         fig = go.Figure()
-        # plotly.express implementation, in case if needed for selection events, works seemlessly
+        # plotly.express implementation, in case if needed for selection events
         # cols = self.df.columns.values.tolist()
         # fig = px.scatter(self.df, hover_data=cols)
-        
-        for i, (x, y, lw) in enumerate(zip(X, Y, linewidths)):
-            left_x = x[:2]
-            right_x = x[2:]
-            left_y = y[:2]
-            right_y = y[2:]
-            horizontal_x = x[1:3]
-            horizontal_y = y[1:3]
 
-            hover_text = '<br>'.join([f"{col}: {self.df[col][i]}" for col in self.df.columns])
+        hover_texts = [
+            '<br>'.join([f"{col}: {self.df[col][idx]}" for col in self.df.columns])
+            for idx in leaf_indices
+        ]  # todo: assert performance!
 
-            fig.add_trace(go.Scatter(x=left_x, y=left_y, mode='lines',
-                                     line=dict(color='black', width=np.log2(1 + lw[0])),
-                                     text=hover_text, hoverinfo='text'))  # hoverlabel_align='left'  # only working if multiline is too long=useless
-            fig.add_trace(go.Scatter(x=right_x, y=right_y, mode='lines',
-                                     line=dict(color='black', width=np.log2(1 + lw[1])),
-                                     text=hover_text, hoverinfo='text'))
-            fig.add_trace(go.Scatter(x=horizontal_x, y=horizontal_y, mode='lines',
-                                     line=dict(color='black', width=1.0),
-                                     text=hover_text, hoverinfo='text'))
+        for i, (x, y) in enumerate(zip(X, Y)):
+            if polar:
+                fig.add_trace(go.Scatterpolar(
+                    r=y,
+                    theta=np.degrees(x),
+                    mode='lines',
+                    line=dict(color='black', width=1.0),
+                    text=hover_texts[i] if i < len(hover_texts) else None,
+                    hoverinfo='text'
+                ))
+            else:
+                fig.add_trace(go.Scatter(
+                    x=x,
+                    y=y,
+                    mode='lines',
+                    line=dict(color='black', width=1.0),
+                    text=hover_texts[i] if i < len(hover_texts) else None,
+                    hoverinfo='text'
+                ))
 
         fig.update_layout(
-            xaxis=dict(showticklabels=False),
-            yaxis=dict(title='distance'),
+            polar=dict(
+                radialaxis=dict(visible=polar),
+                angularaxis=dict(visible=polar)
+            ) if polar else {},
+            xaxis=dict(title='Clusters', showticklabels=not polar),
+            yaxis=dict(title='Distance' if not polar else 'Log(Distance)', visible=not polar),
             showlegend=False
         )
 
         if colorbar:
-            fig.update_layout(coloraxis=dict(colorscale=cmap, colorbar=dict(title='log(Number of points)')))
+            fig.update_layout(coloraxis=dict(colorscale=cmap))
 
         return fig
 
-
-def _get_dendrogram_ordering(parent, linkage, root):
-    """
-    Recursively computes the dendrogram ordering for hierarchical clustering.
-    Args:
-        parent (int): The current parent node index.
-        linkage (ndarray): The linkage matrix containing hierarchical clustering information.
-        root (int): The root node index.
-    Returns:
-        list: A list of node indices representing the dendrogram ordering.
-    """
-
-    if parent < root:
-        return []
-    return _get_dendrogram_ordering(int(linkage[parent - root][0]), linkage, root) + \
-           _get_dendrogram_ordering(int(linkage[parent - root][1]), linkage, root) + [parent]
-
-
-def _calculate_linewidths(ordering, linkage, root):
-    """
-    Calculate the linewidths for each node in the hierarchical clustering.
-    This function computes the linewidths for the left and right branches of each node
-    in the hierarchical clustering dendrogram based on the linkage matrix.
-    Args:
-        ordering (list): A list of node indices in the order they should be processed.
-        linkage (ndarray): The linkage matrix containing the hierarchical clustering.
-                           Each row corresponds to a merge, with the format [idx1, idx2, dist, sample_count].
-        root (int): The root node index from which to start the calculation.
-    Returns:
-        list: A list of tuples, where each tuple contains the linewidths for the left and right branches
-              of the corresponding node in the ordering.
-    """
-
-    linewidths = []
-    for x in ordering:
-        if linkage[x - root][0] >= root:
-            left_width = linkage[int(linkage[x - root][0]) - root][3]
-        else:
-            left_width = 1
-        if linkage[x - root][1] >= root:
-            right_width = linkage[int(linkage[x - root][1]) - root][3]
-        else:
-            right_width = 1
-        linewidths.append((left_width, right_width))
-    return linewidths
+    @staticmethod
+    def _smooth_segment(segment, Nsmooth=100):
+        """Smooth a line segment for polar plotting."""
+        return np.concatenate([[segment[0]], np.linspace(segment[1], segment[2], Nsmooth), [segment[3]]])
 
 
 class MinimumSpanningTree:
@@ -215,7 +170,7 @@ class MinimumSpanningTree:
             hovertext=[
                 "<br>".join(f"{col}: {self.df[col][i]}" for col in self.df.columns)
                 for i in range(len(self.df))
-            ],
+            ],  # todo: assert performance!
             hoverinfo="text"
         ))
 
@@ -249,6 +204,7 @@ if __name__ == "__main__":
     clusterer.fit(data)
 
     # debug and develop here
-    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(truncate_mode='lastp', p=10)
+    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(polar=True)
     # fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, df).plot()
+
     fig.show()
