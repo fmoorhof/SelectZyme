@@ -13,7 +13,6 @@ from warnings import warn
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
-import plotly.express as px
 
 
 class SingleLinkageTree(object):
@@ -58,14 +57,10 @@ class SingleLinkageTree(object):
             Y = np.apply_along_axis(self._smooth_segment, 1, Y)
 
         fig = go.Figure()
-        # plotly.express implementation, in case if needed for selection events
-        # cols = self.df.columns.values.tolist()
-        # fig = px.scatter(self.df, hover_data=cols)
 
-        hover_texts = [
-            '<br>'.join([f"{col}: {self.df[col][idx]}" for col in self.df.columns])
-            for idx in leaf_indices
-        ]  # todo: assert performance!
+        hover_texts = self.df.iloc[leaf_indices].apply(
+            lambda row: '<br>'.join([f"{col}: {row[col]}" for col in self.df.columns]), axis=1
+        ).tolist()
 
         for i, (x, y) in enumerate(zip(X, Y)):
             if polar:
@@ -94,7 +89,8 @@ class SingleLinkageTree(object):
             ) if polar else {},
             xaxis=dict(title='Clusters', showticklabels=not polar),
             yaxis=dict(title='Distance' if not polar else 'Log(Distance)', visible=not polar),
-            showlegend=False
+            showlegend=False,
+            dragmode='zoom'
         )
 
         if colorbar:
@@ -158,6 +154,11 @@ class MinimumSpanningTree:
             hoverinfo="none"
         ))
 
+        hover_text=[
+                "<br>".join(f"{col}: {self.df[col][i]}" for col in self.df.columns)
+                for i in range(len(self.df))
+            ],
+
         fig.add_trace(go.Scatter(
             x=self.X_red[:, 0],
             y=self.X_red[:, 1],
@@ -167,10 +168,7 @@ class MinimumSpanningTree:
                 color=node_color,
                 opacity=node_alpha
             ),
-            hovertext=[
-                "<br>".join(f"{col}: {self.df[col][i]}" for col in self.df.columns)
-                for i in range(len(self.df))
-            ],  # todo: assert performance!
+            hovertext=hover_text,
             hoverinfo="text"
         ))
 
@@ -191,20 +189,22 @@ if __name__ == "__main__":
     import pandas as pd
 
     np.random.seed(42)
+    sample_size = 500000
     df = pd.DataFrame({
-        'x': np.random.randn(50),
-        'y': np.random.randn(50),
-        'cluster': np.random.choice(['A', 'B', 'C'], 50),
-        'marker_symbol': np.random.choice(['circle', 'square', 'diamond', 'triangle-up'], 50),
-        'marker_size': np.random.randint(10, 50, 50)
+        'x': np.random.randn(sample_size),
+        'y': np.random.randn(sample_size),
+        'cluster': np.random.choice(['A', 'B', 'C'], sample_size),
+        'marker_symbol': np.random.choice(['circle', 'square', 'diamond', 'triangle-up'], sample_size),
+        'marker_size': np.random.randint(10, sample_size, sample_size)
     })
-    data, _ = make_blobs(n_samples=50, n_features=2, centers=3, cluster_std=0.8, random_state=42)
+    data, _ = make_blobs(n_samples=sample_size, n_features=2, centers=3, cluster_std=0.8, random_state=42)
+    X_red = np.random.randn(sample_size, 2)  # 2D mock PCA data
 
     clusterer = hdbscan.HDBSCAN(min_cluster_size=5, gen_min_span_tree=True)
     clusterer.fit(data)
 
     # debug and develop here
-    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(polar=True)
-    # fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, df).plot()
+    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(polar=False)
+    # fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, X_red, df).plot()
 
     fig.show()
