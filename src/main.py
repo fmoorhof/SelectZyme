@@ -81,9 +81,13 @@ def parse_data(args):
     return df
 
 
-def database_access(df, project_name):
-    # Create a collection in Qdrant DB with embedded sequences
-    qdrant = QdrantClient(path="/data/tmp/EnzyNavi")  # OR write them to disk
+def database_access(df: pd.DataFrame, project_name: str):
+    """Create a collection in Qdrant DB with embedded sequences
+    :param df: dataframe containing the sequences and the annotation
+    :param project_name: name of the collection
+    return: embeddings: numpy array containing the embeddings"""
+    logging.info("Instantiating Qdrant vector DB. This takes quite a while.")
+    qdrant = QdrantClient(path="/data/tmp/EnzyNavi")  # path= write them to disk OR use memory instance ":memory:"  # perf: instantiation very slow
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
     if df.shape[0] != embeddings.shape[0]:
         qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
@@ -147,7 +151,7 @@ def main(app):
 if __name__ == "__main__":
     app = dash.Dash(__name__)
     args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    # args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='PCA', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = parse_args()  # comment for debugging
 
     # our manual mining

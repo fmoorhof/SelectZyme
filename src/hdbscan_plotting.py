@@ -60,9 +60,9 @@ class SingleLinkageTree(object):
 
         hover_texts = self.df.iloc[leaf_indices].apply(
             lambda row: '<br>'.join([f"{col}: {row[col]}" for col in self.df.columns]), axis=1
-        ).tolist()
+        ).tolist()  # perf: code slow but still ok
 
-        for i, (x, y) in enumerate(zip(X, Y)):
+        for i, (x, y) in enumerate(zip(X, Y)):  # perf: code too slow-> fix needed!
             if polar:
                 fig.add_trace(go.Scatterpolar(
                     r=y,
@@ -127,7 +127,6 @@ class MinimumSpanningTree:
         """
         if self._data.shape[0] > 32767:
             warn("Too many data points for safe rendering of a minimum spanning tree!")
-            return None
 
         # Vary line width if enabled
         if vary_line_width:

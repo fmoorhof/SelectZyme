@@ -91,7 +91,6 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     :param collection_name: name of the vector database
     return: annotation: list of 'accession'
     return: embeddings: numpy array containing the embeddings"""
-    logging.info("Retrieving data from Qdrant DB. This may take a while.")
     collection = qdrant.get_collection(collection_name)
     records = qdrant.scroll(collection_name=collection_name,
                             with_payload=True,  # If List of string - include only specified fields

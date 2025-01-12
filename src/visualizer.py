@@ -48,6 +48,7 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
     return: labels: cluster labels for each point
     """
+    logging.info("Running HDBSCAN. This may take a while.")
     if X.shape[0] < min_samples:
         logging.error("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
         raise ValueError("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
@@ -192,7 +193,7 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
         if brenda != ''  # Only build URL if BRENDA is not empty
         else ''
         for brenda, entry, organism in zip(df['xref_brenda'].values, df['accession'].values, df['organism_id'].values)  # values_host with cudf
-    ]
+    ]  # perf: slow but tolerable
 
     # define markers for the plot
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
