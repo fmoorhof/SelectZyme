@@ -7,6 +7,11 @@ https://stackoverflow.com/questions/51936574/how-to-plot-scipy-hierarchy-dendrog
 
 similarly, adaptations were integrated for the MST implementation:
 https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L760
+
+Conclusion on the adapted hdbscan implementation:
+- Implementation by far the fastest, client side rendering (default) is very slow and loaded plot can not really be interacted with (batch7 dataset, min_samples=5; min_cluster_size=50) for MST, SLC renders slower but then works slowly. (batch7 dataset, min_samples=250; min_cluster_size=500). same slow results.
+- MST in DimRed landscape is not really nice. The force directed layout is better. Apart from this only the connectivity information is really usefull there which can also maybe extracted differently.
+- Trees: polar: nice that it worked now but go.scatterpolar is not really suited for the visualization
 """
 from warnings import warn
 
@@ -20,6 +25,7 @@ class SingleLinkageTree(object):
         self._linkage = linkage
         self.df = df
 
+    # todo: some (root) lines are not properly build and also the line scaling looks not so professional like before. Find reason and fix it.
     def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True, polar=False):
         """Plot a dendrogram of the single linkage tree.
 
@@ -48,6 +54,10 @@ class SingleLinkageTree(object):
         Y = np.array(dendrogram_data['dcoord'])
         leaf_indices = dendrogram_data['leaves']
 
+        if self.df.shape[0] > 5000:
+            warn("Too many data points for rendering of a circular dendrogram figure. switched polar to False to create a non circular dendrogram.")
+            polar=False
+
         if polar:
             # Transform for polar coordinates
             Y = -np.log(Y + 1)
@@ -58,29 +68,59 @@ class SingleLinkageTree(object):
 
         fig = go.Figure()
 
+        # pre-compute hover texts for performance enhancement
         hover_texts = self.df.iloc[leaf_indices].apply(
             lambda row: '<br>'.join([f"{col}: {row[col]}" for col in self.df.columns]), axis=1
         ).tolist()  # perf: code slow but still ok
 
-        for i, (x, y) in enumerate(zip(X, Y)):  # perf: code too slow-> fix needed!
-            if polar:
-                fig.add_trace(go.Scatterpolar(
-                    r=y,
-                    theta=np.degrees(x),
-                    mode='lines',
-                    line=dict(color='black', width=1.0),
-                    text=hover_texts[i] if i < len(hover_texts) else None,
-                    hoverinfo='text'
-                ))
-            else:
-                fig.add_trace(go.Scatter(
-                    x=x,
-                    y=y,
-                    mode='lines',
-                    line=dict(color='black', width=1.0),
-                    text=hover_texts[i] if i < len(hover_texts) else None,
-                    hoverinfo='text'
-                ))
+        if polar:  # todo: go.Scatterpolar not really appropriate for large interactive dendrogram visualizations
+            # batch calculation for performance enhancement
+            r_values = []
+            theta_values = []
+            text_values = []
+            for i, (x, y) in enumerate(zip(X, Y)):
+                r_values.extend(y)
+                theta_values.extend(np.degrees(x))
+                text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
+
+                # Add None to fix unrelated branch connecting lines
+                r_values.append(None)
+                theta_values.append(None)
+                text_values.append(None)
+
+            # create figure with pre-computed values
+            fig = go.Figure(go.Scatterpolar(
+                r=r_values,
+                theta=theta_values,
+                mode='lines',
+                line=dict(color='black', width=1.0),
+                text=text_values,
+                hoverinfo='text'
+            ))  # perf: quite slow: assert why and enhance!
+        else:
+            # batch calculation for performance enhancement
+            x_values = []
+            y_values = []
+            text_values = []
+            for i, (x, y) in enumerate(zip(X, Y)):
+                x_values.extend(x)
+                y_values.extend(y)
+                text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
+
+                # Add None to fix unrelated branch connecting lines
+                x_values.append(None)
+                y_values.append(None)
+                text_values.append(None)
+
+            # create figure with pre-computed values
+            fig = go.Figure(go.Scatter(
+                x=x_values,
+                y=y_values,
+                mode='lines',
+                line=dict(color='black', width=1.0),
+                text=text_values,
+                hoverinfo='text'
+            ))
 
         fig.update_layout(
             polar=dict(
@@ -99,7 +139,7 @@ class SingleLinkageTree(object):
         return fig
 
     @staticmethod
-    def _smooth_segment(segment, Nsmooth=100):
+    def _smooth_segment(segment, Nsmooth=20):
         """Smooth a line segment for polar plotting."""
         return np.concatenate([[segment[0]], np.linspace(segment[1], segment[2], Nsmooth), [segment[3]]])
 
@@ -156,7 +196,7 @@ class MinimumSpanningTree:
         hover_text=[
                 "<br>".join(f"{col}: {self.df[col][i]}" for col in self.df.columns)
                 for i in range(len(self.df))
-            ],
+            ],  # perf: code slow but still ok
 
         fig.add_trace(go.Scatter(
             x=self.X_red[:, 0],
@@ -188,7 +228,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     np.random.seed(42)
-    sample_size = 500000
+    sample_size = 50000  # too big samples cause RecursionError but strangely not for my real datasets
     df = pd.DataFrame({
         'x': np.random.randn(sample_size),
         'y': np.random.randn(sample_size),
