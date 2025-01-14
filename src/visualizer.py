@@ -177,14 +177,14 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     values_to_replace = ['NA', '0']
     df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
     
-    df['ec'] = df['ec'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='ec')
-    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', '0.0.0.0', regex=True)  # 1.1.1.- to 0.0.0.0    
+    df['ec'] = df['ec'].fillna('unknown')  # replace empty ECs because they will not get plottet (if color='ec')
+    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', 'unknown', regex=True)  # 1.1.1.- to 0.0.0.0    
     # values_to_replace = ['1.14.11.-', '1.14.20.-']
     # df['ec'] = df['ec'].replace(values_to_replace, '1.14.1120')
     # Replace 'ec' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
     # df['ec'] = df['ec'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
     df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
-    logging.info(f"{(df['ec'] != '0.0.0.0').sum()} UniProt EC numbers are found.")
+    logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
     logging.info(f"{(df['xref_brenda'] != '').sum()} Brenda entries are found.")
 
     # build Brenda URLs
@@ -198,10 +198,10 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     # define markers for the plot
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
         condition = (df['xref_brenda'].to_pandas() != '') 
-        condition2 = (df['ec'].to_pandas() != '0.0.0.0')
+        condition2 = (df['ec'].to_pandas() != 'unknown')
     else:  # pandas DataFrame
         condition = (df['xref_brenda'] != '') 
-        condition2 = (df['ec'] != '0.0.0.0')
+        condition2 = (df['ec'] != 'unknown')
     df['marker_size'] = 5
     df['marker_symbol'] = 'circle'
     df.loc[condition2, 'marker_size'] = 10  # Set to other value for data points that meet the condition
