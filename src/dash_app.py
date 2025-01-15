@@ -5,12 +5,15 @@ https://dash.plotly.com/datatable/editable"""
 import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
-import plotly.express as px
+
+from visualizer import plot_2d, plot_3d
 
 
 def run_dash_app(df, X_red, method: str, project_name: str):
     """Generate layout and callbacks for a dimensionality reduction page."""
     cols = df.columns.values.tolist()
+
+    fig = plot_2d(df, X_red, legend_attribute=cols[2])
 
     # Define the layout of the Dash app
     layout = html.Div([
@@ -19,29 +22,15 @@ def run_dash_app(df, X_red, method: str, project_name: str):
             dcc.Dropdown(
                 id='legend-attribute',
                 options = [{'label': col, 'value': col} for col in cols],  # cols[:12]
-                value=cols[2]
-                # options=[{'label': 'Cluster', 'value': 'cluster'},],
-                # value='cluster'  # Default color by 'cluster'
+                value=cols[2]  # set default column to show on loading
             )
         ], style={'width': '30%', 'display': 'inline-block'}),
 
         # Scatter plot
         dcc.Graph(
             id='plot',
-            figure=px.scatter(df,
-                            x=X_red[:, 0],
-                            y=X_red[:, 1],
-                            color='ec',  # color='cluster'
-                            title=f'2D {method} on dataset {project_name}',
-                            hover_data=cols,
-                            opacity=0.4,
-                            color_continuous_scale=px.colors.sequential.Viridis,  # px.colors.sequential.Viridis, px.colors.cyclical.Edge
-                            symbol=df['marker_symbol'],
-                            size=df['marker_size'],
-        ),        
-            config={
-                'scrollZoom': True,      
-            },
+            figure=fig,        
+            config={'scrollZoom': True,},
             style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
         ),
 
@@ -97,19 +86,6 @@ def run_dash_app(df, X_red, method: str, project_name: str):
             Input('legend-attribute', 'value')
         )
         def update_plot(legend_attribute):
-            fig = px.scatter(
-                df,
-                x=X_red[:, 0],
-                y=X_red[:, 1],
-                color=df[legend_attribute],
-                title=f'2D {method} on dataset {project_name}',
-                hover_data=df.columns,
-                opacity=0.8,
-                symbol=df['marker_symbol'],
-                size=df['marker_size'],
-                color_continuous_scale=px.colors.sequential.Viridis
-            )
-            fig.update_layout(margin={'l': 40, 'b': 40, 't': 50, 'r': 0})
-            return fig
+            return plot_2d(df, X_red, legend_attribute)
 
     return layout, register_callbacks

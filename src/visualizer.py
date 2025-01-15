@@ -197,16 +197,16 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
 
     # define markers for the plot
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = (df['xref_brenda'].to_pandas() != '') 
+        condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
         condition2 = (df['ec'].to_pandas() != 'unknown')
     else:  # pandas DataFrame
-        condition = (df['xref_brenda'] != '') 
+        condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
         condition2 = (df['ec'] != 'unknown')
-    df['marker_size'] = 5
+    df['marker_size'] = 10
     df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 10  # Set to other value for data points that meet the condition
+    df.loc[condition2, 'marker_size'] = 15  # Set to other value for data points that meet the condition
     df.loc[condition2, 'marker_symbol'] = 'diamond'
-    df.loc[condition, 'marker_size'] = 18
+    df.loc[condition, 'marker_size'] = 30
     df.loc[condition, 'marker_symbol'] = 'cross'
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
 
@@ -236,49 +236,58 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def plot_2d(df, X_red, collection_name: str, method: str):
+def plot_2d(df, X_red, legend_attribute: str):
     """Plot the results, independent of the dimensionality method used. Output files are written to the Output folder.
 
     :param df: dataframe containing the annoattions
     :param X_red: dimensionality reduced embeddings
-    :param collection_name: name of the collection/dataset
+    :param project_name: name of the collection/dataset
     :param method: dimensionality reduction method used"""
     cols = df.columns.values.tolist()
-    cols = cols[0:-3]  # do not provide sequence and markers in hover template
-    fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
-                     color='ec', # color='cluster'
-                 title=f'2D {method} on dataset {collection_name}',
-                 hover_data=cols,
-                 opacity=0.5,
-                 color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
-                 )
- 
-    fig.update_traces(marker=dict(size=df['marker_size'].to_numpy(), symbol=df['marker_symbol'].to_numpy()))
-    # todo: rather provide HTML export option in dash
+    fig = px.scatter(df,
+                    x=X_red[:, 0],
+                    y=X_red[:, 1],
+                    color=legend_attribute,
+                    # title=f'2D {method} on dataset {project_name}',
+                    hover_data=cols,
+                    opacity=0.6,
+                    color_continuous_scale=px.colors.sequential.Viridis,  # px.colors.sequential.Viridis, px.colors.cyclical.Edge
+    )
+    fig.update_traces(
+        marker=dict(
+            size=df['marker_size'].to_numpy(),
+            symbol=df['marker_symbol'].to_numpy()
+        ))
     # fig.write_html(f'datasets/output/{collection_name}_2d_{method}.html')
-    logging.info(f'{method} 2D plot completed.')
+    logging.info(f'2D plot completed.')
+
+    return fig
 
 
-def plot_3d(df, X_red, collection_name: str, method: str):
+def plot_3d(df, X_red, legend_attribute: str):
     """Plot the results, independent of the dimensionality method used. Output files are written to the Output folder.
 
     :param df: dataframe containing the annoattions
     :param X_red: dimensionality reduced embeddings
-    :param collection_name: name of the collection/dataset
+    :param project_name: name of the collection/dataset
     :param method: dimensionality reduction method used"""
     cols = df.columns.values.tolist()
-    # cols = cols[0:-2]  # do not provide sequence
-    fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],  # X_umap[0].to_numpy()?
-                        color='cluster', # color='ec'
-                 title=f'3D {method} on dataset {collection_name}',
-                 hover_data=cols,
-                 opacity=0.5,
-                 color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
-                 )
- 
-    fig.update_traces(marker=dict(size=df['marker_size'].to_numpy(), symbol=df['marker_symbol'].to_numpy()))
-    fig.write_html(f'datasets/output/{collection_name}_3d_{method}.html')
-    logging.info(f'{method} 3D plot completed.')
+    fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],
+                        color=legend_attribute,
+                        # title=f'3D {method} on dataset {project_name}',
+                        hover_data=cols,
+                        opacity=0.6,
+                        color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
+                        )
+    fig.update_traces(
+        marker=dict(
+            size=df['marker_size'].to_numpy(),
+            symbol=df['marker_symbol'].to_numpy()
+        ))
+    # fig.write_html(f'datasets/output/{project_name}_3d_{method}.html')
+    logging.info(f'3D plot completed.')
+
+    return fig
 
 
 
