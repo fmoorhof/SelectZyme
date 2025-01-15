@@ -54,7 +54,15 @@ class SingleLinkageTree(object):
         Y = np.array(dendrogram_data['dcoord'])
         leaf_indices = dendrogram_data['leaves']
 
-        if self.df.shape[0] > 5000:
+        # Determine colors for branches
+        selected_leaves = set(self.df.index[self.df['selected']].tolist())
+        branch_colors = []
+        for i, leaf_index in enumerate(leaf_indices):
+            color = 'red' if leaf_index in selected_leaves else 'black'
+            branch_colors.append(color)
+
+
+        if polar and self.df.shape[0] > 5000:
             warn("Too many data points for rendering of a circular dendrogram figure. switched polar to False to create a non circular dendrogram.")
             polar=False
 
@@ -82,6 +90,7 @@ class SingleLinkageTree(object):
                 r_values.extend(y)
                 theta_values.extend(np.degrees(x))
                 text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
+                color = branch_colors[i] if i < len(branch_colors) else 'black'
 
                 # Add None to fix unrelated branch connecting lines
                 r_values.append(None)
@@ -89,11 +98,11 @@ class SingleLinkageTree(object):
                 text_values.append(None)
 
             # create figure with pre-computed values
-            fig = go.Figure(go.Scatterpolar(
+            fig.add_trace(go.Scatterpolar(
                 r=r_values,
                 theta=theta_values,
                 mode='lines',
-                line=dict(color='black', width=1.0),
+                line=dict(color=color, width=1.0),
                 text=text_values,
                 hoverinfo='text'
             ))  # perf: quite slow: assert why and enhance!
@@ -106,6 +115,7 @@ class SingleLinkageTree(object):
                 x_values.extend(x)
                 y_values.extend(y)
                 text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
+                color = branch_colors[i] if i < len(branch_colors) else 'black'
 
                 # Add None to fix unrelated branch connecting lines
                 x_values.append(None)
@@ -113,11 +123,11 @@ class SingleLinkageTree(object):
                 text_values.append(None)
 
             # create figure with pre-computed values
-            fig = go.Figure(go.Scatter(
+            fig.add_trace(go.Scatter(
                 x=x_values,
                 y=y_values,
                 mode='lines',
-                line=dict(color='black', width=1.0),
+                line=dict(color=color, width=1.0),
                 text=text_values,
                 hoverinfo='text'
             ))
@@ -228,11 +238,12 @@ if __name__ == "__main__":
     import pandas as pd
 
     np.random.seed(42)
-    sample_size = 50000  # too big samples cause RecursionError but strangely not for my real datasets
+    sample_size = 500  # too big samples cause RecursionError but strangely not for my real datasets
     df = pd.DataFrame({
         'x': np.random.randn(sample_size),
         'y': np.random.randn(sample_size),
         'cluster': np.random.choice(['A', 'B', 'C'], sample_size),
+        'selected': np.random.choice([False, True], sample_size),
         'marker_symbol': np.random.choice(['circle', 'square', 'diamond', 'triangle-up'], sample_size),
         'marker_size': np.random.randint(10, sample_size, sample_size)
     })
