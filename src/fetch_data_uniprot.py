@@ -63,10 +63,11 @@ class UniProtFetcher:
             df['reviewed'] = True
             df['sequence'] = df['sequence'].str.upper()
             df['sequence'] = df['sequence'].str.replace('<BR>', '', regex=False)  # if from tool output, replace new line characters
-            if df['xref_brenda'].isnull().all():
+            if 'xref_brenda' in df.columns and df['xref_brenda'].isnull().all():
                 df['xref_brenda'] = True
-            if df['ec'].isnull().all():
+            if 'ec' in df.columns and df['ec'].isnull().all():
                 df['ec'] = True
+
             return df
         except Exception as e:
             logging.error(f"Error loading custom CSV file: {e}")
@@ -218,8 +219,16 @@ if __name__ == '__main__':
     query_terms = ["ec:3.2.1.64"]  #  , "PF01771"]
     length = "200 TO 1020"
     custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/PlasticDB.fasta'
+    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "test_data"
+
+    # PETase
+    query_terms=["ec:3.1.1.74", "ec:3.1.1.3", "ec:3.1.1.1", "ec:3.1.1.101", "ec:3.1.1.2", "xref%3Abrenda-3.1.1.74", "xref%3Abrenda-3.1.1.3", "xref%3Abrenda-3.1.1.1", "xref%3Abrenda-3.1.1.101", "xref%3Abrenda-3.1.1.2", "IPR000675", "PF01083", "IPR013818", "PF00151", "cd00312", "IPR003140"]
+    length = "50 TO 1020"
+    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
+    out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "petase"    
 
     fetcher = UniProtFetcher(df_coi, out_dir)
 
@@ -229,7 +238,7 @@ if __name__ == '__main__':
         if custom_data_location.endswith('.fasta'):
             custom_data = fetcher.load_custom_fasta(custom_data_location)
         else:
-            custom_data = fetcher.load_custom_csv(custom_data_location)
+            custom_data = fetcher.load_custom_csv(file_path=custom_data_location, sep=';')
         df = pd.concat([custom_data, df], ignore_index=True)
     df = fetcher.clean_data(df)
     fetcher.save_data(df, out_filename)
