@@ -2,7 +2,7 @@
 tqdm
 plotly
 requests
-fair-esm
+transformers
 qdrant-client
 h5py
 taxoniq

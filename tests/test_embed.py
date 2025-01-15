@@ -24,7 +24,7 @@ def setup_and_teardown():
 
 class TestEmbedding:
     """Test the embedding function."""
-    def setup_method(self, method):
+    def setup_method(self):
         # Replace this with the code to create your DataFrame
         self.df = Parsing.parse_tsv('tests/head_10.tsv')
     
@@ -34,7 +34,7 @@ class TestEmbedding:
     def test_embeddings(self, sequences): 
         """Test esm-1b embedding"""
         seqs = sequences
-        embeddings = embed.gen_embedding(seqs, device='cuda')
+        embeddings = embed.gen_embedding(seqs)
         
         assert embeddings is not []
         assert embeddings.shape == (18, 1280)  # each of the 18 amino acids is embedded into a 1280 dimensional vector
@@ -42,14 +42,14 @@ class TestEmbedding:
     def test_gen_embedding(self):
         """Test esm-1b embedding with a list of sequences."""
         with pytest.raises(ValueError, match="Sequence length 1630 above maximum sequence length of 1024"):
-            embeddings = embed.gen_embedding(self.df['Sequence'].tolist(), device='cuda')
+            embeddings = embed.gen_embedding(self.df['sequence'].tolist())
             
     def test_gen_embedding(self):
         """Test esm-1b embedding with a list of sequences."""
         pp = Preprocessing(self.df)
         pp.remove_long_sequences()
         df = pp.df
-        embeddings = embed.gen_embedding(df['sequence'].tolist(), device='cuda')
+        embeddings = embed.gen_embedding(df['sequence'].tolist())
         assert embeddings is not []
         assert embeddings.shape == (10, 1280)
 
@@ -65,7 +65,7 @@ class TestDBCreation:
         pp = Preprocessing(self.df)
         pp.remove_long_sequences()
         self.df = pp.df
-        self.embeddings = embed.gen_embedding(self.df['sequence'].tolist(), device='cuda')
+        self.embeddings = embed.gen_embedding(self.df['sequence'].tolist())
 
     def test_create_vector_db_collection(self, setup_and_teardown):
         """Test the creation of a vector database collection."""

@@ -1,47 +1,44 @@
 """
-This file provides basic functionalites like file parsing and esm embedding.
+This file provides basic functionalites like file parsing and esm embedding. Additionally, it provides functions to create a vector database collection in Qdrant and to load it from there.
 """
 import logging
 
 from tqdm import tqdm
 import numpy as np
 import torch
-import esm
-from qdrant_client import QdrantClient, models  # ! pip install qdrant-client
+from transformers import AutoTokenizer, AutoModel
+from qdrant_client import QdrantClient, models
 
 
-def gen_embedding(sequences, device: str = 'cuda:0'):
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def gen_embedding(sequences: list[str]) -> np.ndarray:
     """
-    Generate embeddings for a list of protein sequences.
-
-    :param sequences: list containing protein sequences to embed here
-    :param device: device for running the model (either cpu or gpu=cuda), :number specifies the gpu (if you have multiple use >1 e.g. cuda:1)
+    Generate embeddings for a list of sequences using a pre-trained model.
+    Args:
+        sequences (list[str]): A list of sequences to generate embeddings for.
+    Returns:
+        np.ndarray: A numpy array containing the embeddings for each sequence.
+    The function uses the "facebook/esm1b_t33_650M_UR50S" model from the Hugging Face library to generate embeddings.
+    It tokenizes each sequence, passes it through the model, and computes the mean of the last hidden states to obtain the embedding.
+    The embeddings are moved back to the CPU and returned as a numpy array.
     """
-    # load the esm-1b protein language model
-    model, alphabet = esm.pretrained.esm1b_t33_650M_UR50S()
-    batch_converter = alphabet.get_batch_converter()
-
-    model.eval()  # disable dropout for deterministic results
-    model = model.to(device)
-
-    logging.info(f"Generating embeddings for your {len(sequences)} sequences. This may take a while.")
+    tokenizer = AutoTokenizer.from_pretrained("facebook/esm1b_t33_650M_UR50S")
+    model = AutoModel.from_pretrained("facebook/esm1b_t33_650M_UR50S").to(device)
+    
+    logging.info(f"Generating embeddings using device: {device}")
+    print(f"Generating embeddings using device: {device}")
     embeddings = []
-    with torch.no_grad():
-        for sequence in tqdm(sequences):
-            batch_labels, batch_strs, batch_tokens = batch_converter([[None, sequence]])
-            batch_tokens = batch_tokens.to(device)
-            
-            # generate the full size embedding vector
-            result = model(batch_tokens, repr_layers=[33], return_contacts=False)
-            full_size = result["representations"][33].to('cpu')[0]
-            
-            # derive a fixed size embedding vector
-            fixed_size = full_size[1:-1].mean(0).numpy()  # other than mean possible, too
-            embeddings.append(fixed_size)
-    embeddings = np.array(embeddings)
-    logging.info(f"The embeddings have the dimension: '{embeddings.shape}'")
-
-    return embeddings
+    for seq in tqdm(sequences):
+        inputs = tokenizer(seq, return_tensors="pt", padding=True, truncation=True)
+        with torch.no_grad():
+            inputs = inputs.to(device)
+            outputs = model(**inputs)
+        last_hidden_states = outputs.last_hidden_state
+        embedding = torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()  # Move embedding back to CPU
+        embeddings.append(embedding)
+    return np.array(embeddings)
 
 
 def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) -> list:
@@ -123,7 +120,7 @@ def load_or_createDB(qdrant: QdrantClient, df, collection_name: str):
     collections_info = qdrant.get_collections()
     collection_names = [collection.name for collection in collections_info.collections]
     if collection_name not in collection_names:
-        embeddings = gen_embedding(df['sequence'].tolist(), device='cuda:1')
+        embeddings = gen_embedding(df['sequence'].tolist())
         annotation, embeddings = create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
     else:
         annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
@@ -143,10 +140,9 @@ if __name__=='__main__':
     pp.remove_sequences_with_undertermined_amino_acids()
     df = pp.df
 
-
     collection_name='pytest'
 
     # start testing my code:
-    embeddings = gen_embedding(df['sequence'].tolist(), device='cuda:1')
+    embeddings = gen_embedding(df['sequence'].tolist())
     qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name)

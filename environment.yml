@@ -16,7 +16,7 @@ dependencies:
     - tqdm
     - plotly
     - requests
-    - fair-esm
+    - transformers
     - qdrant-client
     - hdbscan
     - h5py

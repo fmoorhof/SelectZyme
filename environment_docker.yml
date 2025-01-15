@@ -11,7 +11,7 @@ dependencies:
   - pip
   - pip:
     - pytest
-    - fair-esm==2.0.0
+    - transformers==4.48.0
     - h5py==3.10.0
     - hdbscan==0.8.39  # ==0.8.33  # error: command 'gcc' failed: No such file or directory [is indeed not installed in container]
     - matplotlib==3.8.4
