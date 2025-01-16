@@ -12,9 +12,6 @@ from dash.dependencies import Input, Output
 from visualizer import plot_2d
 
 
-
-
-
 def run_dash_app(df, X_red):
     """Generate layout and callbacks for a dimensionality reduction page."""
     cols = df.columns.values.tolist()
@@ -26,7 +23,7 @@ def run_dash_app(df, X_red):
         fig.write_html(buffer)
         html_bytes = buffer.getvalue().encode()
         encoded = b64encode(html_bytes).decode()
-        return encoded
+        return f"data:text/html;base64,{encoded}"
 
     # Define the layout of the Dash app
     layout = html.Div([
@@ -46,7 +43,7 @@ def run_dash_app(df, X_red):
             html.A(
             html.Button("Download plot as HTML"), 
             id="download",
-            href="data:text/html;base64," + _html_export_figure(fig),
+            href=_html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
             download="plotly_graph.html"
             ),
             style={'float': 'right', 'display': 'inline-block'}
@@ -118,10 +115,12 @@ def run_dash_app(df, X_red):
             return existing_table
 
         @app.callback(
-            Output('plot', 'figure'),
+            [Output('plot', 'figure'), Output('download', 'href')],
             Input('legend-attribute', 'value')
         )
-        def update_plot(legend_attribute):
-            return plot_2d(df, X_red, legend_attribute)     
-
+        def update_plot_and_download(legend_attribute):
+            updated_fig = plot_2d(df, X_red, legend_attribute)  # Update the figure
+            updated_href = _html_export_figure(updated_fig)  # Generate the updated download link
+            return updated_fig, updated_href
+        
     return layout, register_callbacks
