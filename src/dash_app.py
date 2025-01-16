@@ -2,6 +2,9 @@
 
 Dash wiki was insanely helpful for the DataTable. If you like to implement additional features, check out the documentation:
 https://dash.plotly.com/datatable/editable"""
+from base64 import b64encode
+import io
+
 import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
@@ -9,22 +12,45 @@ from dash.dependencies import Input, Output
 from visualizer import plot_2d
 
 
-def run_dash_app(df, X_red, method: str, project_name: str):
+
+
+
+def run_dash_app(df, X_red):
     """Generate layout and callbacks for a dimensionality reduction page."""
     cols = df.columns.values.tolist()
 
     fig = plot_2d(df, X_red, legend_attribute=cols[2])
 
+    def _html_export_figure(fig):
+        buffer = io.StringIO()
+        fig.write_html(buffer)
+        html_bytes = buffer.getvalue().encode()
+        encoded = b64encode(html_bytes).decode()
+        return encoded
+
     # Define the layout of the Dash app
     layout = html.Div([
         # Dropdown to select legend attribute of df columns
         html.Div([
+            # Plot display selector
             dcc.Dropdown(
                 id='legend-attribute',
                 options = [{'label': col, 'value': col} for col in cols],  # cols[:12]
                 value=cols[2]  # set default column to show on loading
-            )
-        ], style={'width': '30%', 'display': 'inline-block'}),
+            )], 
+            style={'width': '30%', 'display': 'inline-block'}
+            ),
+        
+        # plot download button
+        html.Div(
+            html.A(
+            html.Button("Download plot as HTML"), 
+            id="download",
+            href="data:text/html;base64," + _html_export_figure(fig),
+            download="plotly_graph.html"
+            ),
+            style={'float': 'right', 'display': 'inline-block'}
+        ),
 
         # Scatter plot
         dcc.Graph(
@@ -34,35 +60,36 @@ def run_dash_app(df, X_red, method: str, project_name: str):
             style={'width': '100%', 'height': '100%', 'display': 'inline-block'}
         ),
 
-    dash_table.DataTable(
-        id='data-table',
-        columns=[{'id': c, 'name': c} for c in df.columns],
-        style_cell={
-            'textAlign': 'left',
-            'maxWidth': '200px',  # Set a maximum width for all columns
-            'whiteSpace': 'normal',  # Allow text to wrap within cells
-            'overflow': 'hidden',  # Hide overflow content
-            'textOverflow': 'ellipsis',  # Add ellipsis for overflow text
+        # data table
+        dash_table.DataTable(
+            id='data-table',
+            columns=[{'id': c, 'name': c} for c in df.columns],
+            style_cell={
+                'textAlign': 'left',
+                'maxWidth': '200px',  # Set a maximum width for all columns
+                'whiteSpace': 'normal',  # Allow text to wrap within cells
+                'overflow': 'hidden',  # Hide overflow content
+                'textOverflow': 'ellipsis',  # Add ellipsis for overflow text
+                },
+            style_data={
+                'width': '150px',  # Set a fixed width for data cells
             },
-        style_data={
-            'width': '150px',  # Set a fixed width for data cells
-        },
-        style_table={
-            'maxWidth': '100%',  # Set the table width to 100% of its container
-            'overflowX': 'auto',  # Enable horizontal scrolling
-        },
-        editable=True,
-        row_deletable=True,
-        export_format='xlsx',
-        export_headers='display',
-        merge_duplicate_headers=True,
-        filter_action="native",
-        sort_action="native",
-        sort_mode="multi",
-        column_selectable="single",
-        row_selectable="multi",
-    )
-    ])
+            style_table={
+                'maxWidth': '100%',  # Set the table width to 100% of its container
+                'overflowX': 'auto',  # Enable horizontal scrolling
+            },
+            editable=True,
+            row_deletable=True,
+            export_format='xlsx',
+            export_headers='display',
+            merge_duplicate_headers=True,
+            filter_action="native",
+            sort_action="native",
+            sort_mode="multi",
+            column_selectable="single",
+            row_selectable="multi",
+        )
+    ])  # closing html.Div finally
 
     # Return layout and callbacks
     def register_callbacks(app):
@@ -95,6 +122,6 @@ def run_dash_app(df, X_red, method: str, project_name: str):
             Input('legend-attribute', 'value')
         )
         def update_plot(legend_attribute):
-            return plot_2d(df, X_red, legend_attribute)
+            return plot_2d(df, X_red, legend_attribute)     
 
     return layout, register_callbacks
