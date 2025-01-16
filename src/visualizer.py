@@ -1,22 +1,7 @@
-"""
-This file is accessing the Qdrant vector database for further analysis. On hughe datasets the CPU implemented tools show a very long runtime. Therefore, this script is
-aiming to perform downstream analysis with GPU only.
- 
-downstream analysis:
-clustering
-dimensionality reduction
-visualization
- 
-Runtime < 30 mins for 200k sequences
- 
-Execution hint: RAPIDSAI was not installable in DeepChem, so i execute this script in a seperate docker container that only contains the RAPIDSAI tools.
-The container name is fmoorhof_rapidsai and the ID: 2cee57c21810
-rapidsai/rapidsai:cuda11.5-base-centos7-py3.9
-"""
 import logging
 
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import networkx as nx
 import cudf
 from cuml.cluster import (
@@ -36,7 +21,6 @@ import matplotlib.pyplot as plt
 
 from ncbi_taxonomy_resolver import lineage_resolver
 from hdbscan_plotting import SingleLinkageTree
-
 
 
 def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
@@ -178,22 +162,10 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
     
     df['ec'] = df['ec'].fillna('unknown')  # replace empty ECs because they will not get plottet (if color='ec')
-    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', 'unknown', regex=True)  # 1.1.1.- to 0.0.0.0    
-    # values_to_replace = ['1.14.11.-', '1.14.20.-']
-    # df['ec'] = df['ec'].replace(values_to_replace, '1.14.1120')
-    # Replace 'ec' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
-    # df['ec'] = df['ec'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
+    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', '', regex=True)  # 1.1.1.- to 0.0.0.0    
     df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
     logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
     logging.info(f"{(df['xref_brenda'] != '').sum()} Brenda entries are found.")
-
-    # build Brenda URLs
-    df['BRENDA URL'] = [
-        f"https://www.brenda-enzymes.org/enzyme.php?ecno={brenda.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
-        if brenda != ''  # Only build URL if BRENDA is not empty
-        else ''
-        for brenda, entry, organism in zip(df['xref_brenda'].values, df['accession'].values, df['organism_id'].values)  # values_host with cudf
-    ]  # perf: slow but tolerable
 
     # define markers for the plot
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
@@ -217,76 +189,58 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     df['kingdom'] = [tax[2] for tax in taxa]
     df['lineage'] = [tax[3] for tax in taxa]
 
-    # alphabetically sort df based on EC numbers (for nicer legend)
-    # df = df.sort_values(by=['ec'])  # Todo: need triage!: embeddings always need to be in same order as df!
-
     df['selected'] = False
     df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
 
-    # line breaks for long entries that hover template can still show all information
-    df['sequence'] = df['sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
-    df['xref_pdb'] = df['xref_pdb'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
-    df['xref_pdb'] = df['xref_pdb'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
-
     # put long columns at the end of the df
-    cols_at_end = ['BRENDA URL', 'xref_pdb', 'sequence']
-    df = df[[c for c in df if c not in cols_at_end] 
-        + [c for c in cols_at_end if c in df]]
+    # cols_at_end = ['BRENDA URL', 'xref_pdb', 'sequence']
+    # df = df[[c for c in df if c not in cols_at_end] 
+    #     + [c for c in cols_at_end if c in df]]
 
+    # df['activity_on_PET'] = df['activity_on_PET'].apply(lambda x: True if x == 1.0 else False)
     return df
 
 
 def plot_2d(df, X_red, legend_attribute: str):
-    """Plot the results, independent of the dimensionality method used. Output files are written to the Output folder.
+    """
+    Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
+    Parameters:
+    df (pd.DataFrame): DataFrame containing the data to be plotted. It should include columns for the legend attribute, marker size, marker symbol, accession, and species.
+    X_red (np.ndarray): 2D array with the reduced dimensionality data. The shape should be (n_samples, 2).
+    legend_attribute (str): Column name in the DataFrame to be used for creating the legend.
+    Returns:
+    plotly.graph_objs._figure.Figure: A Plotly Figure object representing the 2D scatter plot.
+    """
+    fig = go.Figure()
 
-    :param df: dataframe containing the annoattions
-    :param X_red: dimensionality reduced embeddings
-    :param project_name: name of the collection/dataset
-    :param method: dimensionality reduction method used"""
-    cols = df.columns.values.tolist()
-    fig = px.scatter(df,
-                    x=X_red[:, 0],
-                    y=X_red[:, 1],
-                    color=legend_attribute,
-                    # title=f'2D {method} on dataset {project_name}',
-                    hover_data=cols,
-                    opacity=0.6,
-                    color_continuous_scale=px.colors.sequential.Viridis,  # px.colors.sequential.Viridis, px.colors.cyclical.Edge
+    # Add a scatter trace for each unique value in the legend_attribute column
+    for value in df[legend_attribute].unique():
+        subset = df[df[legend_attribute] == value]
+        # columns_of_interest = [col for col in subset.columns if col not in ['sequence', 'BRENDA URL', 'xref_pdb']]
+        columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+
+        fig.add_trace(go.Scatter(
+            x=X_red[subset.index, 0],
+            y=X_red[subset.index, 1],
+            mode='markers',
+            name=str(value),  # Legend name
+            marker=dict(
+                size=subset['marker_size'],
+                symbol=subset['marker_symbol'],
+                opacity=0.6
+            ),
+            customdata=subset['accession'],
+            hovertext=subset.apply(lambda row: '<br>'.join([f'{col}: {row[col]}' for col in columns_of_interest]), axis=1),
+            hoverinfo='text'
+        ))
+
+    fig.update_layout(
+        showlegend=True,
+        legend_title_text=legend_attribute
     )
-    fig.update_traces(
-        marker=dict(
-            size=df['marker_size'].to_numpy(),
-            symbol=df['marker_symbol'].to_numpy()
-        ))
-    # fig.write_html(f'datasets/output/{collection_name}_2d_{method}.html')
-    logging.info(f'2D plot completed.')
 
-    return fig
-
-
-def plot_3d(df, X_red, legend_attribute: str):
-    """Plot the results, independent of the dimensionality method used. Output files are written to the Output folder.
-
-    :param df: dataframe containing the annoattions
-    :param X_red: dimensionality reduced embeddings
-    :param project_name: name of the collection/dataset
-    :param method: dimensionality reduction method used"""
-    cols = df.columns.values.tolist()
-    fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],
-                        color=legend_attribute,
-                        # title=f'3D {method} on dataset {project_name}',
-                        hover_data=cols,
-                        opacity=0.6,
-                        color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
-                        )
-    fig.update_traces(
-        marker=dict(
-            size=df['marker_size'].to_numpy(),
-            symbol=df['marker_symbol'].to_numpy()
-        ))
-    # fig.write_html(f'datasets/output/{project_name}_3d_{method}.html')
-    logging.info(f'3D plot completed.')
-
+    logging.info('2D plot completed.')
+    # fig.write_html(f'datasets/test_landscape.html')
     return fig
 
 

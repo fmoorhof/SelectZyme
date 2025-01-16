@@ -6,7 +6,7 @@ import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 
-from visualizer import plot_2d, plot_3d
+from visualizer import plot_2d
 
 
 def run_dash_app(df, X_red, method: str, project_name: str):
@@ -63,23 +63,19 @@ def run_dash_app(df, X_red, method: str, project_name: str):
             if clickData is None:
                 return existing_table
 
-            selected_feature = clickData['points'][0]['customdata']
-
-            identifier_column = df.columns[0]
-            row_index = df[df[identifier_column] == selected_feature[0]].index
-
-            if not row_index.empty:
-                df.at[row_index[0], 'selected'] = True
-
-            selected_feature[df.columns.get_loc('selected')] = True
-            selected_feature[df.columns.get_loc('sequence')] = selected_feature[df.columns.get_loc('sequence')].replace('<br>', '')
-                
-            new_row = dict(zip(df.columns, selected_feature))
+            # extract accession from selection and lookup row in df and append row to the dash table
+            accession  = clickData['points'][0]['customdata']
+            selected_row = df[df['accession'] == accession].iloc[0]
+            selected_row[df.columns.get_loc('selected')] = True  # if entry has been selected once set it to True
+            # build Brenda URLs
+            if selected_row['xref_brenda'] != '':
+                selected_row['BRENDA URL'] = f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
 
             if existing_table is None:
                 existing_table = []
+            existing_table.append(selected_row.to_dict())
 
-            return existing_table + [new_row]
+            return existing_table
 
         @app.callback(
             Output('plot', 'figure'),
