@@ -192,11 +192,6 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     df['selected'] = False
     df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
 
-    # put long columns at the end of the df
-    # cols_at_end = ['BRENDA URL', 'xref_pdb', 'sequence']
-    # df = df[[c for c in df if c not in cols_at_end] 
-    #     + [c for c in cols_at_end if c in df]]
-
     # df['activity_on_PET'] = df['activity_on_PET'].apply(lambda x: True if x == 1.0 else False)
     return df
 

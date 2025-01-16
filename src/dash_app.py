@@ -37,7 +37,20 @@ def run_dash_app(df, X_red, method: str, project_name: str):
     dash_table.DataTable(
         id='data-table',
         columns=[{'id': c, 'name': c} for c in df.columns],
-        style_cell={'textAlign': 'left'},
+        style_cell={
+            'textAlign': 'left',
+            'maxWidth': '200px',  # Set a maximum width for all columns
+            'whiteSpace': 'normal',  # Allow text to wrap within cells
+            'overflow': 'hidden',  # Hide overflow content
+            'textOverflow': 'ellipsis',  # Add ellipsis for overflow text
+            },
+        style_data={
+            'width': '150px',  # Set a fixed width for data cells
+        },
+        style_table={
+            'maxWidth': '100%',  # Set the table width to 100% of its container
+            'overflowX': 'auto',  # Enable horizontal scrolling
+        },
         editable=True,
         row_deletable=True,
         export_format='xlsx',
