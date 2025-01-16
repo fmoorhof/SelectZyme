@@ -54,13 +54,6 @@ class SingleLinkageTree(object):
         Y = np.array(dendrogram_data['dcoord'])
         leaf_indices = dendrogram_data['leaves']
 
-        # Determine colors for branches
-        selected_leaves = set(self.df.index[self.df['selected']].tolist())
-        branch_colors = []
-        for i, leaf_index in enumerate(leaf_indices):
-            color = 'red' if leaf_index in selected_leaves else 'black'
-            branch_colors.append(color)
-
 
         if polar and self.df.shape[0] > 5000:
             warn("Too many data points for rendering of a circular dendrogram figure. switched polar to False to create a non circular dendrogram.")
@@ -90,7 +83,6 @@ class SingleLinkageTree(object):
                 r_values.extend(y)
                 theta_values.extend(np.degrees(x))
                 text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
-                color = branch_colors[i] if i < len(branch_colors) else 'black'
 
                 # Add None to fix unrelated branch connecting lines
                 r_values.append(None)
@@ -102,7 +94,7 @@ class SingleLinkageTree(object):
                 r=r_values,
                 theta=theta_values,
                 mode='lines',
-                line=dict(color=color, width=1.0),
+                line=dict(color='black', width=1.0),
                 text=text_values,
                 hoverinfo='text'
             ))  # perf: quite slow: assert why and enhance!
@@ -115,7 +107,6 @@ class SingleLinkageTree(object):
                 x_values.extend(x)
                 y_values.extend(y)
                 text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
-                color = branch_colors[i] if i < len(branch_colors) else 'black'
 
                 # Add None to fix unrelated branch connecting lines
                 x_values.append(None)
@@ -127,7 +118,7 @@ class SingleLinkageTree(object):
                 x=x_values,
                 y=y_values,
                 mode='lines',
-                line=dict(color=color, width=1.0),
+                line=dict(color='black', width=1.0),
                 text=text_values,
                 hoverinfo='text'
             ))
@@ -177,7 +168,7 @@ class MinimumSpanningTree:
         """
         if self._data.shape[0] > 32767:
             warn("Too many data points for safe rendering of a minimum spanning tree!")
-
+            
         # Vary line width if enabled
         if vary_line_width:
             line_width = edge_linewidth * (np.log(self._mst.T[2].max() / self._mst.T[2]) + 1.0)
