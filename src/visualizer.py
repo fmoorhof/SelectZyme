@@ -46,9 +46,9 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
 
     labels = hdbscan.fit_predict(X)
 
-    #G = hdbscan.minimum_spanning_tree_.to_networkx()  # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
-    G = hdbscan.minimum_spanning_tree_
-    Gsl = hdbscan.single_linkage_tree_
+    #G = hdbscan.minimum_spanning_tree_  # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
+    G = hdbscan.minimum_spanning_tree_.to_networkx()
+    Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
 
     # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
     # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
@@ -61,9 +61,9 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
     # Annotate nodes with information from `df` (Assuming node indices in the graph match the DataFrame index)
     # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
-    # for node in G.nodes():
-    #     if node in df.index:
-    #         nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
+    for node in G.nodes():
+        if node in df.index:
+            nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
             # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
 
     logging.info("HDBSCAN done")
@@ -174,11 +174,11 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     else:  # pandas DataFrame
         condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
         condition2 = (df['ec'] != 'unknown')
-    df['marker_size'] = 10
+    df['marker_size'] = 6
     df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 15  # Set to other value for data points that meet the condition
+    df.loc[condition2, 'marker_size'] = 8 # Set to other value for data points that meet the condition
     df.loc[condition2, 'marker_symbol'] = 'diamond'
-    df.loc[condition, 'marker_size'] = 30
+    df.loc[condition, 'marker_size'] = 10
     df.loc[condition, 'marker_symbol'] = 'cross'
     # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
 
@@ -192,6 +192,7 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     df['selected'] = False
     df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
 
+    # todo: remove later
     # df['activity_on_PET'] = df['activity_on_PET'].apply(lambda x: True if x == 1.0 else False)
     return df
 
@@ -211,8 +212,8 @@ def plot_2d(df, X_red, legend_attribute: str):
     # Add a scatter trace for each unique value in the legend_attribute column
     for value in df[legend_attribute].unique():
         subset = df[df[legend_attribute] == value]
-        # columns_of_interest = [col for col in subset.columns if col not in ['sequence', 'BRENDA URL', 'xref_pdb']]
-        columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+        columns_of_interest = [col for col in subset.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
+        # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
 
         fig.add_trace(go.Scatter(
             x=X_red[subset.index, 0],
@@ -222,7 +223,7 @@ def plot_2d(df, X_red, legend_attribute: str):
             marker=dict(
                 size=subset['marker_size'],
                 symbol=subset['marker_symbol'],
-                opacity=0.6
+                opacity=0.5
             ),
             customdata=subset['accession'],
             hovertext=subset.apply(lambda row: '<br>'.join([f'{col}: {row[col]}' for col in columns_of_interest]), axis=1),
@@ -233,8 +234,6 @@ def plot_2d(df, X_red, legend_attribute: str):
         showlegend=True,
         legend_title_text=legend_attribute
     )
-
-    logging.info('2D plot completed.')
     # fig.write_html(f'datasets/test_landscape.html')
     return fig
 
