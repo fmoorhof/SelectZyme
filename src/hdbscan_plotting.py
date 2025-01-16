@@ -194,10 +194,10 @@ class MinimumSpanningTree:
             hoverinfo="none"
         ))
 
-        hover_text=[
-                "<br>".join(f"{col}: {self.df[col][i]}" for col in self.df.columns)
-                for i in range(len(self.df))
-            ],  # perf: code slow but still ok
+        columns_of_interest = [col for col in self.df.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
+        # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+        hover_text=["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest)
+                for i in range(len(self.df))]
 
         fig.add_trace(go.Scatter(
             x=self.X_red[:, 0],
@@ -208,6 +208,7 @@ class MinimumSpanningTree:
                 color=node_color,
                 opacity=node_alpha
             ),
+            customdata=self.df['accession'],
             hovertext=hover_text,
             hoverinfo="text"
         ))
@@ -229,10 +230,11 @@ if __name__ == "__main__":
     import pandas as pd
 
     np.random.seed(42)
-    sample_size = 500  # too big samples cause RecursionError but strangely not for my real datasets
+    sample_size = 50  # too big samples cause RecursionError but strangely not for my real datasets
     df = pd.DataFrame({
         'x': np.random.randn(sample_size),
         'y': np.random.randn(sample_size),
+        'accession': np.random.choice(['A', 'B', 'C'], sample_size),
         'cluster': np.random.choice(['A', 'B', 'C'], sample_size),
         'selected': np.random.choice([False, True], sample_size),
         'marker_symbol': np.random.choice(['circle', 'square', 'diamond', 'triangle-up'], sample_size),
@@ -245,7 +247,7 @@ if __name__ == "__main__":
     clusterer.fit(data)
 
     # debug and develop here
-    fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(polar=False)
-    # fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, X_red, df).plot()
+    # fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(polar=False)
+    fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, X_red, df).plot()
 
     fig.show()
