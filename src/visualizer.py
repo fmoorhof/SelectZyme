@@ -47,7 +47,7 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     labels = hdbscan.fit_predict(X)
 
     #G = hdbscan.minimum_spanning_tree_  # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
-    G = hdbscan.minimum_spanning_tree_.to_networkx()
+    G = hdbscan.minimum_spanning_tree_  # .to_networkx()
     Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
 
     # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
@@ -61,10 +61,10 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
     # Annotate nodes with information from `df` (Assuming node indices in the graph match the DataFrame index)
     # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
-    for node in G.nodes():
-        if node in df.index:
-            nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
-            # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
+    # for node in G.nodes():
+    #     if node in df.index:
+    #         nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
+    #         # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
 
     logging.info("HDBSCAN done")
     return labels, G, Gsl
