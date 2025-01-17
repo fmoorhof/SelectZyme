@@ -34,13 +34,7 @@ def layout(G, df, X_red) -> html.Div:
     Note:
     - The `modify_graph_data` function is assumed to be defined elsewhere and is responsible for creating the edge and node traces.
     """
-    # define graph layout and coordinates
-    # G = G.to_networkx()  # if not done in visualizer.py hdbscan
-    pos = nx.spring_layout(G)
-    pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
-    nx.set_node_attributes(G, pos, 'pos')
-
-    edge_trace, node_trace = modify_graph_data(G)
+    edge_trace, node_trace = modify_graph_data(G, df)
 
     fig = go.Figure()
     fig.add_trace(edge_trace)
@@ -137,6 +131,7 @@ def register_callbacks(app, df):
 
         # extract accession from selection and lookup row in df and append row to the dash table
         accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # todo: make this more beatiful and adapt to df shape
+        # accession  = clickData['points'][0]['customdata']
         selected_row = df[df['accession'] == accession].iloc[0]
         selected_row[df.columns.get_loc('selected')] = True  # if entry has been selected once set it to True
         # build Brenda URLs

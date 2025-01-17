@@ -24,8 +24,20 @@ import networkx as nx
 import pandas as pd
 
 
-def modify_graph_data(G: nx.Graph):
+def modify_graph_data(G, df):
     """Generate edge and node traces for a NetworkX graph with improved hover data."""
+    G = G.to_networkx()
+    # annotate nodes with df data
+    for node in G.nodes():
+        if node in df.index:
+            nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
+
+    # define graph layout and coordinates
+    #   # if not done in visualizer.py hdbscan
+    pos = nx.spring_layout(G)
+    pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
+    nx.set_node_attributes(G, pos, 'pos')
+
     # Edge traces
     edge_x = []
     edge_y = []
