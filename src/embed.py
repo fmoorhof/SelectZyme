@@ -1,5 +1,5 @@
 """
-This file provides basic functionalites like file parsing and esm embedding. Additionally, it provides functions to create a vector database collection in Qdrant and to load it from there.
+This file provides basic functionalites like file parsing and protein large language model embedding. Additionally, it provides functions to create a vector database collection in Qdrant and to load it from there.
 """
 import logging
 
@@ -13,7 +13,7 @@ from qdrant_client import QdrantClient, models
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def gen_embedding(sequences: list[str]) -> np.ndarray:
+def gen_embedding(sequences: list[str], plm_model: str = 'esm1b') -> np.ndarray:
     """
     Generate embeddings for a list of sequences using a pre-trained model.
     Args:
@@ -24,11 +24,9 @@ def gen_embedding(sequences: list[str]) -> np.ndarray:
     It tokenizes each sequence, passes it through the model, and computes the mean of the last hidden states to obtain the embedding.
     The embeddings are moved back to the CPU and returned as a numpy array.
     """
-    tokenizer = AutoTokenizer.from_pretrained("facebook/esm1b_t33_650M_UR50S")
-    model = AutoModel.from_pretrained("facebook/esm1b_t33_650M_UR50S").to(device)
+    tokenizer, model = _select_plm_model(plm_model)
     
-    logging.info(f"Generating embeddings using device: {device}")
-    print(f"Generating embeddings using device: {device}")
+    logging.info(f"Generating {plm_model} embeddings using device: {device}")
     embeddings = []
     for seq in tqdm(sequences):
         inputs = tokenizer(seq, return_tensors="pt", padding=True, truncation=True)
@@ -48,7 +46,7 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
     :param df: dataframe containing the sequences and the annotation
     :param embeddings: numpy array containing the embeddings
     :param collection_name: name of the vector database
-    return: annotation: list of 'Entry'
+    return: annotation: list of 'accession'
     """
     logging.info("Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=Vector_db/")
 
@@ -62,11 +60,11 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
         )
     
     records = []
-    annotation = df.iloc[:, 0:2].to_dict(orient='index')  # only use 'Entry' as key (0:1)  # (0, {'Entry': 'Q9NWT6', 'Reviewed': True})
+    annotation = df.iloc[:, 0:2].to_dict(orient='index')  # only use 'accession' as key (0:1)  # (0, {'accession': 'Q9NWT6', 'Reviewed': True})
     logging.info("Creating Qdrant records. This may take a while.")
     for i, anno in tqdm(annotation.items()):
         vector = embeddings[i].tolist()
-        record = models.Record(id=i, vector=vector, payload=anno)  # {'Entry': 'Q9NWT6', 'Reviewed': True}
+        record = models.Record(id=i, vector=vector, payload=anno)  # {'accession': 'Q9NWT6', 'Reviewed': True}
         records.append(record)
 
     logging.info("Uploading data to Qdrant DB. This may take a while.")
@@ -109,7 +107,7 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     return annotation, embeddings
 
     
-def load_or_createDB(qdrant: QdrantClient, df, collection_name: str):
+def load_or_createDB(qdrant: QdrantClient, df, collection_name: str, plm_model: str = 'esm1b'):
     """Checks if a collection with the given name already exists. If not, it will be created.
     :param qdrant: qdrant object
     :param df: dataframe containing the sequences and the annotation
@@ -120,11 +118,50 @@ def load_or_createDB(qdrant: QdrantClient, df, collection_name: str):
     collections_info = qdrant.get_collections()
     collection_names = [collection.name for collection in collections_info.collections]
     if collection_name not in collection_names:
-        embeddings = gen_embedding(df['sequence'].tolist())
+        embeddings = gen_embedding(df['sequence'].tolist(), plm_model=plm_model)
         annotation, embeddings = create_vector_db_collection(qdrant, df, embeddings, collection_name=collection_name)
     else:
         annotation, embeddings = load_collection_from_vector_db(qdrant, collection_name)
     return annotation, embeddings
+
+
+@staticmethod
+def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
+    if plm_model == 'esm1b':
+        tokenizer = AutoTokenizer.from_pretrained("facebook/esm1b_t33_650M_UR50S")
+        model = AutoModel.from_pretrained("facebook/esm1b_t33_650M_UR50S").to(device)
+
+    elif plm_model == 'esm2':
+        tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t33_650M_UR50D")
+        model = AutoModel.from_pretrained("facebook/esm2_t33_650M_UR50D").to(device)
+
+    elif plm_model == 'esm3':
+        raise NotImplementedError("ESM3 not yet implemented")
+        # tokenizer = AutoTokenizer.from_pretrained("EvolutionaryScale/esm3-sm-open-v1")  # no tokenizer specified!?!
+        model = AutoModel.from_pretrained("EvolutionaryScale/esm3-sm-open-v1").to(device)
+
+    elif plm_model == 'prott5':
+        from transformers import AutoModelForSeq2SeqLM
+
+        tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_t5_xl_uniref50")
+        model = AutoModelForSeq2SeqLM.from_pretrained("Rostlab/prot_t5_xl_uniref50")
+
+    elif plm_model == 'prostt5':
+        from transformers import AutoModelForSeq2SeqLM
+
+        tokenizer = AutoTokenizer.from_pretrained("Rostlab/ProstT5")
+        model = AutoModelForSeq2SeqLM.from_pretrained("Rostlab/ProstT5")
+
+    elif plm_model == 'saprot':
+        from transformers import AutoModelForMaskedLM
+
+        tokenizer = AutoTokenizer.from_pretrained("westlake-repl/SaProt_650M_AF2")
+        model = AutoModelForMaskedLM.from_pretrained("westlake-repl/SaProt_650M_AF2")
+
+    else:
+        raise ValueError(f"Model {model} not supported. Please choose one of: 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'")
+    
+    return tokenizer, model
 
 
 
@@ -140,9 +177,10 @@ if __name__=='__main__':
     pp.remove_sequences_with_undertermined_amino_acids()
     df = pp.df
 
-    collection_name='pytest'
+    # test embedding
+    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='esm2')
 
-    # start testing my code:
-    embeddings = gen_embedding(df['sequence'].tolist())
-    qdrant = QdrantClient(path="/scratch/global_1/fmoorhof/Databases/Vector_db/")  # OR write them to disk
-    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name)
+    # test vector db
+    collection_name='pytest'
+    qdrant = QdrantClient(path="/data/tmp/EnzyNavi/")  # OR write them to disk
+    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name, plm_model='esm2')

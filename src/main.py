@@ -33,6 +33,7 @@ def parse_args() -> argparse.Namespace:
     # Optional arguments with defaults
     parser.add_argument('--dim_red', default='TSNE', 
                         help='Dimensionality reduction technique (default: TSNE)')
+    parser.add_argument('--plm_model', default='esm1b', help="Protein language model (default: 'esm1b') other models: 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'")
     parser.add_argument('--out_dir', default='datasets/output/', 
                         help='Output directory (default: datasets/output/)')
     parser.add_argument('--df_coi', nargs='+', default=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'], 
@@ -81,15 +82,15 @@ def parse_data(args):
     return df
 
 
-def database_access(df: pd.DataFrame, project_name: str):
+def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b'):
     """Create a collection in Qdrant DB with embedded sequences
     :param df: dataframe containing the sequences and the annotation
     :param project_name: name of the collection
     return: embeddings: numpy array containing the embeddings"""
     logging.info("Instantiating Qdrant vector DB. This takes quite a while.")
     qdrant = QdrantClient(path="/data/tmp/EnzyNavi")  # path= write them to disk OR use memory instance ":memory:"  # perf: instantiation very slow
-    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name)
-    if df.shape[0] != embeddings.shape[0]:
+    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name, plm_model=plm_model)
+    if df.shape[0] != embeddings.shape[0]:  # todo: recreate the collection instead and make user aware (press [Yn] or dont know yet to report)
         qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
         raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
 
