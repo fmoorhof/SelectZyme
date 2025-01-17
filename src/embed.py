@@ -141,22 +141,22 @@ def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
         model = AutoModel.from_pretrained("EvolutionaryScale/esm3-sm-open-v1").to(device)
 
     elif plm_model == 'prott5':
-        from transformers import AutoModelForSeq2SeqLM
+        from transformers import T5Tokenizer, T5EncoderModel
 
-        tokenizer = AutoTokenizer.from_pretrained("Rostlab/prot_t5_xl_uniref50")
-        model = AutoModelForSeq2SeqLM.from_pretrained("Rostlab/prot_t5_xl_uniref50")
+        tokenizer = T5Tokenizer.from_pretrained("Rostlab/prot_t5_xl_uniref50")
+        model = T5EncoderModel.from_pretrained("Rostlab/prot_t5_xl_uniref50").to(device)
 
     elif plm_model == 'prostt5':
-        from transformers import AutoModelForSeq2SeqLM
+        from transformers import T5Tokenizer, T5EncoderModel
 
-        tokenizer = AutoTokenizer.from_pretrained("Rostlab/ProstT5")
-        model = AutoModelForSeq2SeqLM.from_pretrained("Rostlab/ProstT5")
+        tokenizer = T5Tokenizer.from_pretrained("Rostlab/ProstT5")
+        model = T5EncoderModel.from_pretrained("Rostlab/ProstT5").to(device)
 
     elif plm_model == 'saprot':
         from transformers import AutoModelForMaskedLM
 
         tokenizer = AutoTokenizer.from_pretrained("westlake-repl/SaProt_650M_AF2")
-        model = AutoModelForMaskedLM.from_pretrained("westlake-repl/SaProt_650M_AF2")
+        model = AutoModelForMaskedLM.from_pretrained("westlake-repl/SaProt_650M_AF2").to(device)
 
     else:
         raise ValueError(f"Model {model} not supported. Please choose one of: 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'")
@@ -178,7 +178,7 @@ if __name__=='__main__':
     df = pp.df
 
     # test embedding
-    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='esm2')
+    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='prott5')
 
     # test vector db
     collection_name='pytest'

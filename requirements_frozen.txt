@@ -12,3 +12,6 @@ requests==2.32.2
 plotly==5.24.1
 biopython==1.84
 dash-bootstrap-components==1.6.0
+sentencepiece==0.2.0
+tiktoken==0.8.0
+blobfile==3.0.0
