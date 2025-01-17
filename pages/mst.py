@@ -47,20 +47,7 @@ def layout(G, df, X_red) -> html.Div:
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         )
 
-    # # todo: fix this shape and bring to go.Scatter that i can use the callbackfunction!
-    # fig = {
-    #     "data": [edge_trace, node_trace],
-    #     "layout": dict(
-    #         hovermode="closest",
-    #         margin=dict(b=20, l=5, r=5, t=40),
-    #         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    #         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    #     ),
-    # }
-
-
-
-    # hdbscan_plotting implementation: set MST on top of the dimensionality reduced landscape. Not so nice and clear visualization like the force directed layout
+    # hdbscan_plotting implementation: set MST on top of the dimensionality reduced landscape. Not so nice and clear visualization like the force directed layout, however, implementation works.
     # mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
     # fig = mst.plot()
 
@@ -130,8 +117,7 @@ def register_callbacks(app, df):
             return existing_table
 
         # extract accession from selection and lookup row in df and append row to the dash table
-        accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # todo: make this more beatiful and adapt to df shape
-        # accession  = clickData['points'][0]['customdata']
+        accession  = clickData['points'][0]['customdata']  # accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # if customdata fails 
         selected_row = df[df['accession'] == accession].iloc[0]
         selected_row[df.columns.get_loc('selected')] = True  # if entry has been selected once set it to True
         # build Brenda URLs

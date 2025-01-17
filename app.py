@@ -43,8 +43,8 @@ dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df
 # dimred_register_callbacks(app)  # Call the register_callbacks function to register the callbacks
 
 # Register callbacks (for each)
-# dimred.register_callbacks(app, df, X_red)  # todo: figure out how to register multiple callbacks
-mst.register_callbacks(app, df)
+dimred.register_callbacks(app, df, X_red)  # todo: figure out how to register multiple callbacks from pages?
+# mst.register_callbacks(app, df)  # not needed any more since callback from dimred also apply on mst
 
 # Layout with navigation links and page container
 app.layout = dbc.Container(

@@ -26,7 +26,8 @@ import pandas as pd
 
 def modify_graph_data(G, df):
     """Generate edge and node traces for a NetworkX graph with improved hover data."""
-    G = G.to_networkx()
+    if not isinstance(G, nx.Graph):
+        G = G.to_networkx()
     # annotate nodes with df data
     for node in G.nodes():
         if node in df.index:
@@ -53,41 +54,50 @@ def modify_graph_data(G, df):
         hoverinfo='none',  # No hover info for edges
         mode='lines'
     )
-
+    
     # Node traces
     node_x = []
     node_y = []
-    node_text = []
     for node in G.nodes():
         x, y = G.nodes[node]['pos']
         node_x.append(x)
         node_y.append(y)
 
-        # Remove unnecessary attributes
-        G.nodes[node].pop('data', None)  # Remove 'data' if it exists
-        G.nodes[node].pop('pos', None)  # Remove 'pos' if it exists
+        # # Remove unnecessary attributes
+        # G.nodes[node].pop('data', None)  # Remove 'data' if it exists
+        # G.nodes[node].pop('pos', None)  # Remove 'pos' if it exists
 
-        # Format node attributes for hover text
-        hover_text = "<br>".join([f"{key}: {value}" for key, value in G.nodes[node].items()])
-        node_text.append(hover_text)
+        # # Format node attributes for hover text
+        # hover_text = "<br>".join([f"{key}: {value}" for key, value in G.nodes[node].items()])
+        # node_text.append(hover_text)
 
+    columns_of_interest = [col for col in df.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
+    # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+    node_text=["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest)
+            for i in range(len(df))]
+    
     node_trace = go.Scatter(
         x=node_x, y=node_y,
-        mode='markers',
         hoverinfo='text',
+        customdata=df['accession'],
         text=node_text,  # Use formatted hover text
+        mode='markers',
         marker=dict(
+            size=df['marker_size'],
+            symbol=df['marker_symbol'],
+            opacity=0.7,
+            line_width=1,
+
+            # connectivity legend
             showscale=True,
             colorscale='YlGnBu',
             reversescale=True,
             color=[],  # Will be populated with node adjacencies
-            size=10,
             colorbar=dict(
                 thickness=15,
                 title='Node Connections',
                 xanchor='left',
-            ),
-            line_width=2
+            )
         )
     )
 
