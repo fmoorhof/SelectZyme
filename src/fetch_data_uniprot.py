@@ -114,8 +114,9 @@ class UniProtFetcher:
             ValueError: If the query to UniProt fails or returns an error.
         """
         coi = str(self.df_coi).strip('[]').replace("'", "")
-        raw_data = b''  # byte variable initialization
+        dfs = []
         for qry in query_terms:
+            raw_data = b''
             url = f"https://rest.uniprot.org/uniprotkb/search?" \
                   f"&format=tsv" \
                   f"&query=({qry}) AND (length:[{length}])" \
@@ -125,10 +126,17 @@ class UniProtFetcher:
             for batch, total in self._get_batch(batch_url=url):
                 raw_data += batch.content  # append two bytes in python
 
-        df = pd.read_csv(io.StringIO(raw_data.decode('utf-8')), delimiter='\t')
-        df.columns = self.df_coi
-        df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')  # Set boolean values
-        return df
+            # Decode the raw data and create a DataFrame
+            df = pd.read_csv(io.StringIO(raw_data.decode('utf-8')), delimiter='\t')
+            df.columns = self.df_coi
+            df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')  # Set boolean values
+
+            # Add a 'query_term' column to indicate the query term
+            df['query_term'] = qry
+            dfs.append(df)
+
+        result_df = pd.concat(dfs, ignore_index=True)
+        return result_df
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df[df['accession'] != 'Entry']  # remove concatenated headers that are introduced by each query term
@@ -215,20 +223,20 @@ if __name__ == '__main__':
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "uniprot_PapE"
 
-    # minimal test
-    query_terms = ["ec:3.2.1.64"]  #  , "PF01771"]
-    length = "200 TO 1020"
-    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/PlasticDB.fasta'
-    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
-    out_dir = 'datasets/output/'  # describe desired output location
-    out_filename = "test_data"
-
     # PETase
     query_terms=["ec:3.1.1.74", "ec:3.1.1.3", "ec:3.1.1.1", "ec:3.1.1.101", "ec:3.1.1.2", "xref%3Abrenda-3.1.1.74", "xref%3Abrenda-3.1.1.3", "xref%3Abrenda-3.1.1.1", "xref%3Abrenda-3.1.1.101", "xref%3Abrenda-3.1.1.2", "IPR000675", "PF01083", "IPR013818", "PF00151", "cd00312", "IPR003140"]
     length = "50 TO 1020"
     custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "petase"    
+
+    # minimal test
+    query_terms = ["ec:3.2.1.64", "ec:3.1.1.2"]
+    length = "200 TO 1020"
+    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/PlasticDB.fasta'
+    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
+    out_dir = 'datasets/output/'  # describe desired output location
+    out_filename = "test_data"
 
     fetcher = UniProtFetcher(df_coi, out_dir)
 
