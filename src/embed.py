@@ -25,8 +25,11 @@ def gen_embedding(sequences: list[str], plm_model: str = 'esm1b') -> np.ndarray:
     The embeddings are moved back to the CPU and returned as a numpy array.
     """
     tokenizer, model = _select_plm_model(plm_model)
-    
     logging.info(f"Generating {plm_model} embeddings using device: {device}")
+    
+    if plm_model == 'prott5' or plm_model == 'prostt5':  # models require sequenes to be spaced (whitespace)
+        sequences = [" ".join(list(seq)) for seq in sequences]
+    
     embeddings = []
     for seq in tqdm(sequences):
         inputs = tokenizer(seq, return_tensors="pt", padding=True, truncation=True)
@@ -152,12 +155,6 @@ def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
         tokenizer = T5Tokenizer.from_pretrained("Rostlab/ProstT5")
         model = T5EncoderModel.from_pretrained("Rostlab/ProstT5").to(device)
 
-    elif plm_model == 'saprot':
-        from transformers import AutoModelForMaskedLM
-
-        tokenizer = AutoTokenizer.from_pretrained("westlake-repl/SaProt_650M_AF2")
-        model = AutoModelForMaskedLM.from_pretrained("westlake-repl/SaProt_650M_AF2").to(device)
-
     else:
         raise ValueError(f"Model {model} not supported. Please choose one of: 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'")
     
@@ -178,9 +175,11 @@ if __name__=='__main__':
     df = pp.df
 
     # test embedding
-    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='prott5')
+    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='prostt5')
+    print(embeddings.shape)
+    print(embeddings)
 
     # test vector db
     collection_name='pytest'
-    qdrant = QdrantClient(path="/data/tmp/EnzyNavi/")  # OR write them to disk
-    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name, plm_model='esm2')
+    # qdrant = QdrantClient(path="/data/tmp/EnzyNavi/")  # OR write them to disk
+    # annotation, embeddings = load_or_createDB(qdrant, df, collection_name=collection_name, plm_model='esm2')
