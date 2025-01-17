@@ -35,15 +35,16 @@ df = preprocessing(df)
 X = database_access(df, args.project_name)
 df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
 
-
-# dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
-# dash.register_page('single-linkage', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df, polar=False))  # todo: parse here truncation_mode and p
+# Create page layouts
 dash.register_page('dim', name="Dimensionality reduction and clustering", layout=dimred.layout(df, X_red))
+dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
+dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df, polar=False))  # todo: parse here truncation_mode and p
 # dimred_layout, dimred_register_callbacks = dimred.layout(df, X_red)
 # dimred_register_callbacks(app)  # Call the register_callbacks function to register the callbacks
 
-# Register callbacks for the dimensionality reduction page
-dimred.register_callbacks(app, df, X_red)
+# Register callbacks (for each)
+# dimred.register_callbacks(app, df, X_red)  # todo: figure out how to register multiple callbacks
+mst.register_callbacks(app, df)
 
 # Layout with navigation links and page container
 app.layout = dbc.Container(

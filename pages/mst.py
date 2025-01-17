@@ -36,11 +36,22 @@ def layout(G, df, X_red) -> html.Div:
     """
     # define graph layout and coordinates
     # G = G.to_networkx()  # if not done in visualizer.py hdbscan
-    # pos = nx.spring_layout(G)
-    # pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
-    # nx.set_node_attributes(G, pos, 'pos')
+    pos = nx.spring_layout(G)
+    pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
+    nx.set_node_attributes(G, pos, 'pos')
 
-    # edge_trace, node_trace = modify_graph_data(G)
+    edge_trace, node_trace = modify_graph_data(G)
+
+    fig = go.Figure()
+    fig.add_trace(edge_trace)
+    fig.add_trace(node_trace)
+
+    fig.update_layout(
+        hovermode="closest",
+        margin=dict(b=20, l=5, r=5, t=40),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        )
 
     # # todo: fix this shape and bring to go.Scatter that i can use the callbackfunction!
     # fig = {
@@ -53,9 +64,11 @@ def layout(G, df, X_red) -> html.Div:
     #     ),
     # }
 
+
+
     # hdbscan_plotting implementation: set MST on top of the dimensionality reduced landscape. Not so nice and clear visualization like the force directed layout
-    mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
-    fig = mst.plot()
+    # mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
+    # fig = mst.plot()
 
     layout = html.Div([
         # plot download button
@@ -123,7 +136,7 @@ def register_callbacks(app, df):
             return existing_table
 
         # extract accession from selection and lookup row in df and append row to the dash table
-        accession  = clickData['points'][0]['customdata']
+        accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # todo: make this more beatiful and adapt to df shape
         selected_row = df[df['accession'] == accession].iloc[0]
         selected_row[df.columns.get_loc('selected')] = True  # if entry has been selected once set it to True
         # build Brenda URLs

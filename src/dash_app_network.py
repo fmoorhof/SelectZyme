@@ -25,26 +25,24 @@ import pandas as pd
 
 
 def modify_graph_data(G: nx.Graph):
-    """only needed for minimal spanning tree"""
+    """Generate edge and node traces for a NetworkX graph with improved hover data."""
+    # Edge traces
     edge_x = []
     edge_y = []
     for edge in G.edges():
         x0, y0 = G.nodes[edge[0]]['pos']
         x1, y1 = G.nodes[edge[1]]['pos']
-        edge_x.append(x0)
-        edge_x.append(x1)
-        edge_x.append(None)
-        edge_y.append(y0)
-        edge_y.append(y1)
-        edge_y.append(None)
+        edge_x.extend([x0, x1, None])  # Use extend for cleaner code
+        edge_y.extend([y0, y1, None])
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
         line=dict(width=0.5, color='#888'),
-        hoverinfo='none',  # todo: embedding distances can be shown here (take nodes as template how to do it: 1st: add information to nodes in visualizer HDBSCAN)
+        hoverinfo='none',  # No hover info for edges
         mode='lines'
     )
 
+    # Node traces
     node_x = []
     node_y = []
     node_text = []
@@ -52,20 +50,25 @@ def modify_graph_data(G: nx.Graph):
         x, y = G.nodes[node]['pos']
         node_x.append(x)
         node_y.append(y)
-        # G.nodes[node].pop(['data'])  # pop only 1280 dim embeddings
-        [G.nodes[node].pop(key) for key in ['data', 'pos']]
-        node_text.append(G.nodes[node])  # Add node attributes for hover (except removed 'data' and 'pos')
+
+        # Remove unnecessary attributes
+        G.nodes[node].pop('data', None)  # Remove 'data' if it exists
+        G.nodes[node].pop('pos', None)  # Remove 'pos' if it exists
+
+        # Format node attributes for hover text
+        hover_text = "<br>".join([f"{key}: {value}" for key, value in G.nodes[node].items()])
+        node_text.append(hover_text)
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode='markers',
         hoverinfo='text',
-        text=node_text,
+        text=node_text,  # Use formatted hover text
         marker=dict(
             showscale=True,
             colorscale='YlGnBu',
             reversescale=True,
-            color=[],
+            color=[],  # Will be populated with node adjacencies
             size=10,
             colorbar=dict(
                 thickness=15,
@@ -76,6 +79,7 @@ def modify_graph_data(G: nx.Graph):
         )
     )
 
+    # Color nodes by their number of connections
     node_adjacencies = [len(list(G.adj[node])) for node in G.nodes()]
     node_trace.marker.color = node_adjacencies
 
