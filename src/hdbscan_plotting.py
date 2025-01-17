@@ -69,10 +69,19 @@ class SingleLinkageTree(object):
 
         fig = go.Figure()
 
-        # pre-compute hover texts for performance enhancement
+        # Only show hover data for some df columns
+        columns_of_interest = [col for col in self.df.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
+        # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
         hover_texts = self.df.iloc[leaf_indices].apply(
-            lambda row: '<br>'.join([f"{col}: {row[col]}" for col in self.df.columns]), axis=1
+            lambda row: '<br>'.join([f"{col}: {row[col]}" for col in columns_of_interest]), axis=1
         ).tolist()  # perf: code slow but still ok
+
+    # todo: why customdata not working yet?
+        # todo: assert why plotting results are different using this implementation! is algorithm non deterministic?
+        # columns_of_interest = [col for col in self.df.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
+        # # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+        # hover_texts=["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest)
+        #         for i in range(len(self.df))]
 
         if polar:  # todo: go.Scatterpolar not really appropriate for large interactive dendrogram visualizations
             # batch calculation for performance enhancement
@@ -95,6 +104,8 @@ class SingleLinkageTree(object):
                 theta=theta_values,
                 mode='lines',
                 line=dict(color='black', width=1.0),
+                # todo: why customdata not working yet?
+                # customdata=self.df['accession'],  # needed to pass accession to callback from which entire row is restored of df
                 text=text_values,
                 hoverinfo='text'
             ))  # perf: quite slow: assert why and enhance!
@@ -119,6 +130,8 @@ class SingleLinkageTree(object):
                 y=y_values,
                 mode='lines',
                 line=dict(color='black', width=1.0),
+                # todo: why customdata not working yet?
+                # customdata=self.df['accession'],  # needed to pass accession to callback from which entire row is restored of df
                 text=text_values,
                 hoverinfo='text'
             ))
@@ -194,6 +207,7 @@ class MinimumSpanningTree:
             hoverinfo="none"
         ))
 
+        # Only show hover data for some df columns
         columns_of_interest = [col for col in self.df.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
         # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
         hover_text=["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest)
@@ -208,7 +222,7 @@ class MinimumSpanningTree:
                 color=node_color,
                 opacity=node_alpha
             ),
-            customdata=self.df['accession'],
+            customdata=self.df['accession'],  # needed to pass accession to callback from which entire row is restored of df
             hovertext=hover_text,
             hoverinfo="text"
         ))
