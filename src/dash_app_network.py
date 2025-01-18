@@ -11,7 +11,31 @@ import plotly.graph_objects as go
 import networkx as nx
 import pandas as pd
 
-from src.customizations import set_columns_of_interest
+from customizations import set_columns_of_interest
+
+
+def prune_graph(G: nx.Graph, df: pd.DataFrame) -> tuple:
+    """
+    Prune the graph to keep only nodes with connectivity > 1 and update the DataFrame accordingly.
+    !Assumes that the DataFrame index corresponds to the node IDs in the graph.!
+
+    Parameters:
+    G (networkx.Graph): The input graph.
+    df (pandas.DataFrame): DataFrame containing node attributes and additional information.
+    Returns:
+    tuple: A tuple containing:
+        - G (networkx.Graph): The pruned graph.
+        - df (pandas.DataFrame): The updated DataFrame with rows corresponding to the pruned graph.
+    """
+    # Filter nodes with connectivity > 1
+    nodes_to_keep = [node for node in G.nodes() if len(list(G.adj[node])) > 1]
+    G = G.subgraph(nodes_to_keep).copy()
+
+    # Update the DataFrame to keep only rows corresponding to the retained nodes
+    df = df.loc[nodes_to_keep].copy()
+    df.reset_index(inplace=True)
+
+    return G, df
 
 
 def modify_graph_data(G, df: pd.DataFrame) -> tuple:
@@ -27,6 +51,10 @@ def modify_graph_data(G, df: pd.DataFrame) -> tuple:
     """
     if not isinstance(G, nx.Graph):
         G = G.to_networkx()
+
+    if len(G.nodes()) > 5000:
+        logging.warning("Minimal Spanning Tree (MST) will with over 5000 nodes will be too large for nice visualizations. Concludingly, a reduced MST is created that only shows nodes with connectivity greater than 1.")
+        G, df = prune_graph(G, df)
 
     # define graph layout and coordinates
     pos = nx.spring_layout(G)
