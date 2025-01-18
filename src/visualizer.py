@@ -3,7 +3,6 @@ import logging
 import pandas as pd
 import plotly.graph_objects as go
 import networkx as nx
-import cudf
 from cuml.cluster import (
     HDBSCAN,
     DBSCAN
@@ -17,9 +16,8 @@ from cuml.manifold import (
     TSNE,
     UMAP
 )
-import matplotlib.pyplot as plt
 
-from ncbi_taxonomy_resolver import lineage_resolver
+from src.customizations import set_columns_of_interest
 
 
 def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
@@ -143,57 +141,6 @@ def umap(X, dimension: int = 2, **kwargs):
     return X_umap
 
 
-def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Modify the given DataFrame before plotting to make values look nicer/custom.
-
-    Args:
-        df (pd.DataFrame): The DataFrame to be modified.
-
-    Returns:
-        pd.DataFrame: The modified DataFrame.
-    """
-    # replace empty ECs because they will not get plottet (if color='ec' or 'xref_brenda')
-    df['xref_brenda'] = df['xref_brenda'].fillna('')
-    values_to_replace = ['NA', '0']
-    df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
-    
-    df['ec'] = df['ec'].fillna('unknown')  # replace empty ECs because they will not get plottet (if color='ec')
-    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', '', regex=True)  # 1.1.1.- to 0.0.0.0    
-    df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
-    logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
-    logging.info(f"{(df['xref_brenda'] != '').sum()} Brenda entries are found.")
-
-    # define markers for the plot
-    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
-        condition2 = (df['ec'].to_pandas() != 'unknown')
-    else:  # pandas DataFrame
-        condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
-        condition2 = (df['ec'] != 'unknown')
-    df['marker_size'] = 6
-    df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 8 # Set to other value for data points that meet the condition
-    df.loc[condition2, 'marker_symbol'] = 'diamond'
-    df.loc[condition, 'marker_size'] = 10
-    df.loc[condition, 'marker_symbol'] = 'cross'
-    # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
-
-    # provide taxonomic names and lineages from taxid (organism_id)
-    taxa = [lineage_resolver(i) for i in df['organism_id'].values]
-    df['species'] = [tax[0] for tax in taxa]
-    df['domain'] = [tax[1] for tax in taxa]
-    df['kingdom'] = [tax[2] for tax in taxa]
-    df['lineage'] = [tax[3] for tax in taxa]
-
-    df['selected'] = False
-    df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
-
-    # todo: remove later
-    # df['activity_on_PET'] = df['activity_on_PET'].apply(lambda x: True if x == 1.0 else False)
-    return df
-
-
 def plot_2d(df, X_red, legend_attribute: str):
     """
     Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
@@ -209,8 +156,8 @@ def plot_2d(df, X_red, legend_attribute: str):
     # Add a scatter trace for each unique value in the legend_attribute column
     for value in df[legend_attribute].unique():
         subset = df[df[legend_attribute] == value]
-        columns_of_interest = [col for col in subset.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
-        # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+
+        columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
 
         fig.add_trace(go.Scatter(
             x=X_red[subset.index, 0],

@@ -13,6 +13,7 @@ from preprocessing import Parsing
 from preprocessing import Preprocessing
 from embed import load_or_createDB
 import visualizer
+from customizations import custom_plotting
 from fetch_data_uniprot import UniProtFetcher
 from dash_app import run_dash_app
 # from dash_app_network import run_dash_app
@@ -127,7 +128,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 def dimred_clust(df, X, dim_method):
     labels, G, Gsl = visualizer.clustering_HDBSCAN(X, df, min_samples=5, min_cluster_size=50)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
     df['cluster'] = labels
-    df = visualizer.custom_plotting(df)
+    df = custom_plotting(df)
 
     dim_method = dim_method.upper()
     if dim_method == 'PCA':

@@ -5,12 +5,16 @@ Tutorial taken from: https://plotly.com/python/network-graphs/
 
     Shortest Paths, Betweenness Centrality, critical nodes
 """
+import logging
+
 import plotly.graph_objects as go
 import networkx as nx
 import pandas as pd
 
+from src.customizations import set_columns_of_interest
 
-def modify_graph_data(G, df):
+
+def modify_graph_data(G, df: pd.DataFrame) -> tuple:
     """
     Modify the graph data for visualization.
     Parameters:
@@ -53,8 +57,8 @@ def modify_graph_data(G, df):
         node_x.append(x)
         node_y.append(y)
 
-    columns_of_interest = [col for col in df.columns if col not in ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']]
-    # columns_of_interest = ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
+    # set hover data
+    columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
     node_text=["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest)
             for i in range(len(df))]
     
