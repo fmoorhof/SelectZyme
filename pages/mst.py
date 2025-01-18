@@ -4,10 +4,7 @@ import io
 import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
-import plotly.graph_objects as go
-import networkx as nx
 
-from src.dash_app_network import modify_graph_data
 from src.hdbscan_plotting import MinimumSpanningTree
 
 
@@ -34,22 +31,9 @@ def layout(G, df, X_red) -> html.Div:
     Note:
     - The `modify_graph_data` function is assumed to be defined elsewhere and is responsible for creating the edge and node traces.
     """
-    edge_trace, node_trace = modify_graph_data(G, df)
-
-    fig = go.Figure()
-    fig.add_trace(edge_trace)
-    fig.add_trace(node_trace)
-
-    fig.update_layout(
-        hovermode="closest",
-        margin=dict(b=20, l=5, r=5, t=40),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        )
-
-    # hdbscan_plotting implementation: set MST on top of the dimensionality reduced landscape. Not so nice and clear visualization like the force directed layout, however, implementation works.
-    # mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
-    # fig = mst.plot()
+    mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
+    fig = mst.plot_mst_in_DimRed_landscape()
+    fig = mst.plot_mst_force_directed(G)
 
     layout = html.Div([
         # plot download button

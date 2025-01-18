@@ -8,14 +8,21 @@ https://stackoverflow.com/questions/51936574/how-to-plot-scipy-hierarchy-dendrog
 similarly, adaptations were integrated for the MST implementation:
 https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L760
 
+MST networkx force directed layout implementation:
+This is a minimal example dash app to visualize a networkx graph. Tutorial taken from: https://plotly.com/python/network-graphs/
+possible outlook on networkx implementation:
+- Insights into Connectivity and Routes: Shortest Paths, Betweenness Centrality, critical nodes
+
 Conclusion on the adapted hdbscan implementation:
 - Implementation by far the fastest, client side rendering (default) is very slow and loaded plot can not really be interacted with (batch7 dataset, min_samples=5; min_cluster_size=50) for MST, SLC renders slower but then works slowly. (batch7 dataset, min_samples=250; min_cluster_size=500). same slow results.
 - MST in DimRed landscape is not really nice. The force directed layout is better. Apart from this only the connectivity information is really usefull there which can also maybe extracted differently.
 - Trees: polar: nice that it worked now but go.scatterpolar is not really suited for the visualization
 """
 from warnings import warn
+import logging
 
 import numpy as np
+import networkx as nx
 from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
 
@@ -166,7 +173,7 @@ class MinimumSpanningTree:
         self.X_red = X_red
         self.df = df
 
-    def plot(self, node_size=4, node_color="black", node_alpha=0.5,
+    def plot_mst_in_DimRed_landscape(self, node_size=4, node_color="black", node_alpha=0.5,
              edge_alpha=0.3, edge_linewidth=1, vary_line_width=True, colorbar=True):
         """
         Plot the minimum spanning tree using Plotly Express.
@@ -234,7 +241,143 @@ class MinimumSpanningTree:
         )
 
         return fig
+    
+    def plot_mst_force_directed(self, G: nx.Graph):
+        """
+        Plots a Minimum Spanning Tree (MST) using a force-directed layout.
+        This function takes a NetworkX graph object representing the MST and 
+        visualizes it using Plotly. The graph is modified and plotted with 
+        custom layout settings to enhance visualization.
+        Parameters:
+        -----------
+        G : nx.Graph
+            A NetworkX graph object representing the Minimum Spanning Tree (MST).
+        Returns:
+        --------
+        fig : plotly.graph_objs._figure.Figure
+            A Plotly Figure object containing the MST visualization.
+        """
+        edge_trace, node_trace = self._modify_graph_data(G)
 
+        fig = go.Figure()
+        fig.add_trace(edge_trace)
+        fig.add_trace(node_trace)
+
+        fig.update_layout(
+            hovermode="closest",
+            margin=dict(b=20, l=5, r=5, t=40),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            )
+        
+        return fig
+
+    def _modify_graph_data(self, G) -> tuple:
+        """
+        Modify the graph data for visualization.
+        Parameters:
+        G (networkx.Graph or compatible): The input graph. If not a networkx.Graph, it will be converted.
+        df (pandas.DataFrame): DataFrame containing node attributes and additional information.
+        Returns:
+        tuple: A tuple containing:
+            - edge_trace (plotly.graph_objs.Scatter): Scatter plot trace for edges.
+            - node_trace (plotly.graph_objs.Scatter): Scatter plot trace for nodes with attributes.
+        """
+        if not isinstance(G, nx.Graph):
+            G = G.to_networkx()
+
+        if len(G.nodes()) > 5000:
+            logging.warning("Minimal Spanning Tree (MST) will with over 5000 nodes will be too large for nice visualizations. Concludingly, a reduced MST is created that only shows nodes with connectivity greater than 1.")
+            G, self.df = self._prune_graph(G, df)  # BREAKING CHANGE: is this save to overwrite self.df from pruning?
+
+        # define graph layout and coordinates
+        pos = nx.spring_layout(G)
+        pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
+        nx.set_node_attributes(G, pos, 'pos')
+
+        # Edge traces
+        edge_x = []
+        edge_y = []
+        for edge in G.edges():
+            x0, y0 = G.nodes[edge[0]]['pos']
+            x1, y1 = G.nodes[edge[1]]['pos']
+            edge_x.extend([x0, x1, None])  # Use extend for cleaner code
+            edge_y.extend([y0, y1, None])
+
+        edge_trace = go.Scatter(
+            x=edge_x, y=edge_y,
+            line=dict(width=0.5, color='#888'),
+            hoverinfo='none',  # No hover info for edges
+            mode='lines'
+        )
+        
+        # Node traces
+        node_x = []
+        node_y = []
+        for node in G.nodes():
+            x, y = G.nodes[node]['pos']
+            node_x.append(x)
+            node_y.append(y)
+
+        # set hover data
+        columns_of_interest = set_columns_of_interest(self.df.columns)  # Only show hover data for some df columns
+        node_text=["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest)
+                for i in range(len(self.df))]
+        
+        node_trace = go.Scatter(
+            x=node_x, y=node_y,
+            hoverinfo='text',
+            customdata=self.df['accession'],
+            text=node_text,  # Use formatted hover text
+            mode='markers',
+            marker=dict(
+                size=self.df['marker_size'],
+                symbol=self.df['marker_symbol'],
+                opacity=0.7,
+                line_width=1,
+
+                # connectivity legend
+                showscale=True,
+                colorscale='YlGnBu',
+                reversescale=True,
+                color=[],  # Will be populated with node adjacencies
+                colorbar=dict(
+                    thickness=15,
+                    title='Node Connections',
+                    xanchor='left',
+                )
+            )
+        )
+
+        # Color nodes by their number of connections
+        node_adjacencies = [len(list(G.adj[node])) for node in G.nodes()]
+        node_trace.marker.color = node_adjacencies
+
+        return edge_trace, node_trace
+
+    def _prune_graph(self, G: nx.Graph) -> tuple:
+        """
+        Prune the graph to keep only nodes with connectivity > 1 and update the DataFrame accordingly.
+        !Assumes that the DataFrame index corresponds to the node IDs in the graph.!
+
+        Parameters:
+        G (networkx.Graph): The input graph.
+        df (pandas.DataFrame): DataFrame containing node attributes and additional information.
+        Returns:
+        tuple: A tuple containing:
+            - G (networkx.Graph): The pruned graph.
+            - df (pandas.DataFrame): The updated DataFrame with rows corresponding to the pruned graph.
+        """
+        # Filter nodes with connectivity > 1
+        nodes_to_keep = [node for node in G.nodes() if len(list(G.adj[node])) > 1]
+        G = G.subgraph(nodes_to_keep).copy()
+
+        # Update the DataFrame to keep only rows corresponding to the retained nodes
+        df = self.df.loc[nodes_to_keep].copy()
+        df.reset_index(inplace=True)
+
+        return G, df
+    
 
 
 if __name__ == "__main__":
@@ -257,11 +400,13 @@ if __name__ == "__main__":
     data, _ = make_blobs(n_samples=sample_size, n_features=2, centers=3, cluster_std=0.8, random_state=42)
     X_red = np.random.randn(sample_size, 2)  # 2D mock PCA data
 
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=5, gen_min_span_tree=True)
-    clusterer.fit(data)
+    hdbscan = hdbscan.HDBSCAN(min_cluster_size=5, gen_min_span_tree=True)
+    hdbscan.fit(data)
 
     # debug and develop here
-    # fig = SingleLinkageTree(clusterer.single_linkage_tree_._linkage, df).plot(polar=False)
-    fig = MinimumSpanningTree(clusterer.minimum_spanning_tree_._mst, clusterer.minimum_spanning_tree_._data, X_red, df).plot()
+    # fig = SingleLinkageTree(hdbscan.single_linkage_tree_._linkage, df).plot(polar=False)
+    mst = MinimumSpanningTree(hdbscan.minimum_spanning_tree_._mst, hdbscan.minimum_spanning_tree_._data, X_red, df)
+    fig = mst.plot_mst_in_DimRed_landscape()
+    fig = mst.plot_mst_force_directed(hdbscan.minimum_spanning_tree_)
 
     fig.show()
