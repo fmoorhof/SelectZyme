@@ -8,9 +8,8 @@ Please clone the repository:
 git clone https://github.com/fmoorhof/ec.git
 ```
 
-## Install
-For optimal GPU support, the conda installation is reccomended.
 ### Conda
+For optimal GPU support, the conda installation is reccomended.
 ```
 conda env create -f environment.yml
 ```
@@ -20,7 +19,7 @@ conda env create -f environment.yml
 pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118
 pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
 ```
-Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed and that causes the CI runner to exit on: `OSError: [Errno 28] No space left on device`  
+Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed and that causes the docker containers or CI runner to exit on: `OSError: [Errno 28] No space left on device`  
 
 Outlook: pass extra-index-url in pyproject.toml. Doesnt work for me yet!
 ```
@@ -51,6 +50,9 @@ docker exec -it CONTAINERID /bin/bash
 ## Usage
 ```
 conda activate ec
+# use config.yml files (reccomended for reproducibly saving input)
+python app.py --config=results/test_config.yml
+# or parameter passing
 python src/main.py -p 'argparse_test' -q="ec:1.13.11.85" -q "ec:1.13.11.84" --length '200 TO 601' -loc "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv" -o 'argparse_test'
 ```
 Please pay attention if using multiple query words to repeat the `-p` the argument. Please also specify protein sequence length filters in the mentioned format 'from TO to'
