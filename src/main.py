@@ -27,13 +27,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Process parameters.')
     parser.add_argument('-p', '--project_name', required=True, help='Project name')
     parser.add_argument('-q', '--query_terms', nargs='+', required=True, help='Query terms for UniProt')
-    parser.add_argument('--length', required=True, help='Length range for sequences')
+    parser.add_argument('-l', '--length', required=True, help='Length range for sequences to retrieve from UniProt. Max. sequence length by default (esm1b) is 1024 amino acids. For longer sequences please use esm2, prott5, prostt5 as --plm_model argument.')
     parser.add_argument('-loc', '--custom_data_location', required=True, help='Location of your custom data CSV')
 
     # Optional arguments with defaults
-    parser.add_argument('--dim_red', default='TSNE', 
-                        help='Dimensionality reduction technique (default: TSNE)')
-    parser.add_argument('--plm_model', default='esm1b', help="Protein language model (default: 'esm1b') other models: 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'")
+    parser.add_argument('--dim_red', default='PCA', 
+                        help='Dimensionality reduction technique (default: PCA)')
+    parser.add_argument('--plm_model', default='esm1b', help="Protein language model (default: 'esm1b') other models: 'esm2', 'esm3', 'prott5', 'prostt5'")
     parser.add_argument('--out_dir', default='datasets/output/', 
                         help='Output directory (default: datasets/output/)')
     parser.add_argument('--df_coi', nargs='+', default=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'], 
@@ -46,6 +46,8 @@ def parse_args() -> argparse.Namespace:
     logging.debug(f"Query terms: {args.query_terms}")
     logging.debug(f"Length range: {args.length}")
     logging.debug(f"Custom data location: {args.custom_data_location}")
+    logging.debug(f"Dimensionality reduction: {args.dim_red}")
+    logging.debug(f"Protein Language Model: {args.plm_model}")        
     logging.debug(f"Output directory: {args.out_dir}")
     logging.debug(f"Dataframe columns of interest: {args.df_coi}")
 
