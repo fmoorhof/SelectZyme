@@ -1,24 +1,8 @@
-"""
-This file is accessing the Qdrant vector database for further analysis. On hughe datasets the CPU implemented tools show a very long runtime. Therefore, this script is
-aiming to perform downstream analysis with GPU only.
- 
-downstream analysis:
-clustering
-dimensionality reduction
-visualization
- 
-Runtime < 30 mins for 200k sequences
- 
-Execution hint: RAPIDSAI was not installable in DeepChem, so i execute this script in a seperate docker container that only contains the RAPIDSAI tools.
-The container name is fmoorhof_rapidsai and the ID: 2cee57c21810
-rapidsai/rapidsai:cuda11.5-base-centos7-py3.9
-"""
 import logging
 
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import networkx as nx
-import cudf
 from cuml.cluster import (
     HDBSCAN,
     DBSCAN
@@ -33,11 +17,10 @@ from cuml.manifold import (
     UMAP
 )
 
-from ncbi_taxonomy_resolver import lineage_resolver
+from src.customizations import set_columns_of_interest
 
 
-
-def clustering_HDBSCAN(X, df, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -46,23 +29,37 @@ def clustering_HDBSCAN(X, df, min_samples: int = 30, min_cluster_size: int = 250
     :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
     return: labels: cluster labels for each point
     """
+    logging.info("Running HDBSCAN. This may take a while.")
     if X.shape[0] < min_samples:
         logging.error("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
         raise ValueError("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
     
-    hdbscan = HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, gen_min_span_tree=True, **kwargs)
+    hdbscan = HDBSCAN(min_samples=min_samples, 
+                      min_cluster_size=min_cluster_size, 
+                      gen_min_span_tree=True, 
+                      gen_condensed_tree=True, 
+                      gen_single_linkage_tree_ = True,
+                      **kwargs)  # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
+
     labels = hdbscan.fit_predict(X)
 
-    G = hdbscan.minimum_spanning_tree_.to_networkx()
-    Gsl = hdbscan.single_linkage_tree_.to_networkx()
+    G = hdbscan.minimum_spanning_tree_  # .to_networkx()  # # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
+    Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
 
-    # Annotate nodes with information from `df`
-    # Assuming node indices in the graph match the DataFrame index
+    # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
+    # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
+    #                                   edge_alpha=0.6,
+    #                                   node_size=80,
+    #                                   edge_linewidth=2)
+    # plt.savefig(f"datasets/mst.png", bbox_inches='tight')
+    # plt.close()
+
+    # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
+    # Annotate nodes with information from `df` (Assuming node indices in the graph match the DataFrame index)
     # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
-    for node in G.nodes():
-        if node in df.index:
-            nx.set_node_attributes(G, {node: df.loc[node].to_dict()})
-            nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
+    # for node in G.nodes():
+    #     if node in df.index:
+            # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
 
     logging.info("HDBSCAN done")
     return labels, G, Gsl
@@ -144,123 +141,45 @@ def umap(X, dimension: int = 2, **kwargs):
     return X_umap
 
 
-def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
+def plot_2d(df, X_red, legend_attribute: str):
     """
-    Modify the given DataFrame before plotting to make values look nicer/custom.
-
-    Args:
-        df (pd.DataFrame): The DataFrame to be modified.
-
+    Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
+    Parameters:
+    df (pd.DataFrame): DataFrame containing the data to be plotted. It should include columns for the legend attribute, marker size, marker symbol, accession, and species.
+    X_red (np.ndarray): 2D array with the reduced dimensionality data. The shape should be (n_samples, 2).
+    legend_attribute (str): Column name in the DataFrame to be used for creating the legend.
     Returns:
-        pd.DataFrame: The modified DataFrame.
+    plotly.graph_objs._figure.Figure: A Plotly Figure object representing the 2D scatter plot.
     """
-    # replace empty ECs because they will not get plottet (if color='ec' or 'xref_brenda')
-    df['xref_brenda'] = df['xref_brenda'].fillna('')
-    values_to_replace = ['NA', '0']
-    df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
-    
-    df['ec'] = df['ec'].fillna('0.0.0.0')  # replace empty ECs because they will not get plottet (if color='ec')
-    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', '0.0.0.0', regex=True)  # 1.1.1.- to 0.0.0.0    
-    # values_to_replace = ['1.14.11.-', '1.14.20.-']
-    # df['ec'] = df['ec'].replace(values_to_replace, '1.14.1120')
-    # Replace 'ec' values that don't match the pattern '1.14.[11|20].*' with '0.0.0.1'
-    # df['ec'] = df['ec'].str.replace(r'[^1\.14\.(11|20).*]', '0.0.0.1', regex=True)
-    df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
-    logging.info(f"{(df['ec'] != '0.0.0.0').sum()} UniProt EC numbers are found.")
-    logging.info(f"{(df['xref_brenda'] != '').sum()} Brenda entries are found.")
+    fig = go.Figure()
 
-    # build Brenda URLs
-    df['BRENDA URL'] = [
-        f"https://www.brenda-enzymes.org/enzyme.php?ecno={brenda.split(';')[0]}&UniProtAcc={entry}&OrganismID={organism}"
-        if brenda != ''  # Only build URL if BRENDA is not empty
-        else ''
-        for brenda, entry, organism in zip(df['xref_brenda'].values, df['accession'].values, df['organism_id'].values)  # values_host with cudf
-    ]
+    # Add a scatter trace for each unique value in the legend_attribute column
+    for value in df[legend_attribute].unique():
+        subset = df[df[legend_attribute] == value]
 
-    # define markers for the plot
-    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = (df['xref_brenda'].to_pandas() != '') 
-        condition2 = (df['ec'].to_pandas() != '0.0.0.0')
-    else:  # pandas DataFrame
-        condition = (df['xref_brenda'] != '') 
-        condition2 = (df['ec'] != '0.0.0.0')
-    df['marker_size'] = 5
-    df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 10  # Set to other value for data points that meet the condition
-    df.loc[condition2, 'marker_symbol'] = 'diamond'
-    df.loc[condition, 'marker_size'] = 18
-    df.loc[condition, 'marker_symbol'] = 'cross'
-    # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
+        columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
 
-    # provide taxonomic names and lineages from taxid (organism_id)
-    taxa = [lineage_resolver(i) for i in df['organism_id'].values]
-    df['species'] = [tax[0] for tax in taxa]
-    df['domain'] = [tax[1] for tax in taxa]
-    df['kingdom'] = [tax[2] for tax in taxa]
-    df['lineage'] = [tax[3] for tax in taxa]
+        fig.add_trace(go.Scatter(
+            x=X_red[subset.index, 0],
+            y=X_red[subset.index, 1],
+            mode='markers',
+            name=str(value),  # Legend name
+            marker=dict(
+                size=subset['marker_size'],
+                symbol=subset['marker_symbol'],
+                opacity=0.5
+            ),
+            customdata=subset['accession'],
+            hovertext=subset.apply(lambda row: '<br>'.join([f'{col}: {row[col]}' for col in columns_of_interest]), axis=1),
+            hoverinfo='text'
+        ))
 
-    # alphabetically sort df based on EC numbers (for nicer legend)
-    # df = df.sort_values(by=['ec'])  # Todo: need triage!: embeddings always need to be in same order as df!
-
-    df['selected'] = False
-    df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
-
-    # line breaks for long entries that hover template can still show all information
-    df['sequence'] = df['sequence'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
-    df['xref_pdb'] = df['xref_pdb'].astype(str)  # fixed: AttributeError: 'float' object has no attribute 'replace'
-    df['xref_pdb'] = df['xref_pdb'].str.wrap(90).apply(lambda x: x.replace('\n', '<br>'))
-
-    # put long columns at the end of the df
-    cols_at_end = ['BRENDA URL', 'xref_pdb', 'sequence']
-    df = df[[c for c in df if c not in cols_at_end] 
-        + [c for c in cols_at_end if c in df]]
-
-    return df
-
-
-def plot_2d(df, X_red, collection_name: str, method: str):
-    """Plot the results, independent of the dimensionality method used. Output files are written to the Output folder.
-
-    :param df: dataframe containing the annoattions
-    :param X_red: dimensionality reduced embeddings
-    :param collection_name: name of the collection/dataset
-    :param method: dimensionality reduction method used"""
-    cols = df.columns.values.tolist()
-    cols = cols[0:-3]  # do not provide sequence and markers in hover template
-    fig = px.scatter(df, x=X_red[:, 0], y=X_red[:, 1],  # X_umap[0].to_numpy()?
-                     color='ec', # color='cluster'
-                 title=f'2D {method} on dataset {collection_name}',
-                 hover_data=cols,
-                 opacity=0.5,
-                 color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
-                 )
- 
-    fig.update_traces(marker=dict(size=df['marker_size'].to_numpy(), symbol=df['marker_symbol'].to_numpy()))
-    # todo: rather provide HTML export option in dash
-    # fig.write_html(f'datasets/output/{collection_name}_2d_{method}.html')
-    logging.info(f'{method} 2D plot completed.')
-
-
-def plot_3d(df, X_red, collection_name: str, method: str):
-    """Plot the results, independent of the dimensionality method used. Output files are written to the Output folder.
-
-    :param df: dataframe containing the annoattions
-    :param X_red: dimensionality reduced embeddings
-    :param collection_name: name of the collection/dataset
-    :param method: dimensionality reduction method used"""
-    cols = df.columns.values.tolist()
-    # cols = cols[0:-2]  # do not provide sequence
-    fig = px.scatter_3d(df, x=X_red[:, 0], y=X_red[:, 1], z=X_red[:, 2],  # X_umap[0].to_numpy()?
-                        color='cluster', # color='ec'
-                 title=f'3D {method} on dataset {collection_name}',
-                 hover_data=cols,
-                 opacity=0.5,
-                 color_continuous_scale=px.colors.sequential.Viridis,  # _r = reversed  # color_discrete_sequence=px.colors.sequential.Viridis,
-                 )
- 
-    fig.update_traces(marker=dict(size=df['marker_size'].to_numpy(), symbol=df['marker_symbol'].to_numpy()))
-    fig.write_html(f'datasets/output/{collection_name}_3d_{method}.html')
-    logging.info(f'{method} 3D plot completed.')
+    fig.update_layout(
+        showlegend=True,
+        legend_title_text=legend_attribute
+    )
+    # fig.write_html(f'datasets/test_landscape.html')
+    return fig
 
 
 
