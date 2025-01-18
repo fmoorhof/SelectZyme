@@ -54,6 +54,18 @@ class Preprocessing:
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
+    def preprocess(self):
+        """
+        This function applies all preprocessing steps to the dataframe.
+        """
+        self.remove_long_sequences()
+        self.remove_sequences_without_Metheonin()
+        self.remove_sequences_with_undertermined_amino_acids()
+        self.remove_duplicate_entries()
+        self.remove_duplicate_sequences()
+
+        return self.df
+
     def remove_long_sequences(self) -> None:
         """
         This function removes too long sequences from the dataset. Sequences > 1024 amino acids cause the esm embedding to fail.

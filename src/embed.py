@@ -13,17 +13,19 @@ from qdrant_client import QdrantClient, models
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def gen_embedding(sequences: list[str], plm_model: str = 'esm1b') -> np.ndarray:
+def gen_embedding(sequences: list[str], plm_model: str = 'esm1b', no_pad: bool = False) -> np.ndarray:
     """
-    Generate embeddings for a list of sequences using a pre-trained model.
+    Generate embeddings for a list of sequences using a specified pre-trained language model (PLM).
     Args:
         sequences (list[str]): A list of sequences to generate embeddings for.
+        plm_model (str, optional): The pre-trained language model to use. Default is 'esm1b'.
+                                   Supported models include 'esm1b', 'prott5', and 'prostt5'.
+        no_pad (bool, optional): If True, removes paddings from the sequences before generating mean embeddings.
+                                 Default is False.
     Returns:
-        np.ndarray: A numpy array containing the embeddings for each sequence.
-    The function uses the "facebook/esm1b_t33_650M_UR50S" model from the Hugging Face library to generate embeddings.
-    It tokenizes each sequence, passes it through the model, and computes the mean of the last hidden states to obtain the embedding.
-    The embeddings are moved back to the CPU and returned as a numpy array.
+        np.ndarray: An array of embeddings for the input sequences.
     """
+
     tokenizer, model = _select_plm_model(plm_model)
     logging.info(f"Generating {plm_model} embeddings using device: {device}")
     
@@ -36,9 +38,19 @@ def gen_embedding(sequences: list[str], plm_model: str = 'esm1b') -> np.ndarray:
         with torch.no_grad():
             inputs = inputs.to(device)
             outputs = model(**inputs)
-        last_hidden_states = outputs.last_hidden_state
-        embedding = torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()  # Move embedding back to CPU
+
+        if no_pad == False:
+            last_hidden_states = outputs.last_hidden_state
+            embedding = torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()  # Move embedding back to CPU
+        else:
+            if plm_model == 'prott5' or plm_model == 'prostt5':
+                seq_len = int(len(seq)/2+1)
+            else:
+                seq_len = len(seq)
+            last_hidden_states = outputs.last_hidden_state[0, :seq_len, :]  # Remove padding
+            embedding = last_hidden_states.mean(dim=0).cpu().numpy()  # Move embedding back to CPU
         embeddings.append(embedding)
+
     return np.array(embeddings)
 
 
@@ -128,8 +140,19 @@ def load_or_createDB(qdrant: QdrantClient, df, collection_name: str, plm_model: 
     return annotation, embeddings
 
 
-@staticmethod
 def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
+    """
+    Selects and loads a pre-trained language model (PLM) and its corresponding tokenizer based on the specified model name.
+    Args:
+        plm_model (str): The name of the pre-trained language model to load. 
+                         Options are 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5'.
+    Returns:
+        tuple: A tuple containing the tokenizer and the model.
+    Raises:
+        ValueError: If the specified model name is not supported.
+        NotImplementedError: If 'esm3' is specified, as it is not yet implemented.
+    """
+
     if plm_model == 'esm1b':
         tokenizer = AutoTokenizer.from_pretrained("facebook/esm1b_t33_650M_UR50S")
         model = AutoModel.from_pretrained("facebook/esm1b_t33_650M_UR50S").to(device)
@@ -168,14 +191,10 @@ if __name__=='__main__':
     from preprocessing import Preprocessing
 
     df = Parsing.parse_tsv('tests/head_10.tsv')
-    pp = Preprocessing(df)
-    pp.remove_long_sequences()
-    pp.remove_sequences_without_Metheonin()
-    pp.remove_sequences_with_undertermined_amino_acids()
-    df = pp.df
+    df = Preprocessing(df).preprocess()
 
     # test embedding
-    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='prostt5')
+    embeddings = gen_embedding(df['sequence'].tolist(), plm_model='prostt5', no_pad=True)
     print(embeddings.shape)
     print(embeddings)
 
