@@ -35,9 +35,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-p', '--project_name', help='Project name')
     parser.add_argument('-q', '--query_terms', nargs='+', help='Query terms for UniProt')
     parser.add_argument('-l', '--length', help='Length range for sequences to retrieve from UniProt')
-    parser.add_argument('-loc', '--custom_data_location', help='Location of your custom data CSV')
 
     # Optional arguments with defaults
+    parser.add_argument('-loc', '--custom_data_location', default='', help='Location of your custom data CSV')
     parser.add_argument('--dim_red', default='PCA', 
                         help='Dimensionality reduction technique (default: PCA)')
     parser.add_argument('--plm_model', default='esm1b', 
@@ -96,8 +96,12 @@ def parse_data(args):
     if not os.path.isfile(input_file):  # generate it
         fetcher = UniProtFetcher(args.df_coi, args.out_dir)
         df = fetcher.query_uniprot(args.query_terms, args.length)
-        custom_data = fetcher.load_custom_csv(args.custom_data_location, sep=';')
-        df = pd.concat([custom_data, df], ignore_index=True)
+        if args.custom_data_location != '':
+            if args.custom_data_location.endswith('.fasta'):
+                custom_data = fetcher.load_custom_fasta(args.custom_data_location)
+            else:
+                custom_data = fetcher.load_custom_csv(file_path=args.custom_data_location, sep=';')
+            df = pd.concat([custom_data, df], ignore_index=True)
         df = fetcher.clean_data(df)
         fetcher.save_data(df, args.project_name)
     elif input_file.endswith('.fasta'):
