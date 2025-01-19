@@ -58,6 +58,7 @@ class SingleLinkageTree(object):
         polar : boolean, optional
             Whether to plot a circular (polar) dendrogram.
         """
+        logging.info("Generating phylogenetic tree.")
         dendrogram_data = dendrogram(self._linkage, p=p, truncate_mode=truncate_mode, no_plot=True)
         X = np.array(dendrogram_data['icoord'])
         Y = np.array(dendrogram_data['dcoord'])
@@ -188,6 +189,7 @@ class MinimumSpanningTree:
         fig : plotly.graph_objs._figure.Figure
             A Plotly Figure object containing the MST visualization.
         """
+        logging.info("Generating force-directed layout MST.")
         edge_trace, node_trace = self._modify_graph_data(G)
 
         fig = go.Figure()
@@ -208,8 +210,10 @@ class MinimumSpanningTree:
         """
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
         """
-        if self._data.shape[0] > 5000:
+        logging.info("Generating MST in dimensionality reduced plot.")
+        if self._data.shape[0] > 50000:
             warn("Too many data points for safe rendering of a minimum spanning tree!")
+            return None
 
         # Vary line width if enabled
         if vary_line_width:
@@ -258,7 +262,7 @@ class MinimumSpanningTree:
 
         if len(G.nodes()) > 5000:
             logging.warning("Minimal Spanning Tree (MST) will with over 5000 nodes will be too large for nice visualizations. Concludingly, a reduced MST is created that only shows nodes with connectivity greater than 1.")
-            G, self.df = self._prune_graph(G, df)  # BREAKING CHANGE: is this save to overwrite self.df from pruning?
+            G = self._prune_graph(G)
 
         # define graph layout and coordinates
         pos = nx.spring_layout(G)
@@ -287,28 +291,26 @@ class MinimumSpanningTree:
 
         return edge_trace, node_trace
 
-    def _prune_graph(self, G: nx.Graph) -> tuple:
+    def _prune_graph(self, G: nx.Graph):
         """
         Prune the graph to keep only nodes with connectivity > 1 and update the DataFrame accordingly.
         !Assumes that the DataFrame index corresponds to the node IDs in the graph.!
 
         Parameters:
         G (networkx.Graph): The input graph.
-        df (pandas.DataFrame): DataFrame containing node attributes and additional information.
         Returns:
         tuple: A tuple containing:
             - G (networkx.Graph): The pruned graph.
-            - df (pandas.DataFrame): The updated DataFrame with rows corresponding to the pruned graph.
         """
         # Filter nodes with connectivity > 1
         nodes_to_keep = [node for node in G.nodes() if len(list(G.adj[node])) > 1]
         G = G.subgraph(nodes_to_keep).copy()
 
         # Update the DataFrame to keep only rows corresponding to the retained nodes
-        df = self.df.loc[nodes_to_keep].copy()
-        df.reset_index(inplace=True)
+        self.df = self.df.loc[nodes_to_keep].copy()
+        self.df.reset_index(inplace=True)
 
-        return G, df
+        return G
     
     @staticmethod
     def create_edge_trace(edge_x, edge_y, edge_alpha=0.3, edge_width=1.0):
