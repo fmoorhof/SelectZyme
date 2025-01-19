@@ -159,7 +159,7 @@ def plot_2d(df, X_red, legend_attribute: str):
 
         columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
 
-        fig.add_trace(go.Scatter(
+        fig.add_trace(go.Scattergl(
             x=X_red[subset.index, 0],
             y=X_red[subset.index, 1],
             mode='markers',

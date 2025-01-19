@@ -108,7 +108,7 @@ class SingleLinkageTree(object):
                 text_values.append(None)
 
             # create figure with pre-computed values
-            fig.add_trace(go.Scatterpolar(
+            fig.add_trace(go.Scatterpolargl(
                 r=r_values,
                 theta=theta_values,
                 mode='lines',
@@ -134,7 +134,7 @@ class SingleLinkageTree(object):
                 text_values.append(None)
 
             # create figure with pre-computed values
-            fig.add_trace(go.Scatter(
+            fig.add_trace(go.Scattergl(
                 x=x_values,
                 y=y_values,
                 mode='lines',
@@ -265,7 +265,7 @@ class MinimumSpanningTree:
             G = self._prune_graph(G)
 
         # define graph layout and coordinates
-        pos = nx.spring_layout(G)
+        # pos = nx.spring_layout(G)  # some overlaying nodes, NOT favored layout
         pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
         nx.set_node_attributes(G, pos, 'pos')
 
@@ -303,7 +303,7 @@ class MinimumSpanningTree:
             - G (networkx.Graph): The pruned graph.
         """
         # Filter nodes with connectivity > 1
-        nodes_to_keep = [node for node in G.nodes() if len(list(G.adj[node])) > 1]
+        nodes_to_keep = [node for node in G.nodes() if len(list(G.adj[node])) > 4]
         G = G.subgraph(nodes_to_keep).copy()
 
         # Update the DataFrame to keep only rows corresponding to the retained nodes
@@ -317,7 +317,7 @@ class MinimumSpanningTree:
         """
         Create a Plotly edge trace for the graph.
         """
-        return go.Scatter(
+        return go.Scattergl(
             x=edge_x,
             y=edge_y,
             mode="lines",
@@ -332,7 +332,7 @@ class MinimumSpanningTree:
         columns_of_interest = set_columns_of_interest(self.df.columns)
         hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
         
-        return go.Scatter(
+        return go.Scattergl(
             x=node_x,
             y=node_y,
             mode="markers",
