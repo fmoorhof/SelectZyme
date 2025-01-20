@@ -1,5 +1,5 @@
 """This implementation is inspired by the hdbscan plotting library to access the single linkage tree directly and not first converting it to a newick tree to later use it with a scatter plot (like done in phylogenetic_tree.py)
-Also, this implementation is a revert from initial hdbscan_plotting.py commits, that will get merged consecutively with functionalities from hdbcan_plotting.py.
+Also, this implementation is a revert from initial hdbscan_plotting.py commits (https://github.com/fmoorhof/ec/blob/4103f530d07031fcb66a879eb95713eea17178fe/src/hdbscan_plotting.py) 4103f53, that will get merged consecutively with functionalities from hdbcan_plotting.py.
 """
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
