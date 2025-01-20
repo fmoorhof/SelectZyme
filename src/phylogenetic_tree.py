@@ -1,5 +1,7 @@
 """Deprecation warning: This file can be deleted if i stick to the hdbscan_plotting implementation!
 
+Neither normal nor circular are implemented well. tree spans over the whole plot 1 branch each so the implementation is utterly wrong. remove
+
 Implementations inspired and mostly taken from: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-phylogeny/utils.py
 networkx graph to newick format implementation is taken from: https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format
 """
@@ -358,4 +360,4 @@ if __name__=="__main__":
     fig.write_image("datasets/dendrogram_with_lines.png")
 
     fig = create_tree_circular(newick_tree)
-    fig.write_image("datasets/dendrogram_circular.png")
+    # fig.write_image("datasets/dendrogram_circular.png")

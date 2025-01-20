@@ -1,4 +1,7 @@
-"""this is only a separate development script. i think code failed but if not, integrate into phylogenetic_tree.py"""
+"""this is only a separate development script. i think code failed but if not, integrate into phylogenetic_tree.py
+
+Conclusion Circos library is way too slow for already medium sized trees (backend calculation). impractical!
+"""
 from pycirclize import Circos
 from pycirclize.utils import load_example_tree_file, ColorCycler
 from matplotlib.lines import Line2D
