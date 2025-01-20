@@ -4,30 +4,20 @@ import io
 import dash
 from dash import html, dcc, dash_table
 from dash.dependencies import Input, Output
-import networkx as nx
 import pandas as pd
 import plotly.figure_factory as ff
 
 from src.hdbscan_plotting import SingleLinkageTree
-from src.phylogenetic_tree import g_to_newick, create_tree, create_tree_circular  # # utterly ugly implementation and incorrect. remove
-from src.phylogenetic_tree_circular import circos_dendrogram
 
 
 def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
     sl = SingleLinkageTree(G._linkage, df)
     fig = sl.plot(polar=polar)  # latest implementation using the hdbscan_plotting
     
-    # utterly ugly implementation and incorrect. remove
-    newick_str = g_to_newick(G.to_networkx())
-    fig = create_tree(newick_str)  # create_tree_circular(newick_str)
-
     # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. browser freezes!
     # but implementation correct and very pretty, maybe check why so slow and optimize
     fig = ff.create_dendrogram(G._linkage)  # todo: labels=df
 
-    # attempt circos_dendrogram: figure creation ultra slow. -> not usable
-    fig = circos_dendrogram(newick_str)  # todo: fig needs to be plotly figure not matplotlib
-    fig.savefig("datasets/pycirclize.png")
 
     layout = html.Div([
         # plot download button
