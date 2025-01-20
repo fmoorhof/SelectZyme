@@ -28,13 +28,13 @@ import plotly.graph_objects as go
 
 from customizations import set_columns_of_interest
 
-
+# try to revert in single_linkage_plotting.py to adress this issue: otherwise i dont see a way of fixing it:
+    # todo: some (root) lines are not properly build and also the line scaling looks not so professional like before. Find reason and fix it.
 class SingleLinkageTree(object):
     def __init__(self, linkage, df):
         self._linkage = linkage
         self.df = df
 
-    # todo: some (root) lines are not properly build and also the line scaling looks not so professional like before. Find reason and fix it.
     def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True, polar=False):
         """Plot a dendrogram of the single linkage tree.
 

@@ -7,17 +7,24 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import plotly.figure_factory as ff
 
-from src.hdbscan_plotting import SingleLinkageTree
+# from src.hdbscan_plotting import SingleLinkageTree
+from single_linkage_plotting import SingleLinkageTree
 
 
 def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
-    sl = SingleLinkageTree(G._linkage, df)
-    fig = sl.plot(polar=polar)  # latest implementation using the hdbscan_plotting
+    # tree looks a bit creapy after overengineering it. try to revert and merge new functionalities instead of reverting here much (build from scratch again in single_linkage_plotting.py)
+    # from src.hdbscan_plotting import SingleLinkageTree
+    # sl = SingleLinkageTree(G._linkage, df)
+    # fig = sl.plot(polar=polar)  # latest implementation using the hdbscan_plotting
+
+    # from src.single_linage_plotting import SingleLinkageTree
+    sl = SingleLinkageTree(linkage=G._linkage, df=df)
+    fig = sl.plot()
+
     
     # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. browser freezes!
     # but implementation correct and very pretty, maybe check why so slow and optimize
-    fig = ff.create_dendrogram(G._linkage)  # todo: labels=df
-
+    # fig = ff.create_dendrogram(G._linkage)  # todo: labels=df
 
     layout = html.Div([
         # plot download button
