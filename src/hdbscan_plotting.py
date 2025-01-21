@@ -1,10 +1,4 @@
 """This implementation is inspired by the hdbscan plotting library to access the single linkage tree directly and not first converting it to a newick tree to later use it with a scatter plot (like done in phylogenetic_tree.py)
-https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L536
-based on this implementation, the plotting function was modified to use plotly (instead of matplotlib). Also, df has been added for plot annotations.
-Additionally, plotting unrelated functionalities (such as other export formats) were removed.
-polar coordinates were inspired by this stackoverflow post:
-https://stackoverflow.com/questions/51936574/how-to-plot-scipy-hierarchy-dendrogram-using-polar-coordinates
-
 similarly, adaptations were integrated for the MST implementation:
 https://github.com/scikit-learn-contrib/hdbscan/blob/f0285287a62084e3a796f3a34901181972966b72/hdbscan/plots.py#L760
 
@@ -14,157 +8,16 @@ possible outlook on networkx implementation:
 - Insights into Connectivity and Routes: Shortest Paths, Betweenness Centrality, critical nodes
 
 Conclusion on the adapted hdbscan implementation:
-- Implementation by far the fastest, client side rendering (default) is very slow and loaded plot can not really be interacted with (batch7 dataset, min_samples=5; min_cluster_size=50) for MST, SLC renders slower but then works slowly. (batch7 dataset, min_samples=250; min_cluster_size=500). same slow results.
 - MST in DimRed landscape is not really nice. The force directed layout is better. Apart from this only the connectivity information is really usefull there which can also maybe extracted differently.
-- Trees: polar: nice that it worked now but go.scatterpolar is not really suited for the visualization
 """
 from warnings import warn
 import logging
 
 import numpy as np
 import networkx as nx
-from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
 
 from customizations import set_columns_of_interest
-
-# try to revert in single_linkage_plotting.py to adress this issue: otherwise i dont see a way of fixing it:
-    # todo: some (root) lines are not properly build and also the line scaling looks not so professional like before. Find reason and fix it.
-class SingleLinkageTree(object):
-    def __init__(self, linkage, df):
-        self._linkage = linkage
-        self.df = df
-
-    def plot(self, truncate_mode=None, p=0, vary_line_width=True, cmap='Viridis', colorbar=True, polar=False):
-        """Plot a dendrogram of the single linkage tree.
-
-        Parameters
-        ----------
-        truncate_mode : str, optional
-            Truncation mode ('none', 'lastp', or 'level') for the dendrogram.
-
-        p : int, optional
-            The `p` parameter for `truncate_mode`.
-
-        vary_line_width : boolean, optional
-            Whether to vary line width based on cluster size.
-
-        cmap : str, optional
-            Color scale to use for the clusters.
-
-        colorbar : boolean, optional
-            Whether to include a colorbar in the plot.
-
-        polar : boolean, optional
-            Whether to plot a circular (polar) dendrogram.
-        """
-        logging.info("Generating phylogenetic tree.")
-        dendrogram_data = dendrogram(self._linkage, p=p, truncate_mode=truncate_mode, no_plot=True)
-        X = np.array(dendrogram_data['icoord'])
-        Y = np.array(dendrogram_data['dcoord'])
-        leaf_indices = dendrogram_data['leaves']
-
-
-        if polar and self.df.shape[0] > 5000:
-            warn("Too many data points for rendering of a circular dendrogram figure. switched polar to False to create a non circular dendrogram.")
-            polar=False
-
-        if polar:
-            # Transform for polar coordinates
-            Y = -np.log(Y + 1)
-            X_min, X_max = X.min(), X.max()
-            X = ((X - X_min) / (X_max - X_min) * 0.8 + 0.1) * 2 * np.pi
-            X = np.apply_along_axis(self._smooth_segment, 1, X)
-            Y = np.apply_along_axis(self._smooth_segment, 1, Y)
-
-        fig = go.Figure()
-
-        # set hover data
-        columns_of_interest = set_columns_of_interest(self.df.columns)  # Only show hover data for some df columns
-        hover_texts = self.df.iloc[leaf_indices].apply(
-            lambda row: '<br>'.join([f"{col}: {row[col]}" for col in columns_of_interest]), axis=1
-        ).tolist()  # perf: code slow but still ok
-
-    # todo: why customdata not working yet?
-        # todo: assert why plotting results are different using this implementation! is algorithm non deterministic?
-        # set hover data
-        # columns_of_interest = set_columns_of_interest(self.df.columns)  # Only show hover data for some df columns
-        # hover_texts=["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest)
-        #         for i in range(len(self.df))]
-
-        if polar:  # todo: go.Scatterpolar not really appropriate for large interactive dendrogram visualizations
-            # batch calculation for performance enhancement
-            r_values = []
-            theta_values = []
-            text_values = []
-            for i, (x, y) in enumerate(zip(X, Y)):
-                r_values.extend(y)
-                theta_values.extend(np.degrees(x))
-                text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
-
-                # Add None to fix unrelated branch connecting lines
-                r_values.append(None)
-                theta_values.append(None)
-                text_values.append(None)
-
-            # create figure with pre-computed values
-            fig.add_trace(go.Scatterpolargl(
-                r=r_values,
-                theta=theta_values,
-                mode='lines',
-                line=dict(color='black', width=1.0),
-                # todo: why customdata not working yet?
-                # customdata=self.df['accession'],  # needed to pass accession to callback from which entire row is restored of df
-                text=text_values,
-                hoverinfo='text'
-            ))  # perf: quite slow: assert why and enhance!
-        else:
-            # batch calculation for performance enhancement
-            x_values = []
-            y_values = []
-            text_values = []
-            for i, (x, y) in enumerate(zip(X, Y)):
-                x_values.extend(x)
-                y_values.extend(y)
-                text_values.extend([hover_texts[i]] * len(y) if i < len(hover_texts) else [None] * len(y))
-
-                # Add None to fix unrelated branch connecting lines
-                x_values.append(None)
-                y_values.append(None)
-                text_values.append(None)
-
-            # create figure with pre-computed values
-            fig.add_trace(go.Scattergl(
-                x=x_values,
-                y=y_values,
-                mode='lines',
-                line=dict(color='black', width=1.0),
-                # todo: why customdata not working yet?
-                # customdata=self.df['accession'],  # needed to pass accession to callback from which entire row is restored of df
-                text=text_values,
-                hoverinfo='text'
-            ))
-
-        fig.update_layout(
-            polar=dict(
-                radialaxis=dict(visible=polar),
-                angularaxis=dict(visible=polar)
-            ) if polar else {},
-            xaxis=dict(title='Clusters', showticklabels=not polar),
-            yaxis=dict(title='Distance' if not polar else 'Log(Distance)', visible=not polar),
-            showlegend=False,
-            dragmode='zoom'
-        )
-
-        if colorbar:
-            fig.update_layout(coloraxis=dict(colorscale=cmap))
-
-        return fig
-
-    @staticmethod
-    def _smooth_segment(segment, Nsmooth=20):
-        """Smooth a line segment for polar plotting."""
-        return np.concatenate([[segment[0]], np.linspace(segment[1], segment[2], Nsmooth), [segment[3]]])
 
 
 class MinimumSpanningTree:
@@ -383,7 +236,6 @@ if __name__ == "__main__":
     hdbscan.fit(data)
 
     # debug and develop here
-    # fig = SingleLinkageTree(hdbscan.single_linkage_tree_._linkage, df).plot(polar=False)
     mst = MinimumSpanningTree(hdbscan.minimum_spanning_tree_._mst, hdbscan.minimum_spanning_tree_._data, X_red, df)
     fig = mst.plot_mst_in_DimRed_landscape()  # NOT favored visualization
     fig = mst.plot_mst_force_directed(hdbscan.minimum_spanning_tree_)

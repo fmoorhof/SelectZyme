@@ -5,26 +5,28 @@ import dash
 from dash import html, dcc, dash_table
 from dash.dependencies import Input, Output
 import pandas as pd
-import plotly.figure_factory as ff
+# import plotly.figure_factory as ff
 
+from src.customizations import set_columns_of_interest
 # from src.hdbscan_plotting import SingleLinkageTree
-from single_linkage_plotting import SingleLinkageTree
+from single_linkage_plotting import create_dendrogram
 
 
 def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
     # tree looks a bit creapy after overengineering it. try to revert and merge new functionalities instead of reverting here much (build from scratch again in single_linkage_plotting.py)
     # from src.hdbscan_plotting import SingleLinkageTree
     # sl = SingleLinkageTree(G._linkage, df)
-    # fig = sl.plot(polar=polar)  # latest implementation using the hdbscan_plotting
+    # fig = sl.plot(polar=polar)
 
-    # from src.single_linage_plotting import SingleLinkageTree
-    sl = SingleLinkageTree(linkage=G._linkage, df=df)
-    fig = sl.plot()
-
-    
-    # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. browser freezes!
+    # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. also dendrogram creation and figure creation
     # but implementation correct and very pretty, maybe check why so slow and optimize
-    # fig = ff.create_dendrogram(G._linkage)  # todo: labels=df
+    columns_of_interest = set_columns_of_interest(df.columns)
+    hover_text = ["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest) for i in range(len(df))]
+    # fig = ff.create_dendrogram(G._linkage, hovertext=hover_text)  # labels=df['accession'].to_list()  # root node causes probably different dimensions of G._linkage and df
+    
+    # leanest SL implementation and current go-to. Callback also working
+    fig = create_dendrogram(Z=G._linkage, df=df, hovertext=hover_text)
+
 
     layout = html.Div([
         # plot download button
