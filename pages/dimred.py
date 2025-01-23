@@ -4,6 +4,7 @@ import io
 import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
+import plotly.graph_objects as go
 
 from visualizer import plot_2d
 from src.dash_app import run_dash_app
@@ -14,10 +15,25 @@ from src.dash_app import run_dash_app
 #     return layout, register_callbacks
 
 
-def layout(df, X_red):
+def layout(df, X_red, centroids_df):
     cols = df.columns.values.tolist()
 
     fig = plot_2d(df, X_red, legend_attribute=cols[2])
+
+    # add cluster centroids trace
+    fig.add_trace(
+        go.Scattergl(
+            x=centroids_df['x'],
+            y=centroids_df['y'],
+            mode='markers',
+            marker=dict(
+                size=15,
+                symbol='x',
+            ),             
+            hovertext=centroids_df['cluster'],
+            hoverinfo='text'
+        )
+    )
 
     # Define the layout of the Dash app
     layout = html.Div([

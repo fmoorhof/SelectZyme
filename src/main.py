@@ -130,10 +130,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 
 
 def dimred_clust(df, X, dim_method):
-    labels, G, Gsl = visualizer.clustering_HDBSCAN(X, df, min_samples=5, min_cluster_size=50)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
-    df['cluster'] = labels
-    df = custom_plotting(df)
-
+    """Dimensionality reduction and clustering"""
     dim_method = dim_method.upper()
     if dim_method == 'PCA':
         X_red = visualizer.pca(X)
@@ -142,7 +139,12 @@ def dimred_clust(df, X, dim_method):
     elif dim_method == 'UMAP':
         X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
 
-    return df, X_red, G, Gsl
+    # clustering
+    labels, G, Gsl, centroids_df = visualizer.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=50)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
+    df['cluster'] = labels
+    df = custom_plotting(df)
+
+    return df, X_red, G, Gsl, centroids_df
 
 
 def main(app):

@@ -1,12 +1,9 @@
 import logging
 
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
-import networkx as nx
-from cuml.cluster import (
-    HDBSCAN,
-    DBSCAN
-)  # pip install hdbscan (the cuml is based on it else plotting can not be done direcly from the module)
+from cuml.cluster import HDBSCAN
 from cuml.decomposition import (
     PCA,
     TruncatedSVD,
@@ -20,7 +17,34 @@ from cuml.manifold import (
 from src.customizations import set_columns_of_interest
 
 
-def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def _weighted_cluster_centroid(model, X, cluster_id) -> np.ndarray:
+    """
+    Calculate the weighted centroid for a given cluster.
+    This function computes the weighted centroid of a cluster identified by `cluster_id` 
+    using the provided clustering `model` and data `X`. The implementation is inspired 
+    by HDBSCAN but adapted for use with CuML HDBSCAN, which does not expose the 
+    `_raw_data` attribute.
+    Parameters:
+    model (HDBSCAN): The clustering model that has been fitted to the data.
+    X (np.ndarray): The dataset used for clustering.
+    cluster_id (int): The identifier of the cluster for which the centroid is to be calculated.
+                      Note that `cluster_id` should not be -1, as this represents noise.
+    Returns:
+    np.ndarray: The weighted centroid of the specified cluster.
+    Raises:
+    ValueError: If `cluster_id` is -1, indicating a noise cluster.
+    """
+    if cluster_id == -1:
+        raise ValueError("Cannot calculate centroid for noise cluster (-1).")
+    
+    mask = model.labels_ == cluster_id
+    cluster_data = X[mask]  # model._raw_data[mask]  CuML HDBSCAN doesnt have _raw_data explosed but defined as GPUArray of X, called X_m and defined in from cuml.internals.input_utils import input_to_cuml_array
+    cluster_membership_strengths = model.probabilities_[mask]
+    
+    return np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
+
+
+def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -29,6 +53,7 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
     return: labels: cluster labels for each point
     """
+    # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
     logging.info("Running HDBSCAN. This may take a while.")
     if X.shape[0] < min_samples:
         logging.error("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
@@ -37,48 +62,28 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     hdbscan = HDBSCAN(min_samples=min_samples, 
                       min_cluster_size=min_cluster_size, 
                       gen_min_span_tree=True, 
-                      gen_condensed_tree=True, 
-                      gen_single_linkage_tree_ = True,
-                      **kwargs)  # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
+                      **kwargs)  
 
-    labels = hdbscan.fit_predict(X)
+    hdbscan.fit(X)
+    labels = hdbscan.labels_
 
     G = hdbscan.minimum_spanning_tree_  # .to_networkx()  # # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
     Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
 
-    # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
-    # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
-    #                                   edge_alpha=0.6,
-    #                                   node_size=80,
-    #                                   edge_linewidth=2)
-    # plt.savefig(f"datasets/mst.png", bbox_inches='tight')
-    # plt.close()
-
-    # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
-    # Annotate nodes with information from `df` (Assuming node indices in the graph match the DataFrame index)
-    # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
-    # for node in G.nodes():
-    #     if node in df.index:
-            # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
+    # Calculate centroids for each cluster
+    centroids = []
+    for cluster_id in np.unique(labels):
+        if cluster_id != -1:  # Skip noise cluster
+            centroid = _weighted_cluster_centroid(hdbscan, X, cluster_id)
+            centroids.append({
+                'cluster': cluster_id,
+                'x': centroid[0],
+                'y': centroid[1] if X.shape[1] > 1 else None  # Handle 1D case
+            })
+    centroids_df = pd.DataFrame(centroids)
 
     logging.info("HDBSCAN done")
-    return labels, G, Gsl
-
-
-def clustering_DBSCAN(X, eps: float = 1.0, min_samples: int = 1, **kwargs):
-    """
-    Clustering of the embeddings with a Density Based clustering algorithm (HDBScan).
-    # finished in 12 mins on 200k:)
-
-    :param X: embeddings
-    :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
-    :param kwargs: Additional parameters
-    return: labels: cluster labels for each point
-    """
-    dbscan = DBSCAN(eps, min_samples=min_samples, **kwargs)
-    labels = dbscan.fit_predict(X)
-    logging.info("DBSCAN done")
-    return labels
+    return labels, G, Gsl, centroids_df
 
 
 def pca(X, dimension: int = 2, **kwargs):
