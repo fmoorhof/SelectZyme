@@ -75,52 +75,51 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **
     for cluster_id in np.unique(labels):
         if cluster_id != -1:  # Skip noise cluster
             centroid = _weighted_cluster_centroid(hdbscan, X, cluster_id)
-            centroids.append({
-                'cluster': cluster_id,
-                'x': centroid[0],
-                'y': centroid[1] if X.shape[1] > 1 else None  # Handle 1D case
-            })
-    centroids_df = pd.DataFrame(centroids)
+            centroids.append(centroid)
+    X_centroids = np.array(centroids)
 
     logging.info("HDBSCAN done")
-    return labels, G, Gsl, centroids_df
+    return labels, G, Gsl, X_centroids
 
 
-def pca(X, dimension: int = 2, **kwargs):
+def pca(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with PCA.
     :param kwargs: Additional parameters"""
     pca = PCA(n_components=dimension, output_type="numpy")
     X_pca = pca.fit_transform(X)
+    X_pca_centroid = pca.transform(X_centroids)
     variance = pca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
     logging.info("PCA done")
-    return X_pca
+    return X_pca, X_pca_centroid
 
 
-def incremental_pca(X, dimension: int = 2, **kwargs):
+def incremental_pca(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with Incremental PCA.
     Incremental PCA (Principal Component Analysis) is a variant of PCA that is designed to handle very large datasets that may not fit into memory.
     Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently.
     :param kwargs: Additional parameters"""
     ipca = IncrementalPCA(n_components=dimension, output_type="numpy", **kwargs)
     X_ipca = ipca.fit_transform(X)
+    X_ipca_centroid = ipca.transform(X_centroids)
     variance = ipca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
     logging.info("Incremental PCA done")
-    return X_ipca
+    return X_ipca, X_ipca_centroid
 
 
-def truncated_svd(X, dimension: int = 2, **kwargs):
+def truncated_svd(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with Truncated SVD.
     
     :param kwargs: Additional parameters
     """
     svd = TruncatedSVD(n_components=dimension, output_type="numpy", **kwargs)
     X_svd = svd.fit_transform(X)
+    X_svd_centroid = svd.transform(X_centroids)
     logging.info("Truncated SVD done")
-    return X_svd
+    return X_svd, X_svd_centroid
 
 
 def tsne(X, dimension: int = 2, **kwargs):
@@ -131,22 +130,23 @@ def tsne(X, dimension: int = 2, **kwargs):
     """
     tsne = TSNE(n_components=dimension, **kwargs)
     X_tsne = tsne.fit_transform(X)
-    logging.info("tSNE done")
+    logging.info("tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE as it not learning representations so it can not transform centroids meaningfully.")
     return X_tsne
 
 
 # Dim reduced visualization with UMAP: super slow!! and .5GB output files wtf.
-def umap(X, dimension: int = 2, **kwargs):
+def umap(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with UMAP.
     :param kwargs: Additional parameters
     """
     umap = UMAP(n_components=dimension, **kwargs)  # unittest params: n_neighbors=10, min_dist=0.01
     X_umap = umap.fit_transform(X)
+    X_umap_centroid = umap.transform(X_centroids)
     logging.info("UMAP done")
-    return X_umap
+    return X_umap, X_umap_centroid
 
 
-def plot_2d(df, X_red, legend_attribute: str):
+def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, legend_attribute: str):
     """
     Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
     Parameters:
@@ -183,6 +183,24 @@ def plot_2d(df, X_red, legend_attribute: str):
         showlegend=True,
         legend_title_text=legend_attribute
     )
+
+    # add cluster centroids trace
+    fig.add_trace(
+        go.Scattergl(
+            x=X_red_centroids[:, 0],
+            y=X_red_centroids[:, 1],
+            mode='markers',
+            name='Cluster Centroids',  # Set the legend name
+            marker=dict(
+                size=10,
+                symbol='x',
+                color='red',
+            ),             
+            hovertext=[f"Cluster {i} centroid" for i in range(X_red_centroids.shape[0])],
+            hoverinfo='text'
+        )
+    )
+
     # fig.write_html(f'datasets/test_landscape.html')
     return fig
 

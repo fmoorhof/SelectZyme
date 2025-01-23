@@ -7,7 +7,7 @@ import yaml
 import pandas as pd
 from qdrant_client import QdrantClient
 import dash
-import networkx as nx
+import numpy as np
 
 from preprocessing import Parsing
 from preprocessing import Preprocessing
@@ -130,21 +130,20 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 
 
 def dimred_clust(df, X, dim_method):
-    """Dimensionality reduction and clustering"""
-    dim_method = dim_method.upper()
-    if dim_method == 'PCA':
-        X_red = visualizer.pca(X)
-    elif dim_method == 'TSNE':
-        X_red = visualizer.tsne(X, random_state=42)
-    elif dim_method == 'UMAP':
-        X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
-
-    # clustering
-    labels, G, Gsl, centroids_df = visualizer.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=50)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
+    labels, G, Gsl, X_centroids = visualizer.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=15)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
     df['cluster'] = labels
     df = custom_plotting(df)
 
-    return df, X_red, G, Gsl, centroids_df
+    dim_method = dim_method.upper()
+    if dim_method == 'PCA':
+        X_red, X_red_centroids = visualizer.pca(X, X_centroids)
+    elif dim_method == 'TSNE':
+        X_red = visualizer.tsne(X, random_state=42)
+        X_red_centroids = np.empty((0, 2))
+    elif dim_method == 'UMAP':
+        X_red, X_red_centroids = visualizer.umap(X, X_centroids, n_neighbors=15, random_state=42)
+
+    return df, X_red, G, Gsl, X_red_centroids
 
 
 def main(app):
@@ -153,26 +152,6 @@ def main(app):
 
     X = database_access(df, args.project_name)
     df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
-
-    # # minimal spanning tree app
-    # pos = nx.nx_agraph.graphviz_layout(G)  # alternative layout: pos = nx.nx_pydot.graphviz_layout(G)  # conda install anaconda::pydot
-    # nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
-    # app = run_dash_app(G, df, app)  # network and table setting
-    # # todo mst: table selection not working: use same table from landscape, no new one. also annotation from table data or df - color selections in tree
-
-    # # single linkage tree app
-    # # pos = nx.spring_layout(Gsl)
-    # # nx.set_node_attributes(Gsl, pos, 'pos')  # Assign positions as attributes
-    # # app = run_dash_app(Gsl, df, app)  # network and table setting    
-    # # todo slt: make graph layout phylogenetic tree-like, perf: graph creation quite slow
-    # # convert slt to another format usable for cytoscape and use dash-phylogeny
-    # if nx.is_tree(Gsl):
-    #     newick_str = g_to_newick(Gsl)  # if wrong root got selected, fewer datapoints are displayed
-    #     fig = create_tree(newick_str)
-    # else:
-    #     ValueError("Graph is not a tree. Phylogenetic tree creation is only possible for trees.")
-    # app = run_dash_app(Gsl, df, app, fig)  # network and table setting 
-    # # todo: tree is not displayed properly
 
     # TSNE plot and table app
     # app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)  # plot and table: from dash_app import run_dash_app

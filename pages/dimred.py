@@ -15,25 +15,10 @@ from src.dash_app import run_dash_app
 #     return layout, register_callbacks
 
 
-def layout(df, X_red, centroids_df):
+def layout(df, X_red, X_red_centroids):
     cols = df.columns.values.tolist()
 
-    fig = plot_2d(df, X_red, legend_attribute=cols[2])
-
-    # add cluster centroids trace
-    fig.add_trace(
-        go.Scattergl(
-            x=centroids_df['x'],
-            y=centroids_df['y'],
-            mode='markers',
-            marker=dict(
-                size=15,
-                symbol='x',
-            ),             
-            hovertext=centroids_df['cluster'],
-            hoverinfo='text'
-        )
-    )
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute=cols[2])
 
     # Define the layout of the Dash app
     layout = html.Div([
@@ -101,7 +86,7 @@ def layout(df, X_red, centroids_df):
     return layout
 
 
-def register_callbacks(app, df, X_red):
+def register_callbacks(app, df, X_red, X_red_centroids):
     # Define callbacks
     @app.callback(
         Output('data-table', 'data'),
@@ -131,7 +116,7 @@ def register_callbacks(app, df, X_red):
         Input('legend-attribute', 'value')
     )
     def update_plot_and_download(legend_attribute):
-        updated_fig = plot_2d(df, X_red, legend_attribute)  # Update the figure
+        updated_fig = plot_2d(df, X_red, X_red_centroids, legend_attribute)  # Update the figure
         updated_href = _html_export_figure(updated_fig)  # Generate the updated download link
         return updated_fig, updated_href
     

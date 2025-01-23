@@ -22,17 +22,17 @@ def main(app):
     df = parse_data(args)
     df = preprocessing(df)
     X = database_access(df, args.project_name, args.plm_model)
-    df, X_red, G, Gsl, centroids_df = dimred_clust(df, X, args.dim_red)
+    df, X_red, G, Gsl, X_red_centroids = dimred_clust(df, X, args.dim_red)
 
     # Create page layouts
-    dash.register_page('dim', name="Dimensionality reduction and clustering", layout=dimred.layout(df, X_red, centroids_df))
+    dash.register_page('dim', name="Dimensionality reduction and clustering", layout=dimred.layout(df, X_red, X_red_centroids))
     dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
     dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df, polar=False))  # todo: parse here truncation_mode and p
     # dimred_layout, dimred_register_callbacks = dimred.layout(df, X_red)
     # dimred_register_callbacks(app)  # Call the register_callbacks function to register the callbacks
 
     # Register callbacks
-    dimred.register_callbacks(app, df, X_red)
+    dimred.register_callbacks(app, df, X_red, X_red_centroids)
     # other callbacks are not needed and can be removed theoretically in each layout: do this on cleanup
     # mst.register_callbacks(app, df)  # not needed any more since callback from dimred also apply on mst
     # sl.register_callbacks(app, df)  # not needed any more since callback from dimred also apply on mst
