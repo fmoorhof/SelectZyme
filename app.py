@@ -1,7 +1,6 @@
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State
 
 import pages.mst as mst
 import pages.single_linkage as sl
@@ -49,7 +48,7 @@ def main(app):
             ),
             html.Div(
                 [
-                    dcc.Store(id='shared-data', data=[]),  # Global shared data store
+                    dcc.Store(id='shared-data', data=[]),  # !saves table data from layouts via callbacks defined in the page layouts
                     dbc.Nav(
                         [
                             dbc.NavItem(
@@ -67,40 +66,6 @@ def main(app):
         ],
         fluid=True,
     )
-
-    # Register callbacks for shared data
-    register_shared_callbacks(app, df)
-
-
-def register_shared_callbacks(app, df):
-    # Callback to update shared data based on click interaction
-    @app.callback(
-        Output('shared-data', 'data'),
-        Input('plot', 'clickData'),
-        State('shared-data', 'data')
-    )
-    def update_shared_data(click_data, existing_data):
-        # so far i dont know how this works here but if i comment all i get empy list always. with this entire code however i get duplicates that magically disappear after new selection
-        if click_data is None:
-            return existing_data
-
-        # Extract accession from click data and lookup row in df
-        accession = click_data['points'][0]['customdata']
-        selected_row = df[df['accession'] == accession].iloc[0].to_dict()
-
-        # Update shared data
-        if existing_data is None:
-            existing_data = []
-        existing_data.append(selected_row)
-        return existing_data
-
-    # # Callback to display shared data in a table (optional for debugging or a shared page)
-    # @app.callback(
-    #     Output('shared-data-table', 'data'),
-    #     Input('shared-data', 'data')
-    # )
-    # def update_shared_table(shared_data):
-    #     return shared_data
 
 
 

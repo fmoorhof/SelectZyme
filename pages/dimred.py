@@ -96,11 +96,14 @@ def layout(df, X_red, X_red_centroids):
 def register_callbacks(app, df, X_red, X_red_centroids):
     # Define callbacks
     @app.callback(
-        Output('data-table', 'data'),        
-        [Input('plot', 'clickData'), Input('shared-data', 'data')],
-        State('data-table', 'data')
+        [Output('data-table', 'data'),  # output data to table displayed at page
+         Output('shared-data', 'data')],  # output data to update the dcc.Store in app.py
+        [Input('plot', 'clickData'),  # input users selection/click data
+         Input('shared-data', 'data')],  # input from dcc.Store in app.py (to load existing table at another page)
+        State('data-table', 'data'),  # !if user edits the table (delete rows, edit cells), changes are saved here
+        # State('shared-data', 'data')
     )
-    def update_table(clickData, existing_table, shared_data):
+    def update_table(clickData, shared_table, data_table):  # (input 1, input 2, state)
         """
         Updates the existing table with a new row based on the clickData.
         Parameters:
@@ -117,7 +120,12 @@ def register_callbacks(app, df, X_red, X_red_centroids):
         - The selected row is converted to a dictionary and appended to the existing table.
         """
         if clickData is None:
-            return existing_table
+            return shared_table  # fix: not working, still table loads empty until 1st click (remove next line then, too)
+        
+        # if user deletes entries or modifies cells
+        if data_table is not None:  # skip reload events/page changes since data_table is None (remove with fix above when done)
+             if data_table != shared_table:
+                shared_table = data_table  # set modified changes of user to shared_table (dcc.Store)
 
         # extract accession from selection and lookup row in df and append row to the dash table
         accession  = clickData['points'][0]['customdata']  # accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # if customdata fails 
@@ -128,11 +136,11 @@ def register_callbacks(app, df, X_red, X_red_centroids):
         if selected_row['xref_brenda'] != '':
             selected_row['BRENDA URL'] = f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
 
-        if existing_table is None:
-            existing_table = []
-        existing_table.append(selected_row.to_dict())
+        if shared_table is None:
+            shared_table = []
+        shared_table.append(selected_row.to_dict())
 
-        return existing_table
+        return shared_table, shared_table
 
     @app.callback(
         [Output('plot', 'figure'), Output('download-button', 'href')],
