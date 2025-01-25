@@ -1,22 +1,18 @@
-from base64 import b64encode
-import io
-
-import dash
 from dash import html, dcc, dash_table
-from dash.dependencies import Input, Output
 import pandas as pd
 # import plotly.figure_factory as ff
 
+from pages.dimred import html_export_figure
 from src.customizations import set_columns_of_interest
 # from src.hdbscan_plotting import SingleLinkageTree
 from single_linkage_plotting import create_dendrogram
 
 
-def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
+def layout(G, df: pd.DataFrame) -> html.Div:
     # tree looks a bit creapy after overengineering it. try to revert and merge new functionalities instead of reverting here much (build from scratch again in single_linkage_plotting.py)
     # from src.hdbscan_plotting import SingleLinkageTree
     # sl = SingleLinkageTree(G._linkage, df)
-    # fig = sl.plot(polar=polar)
+    # fig = sl.plot()
 
     # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. also dendrogram creation and figure creation
     # but implementation correct and very pretty, maybe check why so slow and optimize
@@ -34,7 +30,7 @@ def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
             html.A(
             html.Button("Download plot as HTML"), 
             id="download",
-            href=_html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
+            href=html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
             download="plotly_graph.html"
             ),
             style={'float': 'right', 'display': 'inline-block'}
@@ -80,39 +76,3 @@ def layout(G, df: pd.DataFrame, polar=False) -> html.Div:
     ])  # closing html.Div finally
 
     return layout
-
-
-def register_callbacks(app, df):
-    # Define callbacks
-    @app.callback(
-        Output('data-table', 'data'),
-        Input('plot', 'clickData'),
-        dash.dependencies.State('data-table', 'data')
-    )
-    def update_table(clickData, existing_table):
-        if clickData is None:
-            return existing_table
-
-        # extract accession from selection and lookup row in df and append row to the dash table
-        # todo: why customdata not working yet?
-        # accession  = clickData['points'][0]['customdata']  # accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # if customdata fails 
-        accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')
-        selected_row = df[df['accession'] == accession].iloc[0]
-        selected_row[df.columns.get_loc('selected')] = True  # if entry has been selected once set it to True
-        # build Brenda URLs
-        if selected_row['xref_brenda'] != '':
-            selected_row['BRENDA URL'] = f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
-
-        if existing_table is None:
-            existing_table = []
-        existing_table.append(selected_row.to_dict())
-
-        return existing_table
-    
-
-def _html_export_figure(fig):
-        buffer = io.StringIO()
-        fig.write_html(buffer)
-        html_bytes = buffer.getvalue().encode()
-        encoded = b64encode(html_bytes).decode()
-        return f"data:text/html;base64,{encoded}"    

@@ -45,7 +45,7 @@ def layout(df, X_red, X_red_centroids):
             html.A(
             html.Button("Download plot as HTML"), 
             id="download-button",
-            href=_html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
+            href=html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
             download="plotly_graph.html"
             ),
             style={'float': 'right', 'display': 'inline-block'}
@@ -157,11 +157,11 @@ def register_callbacks(app, df, X_red, X_red_centroids):
                 - updated_href: The HTML href link for downloading the updated figure.
         """
         updated_fig = plot_2d(df, X_red, X_red_centroids, legend_attribute)  # Update the figure
-        updated_href = _html_export_figure(updated_fig)  # Generate the updated download link
+        updated_href = html_export_figure(updated_fig)  # Generate the updated download link
         return updated_fig, updated_href
     
 
-def _html_export_figure(fig):
+def html_export_figure(fig):
         """
         Converts a Plotly figure to an HTML string and encodes it in base64 format.
         Args:

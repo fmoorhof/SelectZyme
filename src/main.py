@@ -1,3 +1,5 @@
+"""This file soon can be deleted together with dash_app.py but before merge some functions required by app.py
+into there or a utils file."""
 import logging
 import sys
 import os
@@ -16,8 +18,6 @@ import visualizer
 from customizations import custom_plotting
 from fetch_data_uniprot import UniProtFetcher
 from dash_app import run_dash_app
-# from dash_app_network import run_dash_app
-# from phylogenetic_tree import create_tree, g_to_newick
 
 
 logging.basicConfig(
@@ -130,7 +130,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 
 
 def dimred_clust(df, X, dim_method):
-    labels, G, Gsl, X_centroids = visualizer.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=15)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
+    labels, G, Gsl, X_centroids = visualizer.clustering_HDBSCAN(X, min_samples=3, min_cluster_size=10)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
     df['cluster'] = labels
     df = custom_plotting(df)
 

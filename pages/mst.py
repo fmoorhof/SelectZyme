@@ -1,11 +1,7 @@
-from base64 import b64encode
-import io
-
-import dash
 from dash import dcc, html, dash_table
-from dash.dependencies import Input, Output
 
 from src.hdbscan_plotting import MinimumSpanningTree
+from pages.dimred import html_export_figure
 
 
 # Register page
@@ -41,7 +37,7 @@ def layout(G, df, X_red) -> html.Div:
             html.A(
             html.Button("Download plot as HTML"), 
             id="download",
-            href=_html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
+            href=html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
             download="plotly_graph.html"
             ),
             style={'float': 'right', 'display': 'inline-block'}
@@ -87,37 +83,3 @@ def layout(G, df, X_red) -> html.Div:
     ])  # closing html.Div finally
 
     return layout
-
-
-def register_callbacks(app, df):
-    # Define callbacks
-    @app.callback(
-        Output('data-table', 'data'),
-        Input('plot', 'clickData'),
-        dash.dependencies.State('data-table', 'data')
-    )
-    def update_table(clickData, existing_table):
-        if clickData is None:
-            return existing_table
-
-        # extract accession from selection and lookup row in df and append row to the dash table
-        accession  = clickData['points'][0]['customdata']  # accession  = clickData['points'][0]['text'].split('<br>')[0].replace('accession: ', '')  # if customdata fails 
-        selected_row = df[df['accession'] == accession].iloc[0]
-        selected_row[df.columns.get_loc('selected')] = True  # if entry has been selected once set it to True
-        # build Brenda URLs
-        if selected_row['xref_brenda'] != '':
-            selected_row['BRENDA URL'] = f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
-
-        if existing_table is None:
-            existing_table = []
-        existing_table.append(selected_row.to_dict())
-
-        return existing_table
-    
-
-def _html_export_figure(fig):
-        buffer = io.StringIO()
-        fig.write_html(buffer)
-        html_bytes = buffer.getvalue().encode()
-        encoded = b64encode(html_bytes).decode()
-        return f"data:text/html;base64,{encoded}"    

@@ -27,16 +27,10 @@ def main(app):
     # Create page layouts
     dash.register_page('dim', name="Dimensionality reduction and clustering", layout=dimred.layout(df, X_red, X_red_centroids))
     dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
-    dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df, polar=False))  # todo: parse here truncation_mode and p
-    # dimred_layout, dimred_register_callbacks = dimred.layout(df, X_red)
-    # dimred_register_callbacks(app)  # Call the register_callbacks function to register the callbacks
+    dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df))
 
     # Register callbacks
     dimred.register_callbacks(app, df, X_red, X_red_centroids)
-    # other callbacks are not needed and can be removed theoretically in each layout: do this on cleanup
-    # mst.register_callbacks(app, df)  # not needed any more since callback from dimred also apply on mst
-    # sl.register_callbacks(app, df)  # not needed any more since callback from dimred also apply on mst
-
 
     # Layout with navigation links and page container
     app.layout = dbc.Container(
@@ -60,7 +54,6 @@ def main(app):
                     ),
                     html.Hr(),
                     dash.page_container,  # Displays the content of the current page
-                    # dimred_layout  # insert dimensionality reduction layout from here
                 ]
             ),
         ],
