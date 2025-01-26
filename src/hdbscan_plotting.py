@@ -22,8 +22,8 @@ from customizations import set_columns_of_interest
 
 class MinimumSpanningTree:
     def __init__(self, mst, data, X_red, df):
-        self._mst = mst
-        self._data = data
+        self._mst = mst  # struct: (node1, node2, weight)
+        self._data = data  # what is _data actually? -> read HDBSCAN source code again
         self.X_red = X_red
         self.df = df
     
@@ -43,7 +43,7 @@ class MinimumSpanningTree:
             A Plotly Figure object containing the MST visualization.
         """
         logging.info("Generating force-directed layout MST.")
-        edge_trace, node_trace = self._modify_graph_data(G)
+        edge_trace, node_trace = self._modify_graph_data(G)  # perf: slow
 
         fig = go.Figure()
         fig.add_trace(edge_trace)
@@ -54,6 +54,7 @@ class MinimumSpanningTree:
             margin=dict(b=20, l=5, r=5, t=40),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            showlegend=False,  # hide the node and edge trace legend plotted over the custom legend
             )
         
         return fig
@@ -68,17 +69,17 @@ class MinimumSpanningTree:
             warn("Too many data points for safe rendering of a minimum spanning tree!")
             return None
 
-        # Vary line width if enabled
+        # Vary line width if enabled  # todo: use line_width to display edge weights either as color, transparency or width
         if vary_line_width:
             line_width = edge_linewidth * (np.log(self._mst.T[2].max() / self._mst.T[2]) + 1.0)
         else:
             line_width = edge_linewidth
 
         # Edge coordinates and weights
-        line_coords = self.X_red[self._mst[:, :2].astype(int)]
+        line_coords = self.X_red[self._mst[:, :2].astype(int)]  # X_red[node connections] = coordinates of the nodes in X_red
         edge_x, edge_y = [], []
         for (x1, y1), (x2, y2) in zip(line_coords[:, 0], line_coords[:, 1]):
-            edge_x.extend([x1, x2, None])
+            edge_x.extend([x1, x2, None])  # None: A separator indicating the end of this edge
             edge_y.extend([y1, y2, None])
 
         # Create edge and node traces
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     np.random.seed(42)
-    sample_size = 50  # too big samples cause RecursionError but strangely not for my real datasets
+    sample_size = 5  # too big samples cause RecursionError but strangely not for my real datasets
     df = pd.DataFrame({
         'x': np.random.randn(sample_size),
         'y': np.random.randn(sample_size),
@@ -227,7 +228,7 @@ if __name__ == "__main__":
         'cluster': np.random.choice(['A', 'B', 'C'], sample_size),
         'selected': np.random.choice([False, True], sample_size),
         'marker_symbol': np.random.choice(['circle', 'square', 'diamond', 'triangle-up'], sample_size),
-        'marker_size': np.random.randint(10, sample_size, sample_size)
+        'marker_size': np.random.randint(2, sample_size, sample_size)
     })
     data, _ = make_blobs(n_samples=sample_size, n_features=2, centers=3, cluster_std=0.8, random_state=42)
     X_red = np.random.randn(sample_size, 2)  # 2D mock PCA data

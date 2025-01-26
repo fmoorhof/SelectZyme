@@ -29,7 +29,7 @@ def layout(G, df: pd.DataFrame) -> html.Div:
         html.Div(
             html.A(
             html.Button("Download plot as HTML"), 
-            id="download",
+            id="download-button",
             href=html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
             download="plotly_graph.html"
             ),
