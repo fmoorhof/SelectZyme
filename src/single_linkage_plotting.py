@@ -13,14 +13,22 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
     icoord = np.array(P["icoord"])
     dcoord = np.array(P["dcoord"])
 
+    layout = go.Layout(
+        xaxis_title="Cluster/Variant",
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis_title="Distance",
+        showlegend=False,
+        # legend_title_text=legend_attribute,
+        )
+    fig = go.Figure(layout=layout)
+
     # Get the color mapping and apply it to the DataFrame
     color_mapping = _value_to_color(df[legend_attribute])
     df['cluster_colors'] = df[legend_attribute].map(color_mapping)
 
-    # Create traces for the dendrogram
-    traces = []
-    for i in range(len(icoord)):
-        trace = go.Scattergl(
+    # create scatter traces
+    for i in range(len(icoord)):  # perf: very very slow, breaking performance for large datasets
+        fig.add_traces(go.Scattergl(
             x=icoord[i],
             y=dcoord[i],
             # name=str(legend_attribute),  # Legend name
@@ -35,17 +43,7 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
             customdata=df['accession'],
             text=hovertext[i],
             hoverinfo="text",
-        )
-        traces.append(trace)
-    
-    fig = go.Figure(data=traces)
-    fig.update_layout(
-        xaxis_title="Cluster/Variant",
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis_title="Distance",
-        showlegend=False,
-        # legend_title_text=legend_attribute
-    )
+        ))
 
     return fig
 
