@@ -226,7 +226,7 @@ if __name__ == '__main__':
     # PETase
     query_terms=["ec:3.1.1.74", "ec:3.1.1.3", "ec:3.1.1.1", "ec:3.1.1.101", "ec:3.1.1.2", "xref%3Abrenda-3.1.1.74", "xref%3Abrenda-3.1.1.3", "xref%3Abrenda-3.1.1.1", "xref%3Abrenda-3.1.1.101", "xref%3Abrenda-3.1.1.2", "IPR000675", "PF01083", "IPR013818", "PF00151", "cd00312", "IPR003140"]
     length = "50 TO 1020"
-    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
+    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed_final.csv'
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "petase"    
 
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     query_terms = ["ec:3.2.1.64", "ec:3.1.1.2"]
     length = "200 TO 1020"
     custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/PlasticDB.fasta'
-    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv'
+    custom_data_location = '/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed_final.csv'
     out_dir = 'datasets/output/'  # describe desired output location
     out_filename = "test_data"
 

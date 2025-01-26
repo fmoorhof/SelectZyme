@@ -1,12 +1,9 @@
 import logging
 
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
-import networkx as nx
-from cuml.cluster import (
-    HDBSCAN,
-    DBSCAN
-)  # pip install hdbscan (the cuml is based on it else plotting can not be done direcly from the module)
+from cuml.cluster import HDBSCAN
 from cuml.decomposition import (
     PCA,
     TruncatedSVD,
@@ -20,7 +17,34 @@ from cuml.manifold import (
 from src.customizations import set_columns_of_interest
 
 
-def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def _weighted_cluster_centroid(model, X, cluster_id) -> np.ndarray:
+    """
+    Calculate the weighted centroid for a given cluster.
+    This function computes the weighted centroid of a cluster identified by `cluster_id` 
+    using the provided clustering `model` and data `X`. The implementation is inspired 
+    by HDBSCAN but adapted for use with CuML HDBSCAN, which does not expose the 
+    `_raw_data` attribute.
+    Parameters:
+    model (HDBSCAN): The clustering model that has been fitted to the data.
+    X (np.ndarray): The dataset used for clustering.
+    cluster_id (int): The identifier of the cluster for which the centroid is to be calculated.
+                      Note that `cluster_id` should not be -1, as this represents noise.
+    Returns:
+    np.ndarray: The weighted centroid of the specified cluster.
+    Raises:
+    ValueError: If `cluster_id` is -1, indicating a noise cluster.
+    """
+    if cluster_id == -1:
+        raise ValueError("Cannot calculate centroid for noise cluster (-1).")
+    
+    mask = model.labels_ == cluster_id
+    cluster_data = X[mask]  # model._raw_data[mask]  CuML HDBSCAN doesnt have _raw_data explosed but defined as GPUArray of X, called X_m and defined in from cuml.internals.input_utils import input_to_cuml_array
+    cluster_membership_strengths = model.probabilities_[mask]
+    
+    return np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
+
+
+def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -29,6 +53,7 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
     return: labels: cluster labels for each point
     """
+    # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
     logging.info("Running HDBSCAN. This may take a while.")
     if X.shape[0] < min_samples:
         logging.error("The number of samples in X is less than min_samples. Please try a smaller value for min_samples.")
@@ -37,85 +62,64 @@ def clustering_HDBSCAN(X, df: pd.DataFrame, min_samples: int = 30, min_cluster_s
     hdbscan = HDBSCAN(min_samples=min_samples, 
                       min_cluster_size=min_cluster_size, 
                       gen_min_span_tree=True, 
-                      gen_condensed_tree=True, 
-                      gen_single_linkage_tree_ = True,
-                      **kwargs)  # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
+                      **kwargs)  
 
-    labels = hdbscan.fit_predict(X)
+    hdbscan.fit(X)
+    labels = hdbscan.labels_
 
     G = hdbscan.minimum_spanning_tree_  # .to_networkx()  # # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
     Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
 
-    # plotting with default hdbscan reccomendation (matplotlib and hence interactivity missing) (remove when interactive plots enabled)
-    # hdbscan.minimum_spanning_tree_.plot(edge_cmap='viridis',
-    #                                   edge_alpha=0.6,
-    #                                   node_size=80,
-    #                                   edge_linewidth=2)
-    # plt.savefig(f"datasets/mst.png", bbox_inches='tight')
-    # plt.close()
-
-    # deprecated when networkx replaced by SingleLinkageTree implementation (also remove df from function signature)
-    # Annotate nodes with information from `df` (Assuming node indices in the graph match the DataFrame index)
-    # Assuming nodes (NodeIDs) in G and Gls are the same -> performance enhancement (yes they match: nx.get_node_attributes(Gsl, "accession"))
-    # for node in G.nodes():
-    #     if node in df.index:
-            # nx.set_node_attributes(Gsl, {node: df.loc[node].to_dict()})
+    # Calculate centroids for each cluster
+    centroids = []
+    for cluster_id in np.unique(labels):
+        if cluster_id != -1:  # Skip noise cluster
+            centroid = _weighted_cluster_centroid(hdbscan, X, cluster_id)
+            centroids.append(centroid)
+    X_centroids = np.array(centroids)
 
     logging.info("HDBSCAN done")
-    return labels, G, Gsl
+    return labels, G, Gsl, X_centroids
 
 
-def clustering_DBSCAN(X, eps: float = 1.0, min_samples: int = 1, **kwargs):
-    """
-    Clustering of the embeddings with a Density Based clustering algorithm (HDBScan).
-    # finished in 12 mins on 200k:)
-
-    :param X: embeddings
-    :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
-    :param kwargs: Additional parameters
-    return: labels: cluster labels for each point
-    """
-    dbscan = DBSCAN(eps, min_samples=min_samples, **kwargs)
-    labels = dbscan.fit_predict(X)
-    logging.info("DBSCAN done")
-    return labels
-
-
-def pca(X, dimension: int = 2, **kwargs):
+def pca(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with PCA.
     :param kwargs: Additional parameters"""
     pca = PCA(n_components=dimension, output_type="numpy")
     X_pca = pca.fit_transform(X)
+    X_pca_centroid = pca.transform(X_centroids)
     variance = pca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
     logging.info("PCA done")
-    return X_pca
+    return X_pca, X_pca_centroid
 
 
-def incremental_pca(X, dimension: int = 2, **kwargs):
+def incremental_pca(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with Incremental PCA.
     Incremental PCA (Principal Component Analysis) is a variant of PCA that is designed to handle very large datasets that may not fit into memory.
     Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently.
     :param kwargs: Additional parameters"""
     ipca = IncrementalPCA(n_components=dimension, output_type="numpy", **kwargs)
     X_ipca = ipca.fit_transform(X)
+    X_ipca_centroid = ipca.transform(X_centroids)
     variance = ipca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
     logging.info("Incremental PCA done")
-    return X_ipca
+    return X_ipca, X_ipca_centroid
 
 
-def truncated_svd(X, dimension: int = 2, **kwargs):
+def truncated_svd(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with Truncated SVD.
     
     :param kwargs: Additional parameters
     """
     svd = TruncatedSVD(n_components=dimension, output_type="numpy", **kwargs)
     X_svd = svd.fit_transform(X)
+    X_svd_centroid = svd.transform(X_centroids)
     logging.info("Truncated SVD done")
-    return X_svd
+    return X_svd, X_svd_centroid
 
 
 def tsne(X, dimension: int = 2, **kwargs):
@@ -126,22 +130,23 @@ def tsne(X, dimension: int = 2, **kwargs):
     """
     tsne = TSNE(n_components=dimension, **kwargs)
     X_tsne = tsne.fit_transform(X)
-    logging.info("tSNE done")
+    logging.info("tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE as it not learning representations so it can not transform centroids meaningfully.")
     return X_tsne
 
 
 # Dim reduced visualization with UMAP: super slow!! and .5GB output files wtf.
-def umap(X, dimension: int = 2, **kwargs):
+def umap(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with UMAP.
     :param kwargs: Additional parameters
     """
     umap = UMAP(n_components=dimension, **kwargs)  # unittest params: n_neighbors=10, min_dist=0.01
     X_umap = umap.fit_transform(X)
+    X_umap_centroid = umap.transform(X_centroids)
     logging.info("UMAP done")
-    return X_umap
+    return X_umap, X_umap_centroid
 
 
-def plot_2d(df, X_red, legend_attribute: str):
+def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, legend_attribute: str):
     """
     Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
     Parameters:
@@ -159,7 +164,7 @@ def plot_2d(df, X_red, legend_attribute: str):
 
         columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
 
-        fig.add_trace(go.Scatter(
+        fig.add_trace(go.Scattergl(
             x=X_red[subset.index, 0],
             y=X_red[subset.index, 1],
             mode='markers',
@@ -178,6 +183,24 @@ def plot_2d(df, X_red, legend_attribute: str):
         showlegend=True,
         legend_title_text=legend_attribute
     )
+
+    # add cluster centroids trace
+    fig.add_trace(
+        go.Scattergl(
+            x=X_red_centroids[:, 0],
+            y=X_red_centroids[:, 1],
+            mode='markers',
+            name='Cluster Centroids',  # Set the legend name
+            marker=dict(
+                size=10,
+                symbol='x',
+                color='red',
+            ),             
+            hovertext=[f"Cluster {i} centroid" for i in range(X_red_centroids.shape[0])],
+            hoverinfo='text'
+        )
+    )
+
     # fig.write_html(f'datasets/test_landscape.html')
     return fig
 

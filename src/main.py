@@ -1,3 +1,5 @@
+"""This file soon can be deleted together with dash_app.py but before merge some functions required by app.py
+into there or a utils file."""
 import logging
 import sys
 import os
@@ -7,7 +9,7 @@ import yaml
 import pandas as pd
 from qdrant_client import QdrantClient
 import dash
-import networkx as nx
+import numpy as np
 
 from preprocessing import Parsing
 from preprocessing import Preprocessing
@@ -16,8 +18,6 @@ import visualizer
 from customizations import custom_plotting
 from fetch_data_uniprot import UniProtFetcher
 from dash_app import run_dash_app
-# from dash_app_network import run_dash_app
-# from phylogenetic_tree import create_tree, g_to_newick
 
 
 logging.basicConfig(
@@ -35,9 +35,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-p', '--project_name', help='Project name')
     parser.add_argument('-q', '--query_terms', nargs='+', help='Query terms for UniProt')
     parser.add_argument('-l', '--length', help='Length range for sequences to retrieve from UniProt')
-    parser.add_argument('-loc', '--custom_data_location', help='Location of your custom data CSV')
 
     # Optional arguments with defaults
+    parser.add_argument('-loc', '--custom_data_location', default='', help='Location of your custom data CSV')
     parser.add_argument('--dim_red', default='PCA', 
                         help='Dimensionality reduction technique (default: PCA)')
     parser.add_argument('--plm_model', default='esm1b', 
@@ -96,8 +96,12 @@ def parse_data(args):
     if not os.path.isfile(input_file):  # generate it
         fetcher = UniProtFetcher(args.df_coi, args.out_dir)
         df = fetcher.query_uniprot(args.query_terms, args.length)
-        custom_data = fetcher.load_custom_csv(args.custom_data_location, sep=';')
-        df = pd.concat([custom_data, df], ignore_index=True)
+        if args.custom_data_location != '':
+            if args.custom_data_location.endswith('.fasta'):
+                custom_data = fetcher.load_custom_fasta(args.custom_data_location)
+            else:
+                custom_data = fetcher.load_custom_csv(file_path=args.custom_data_location, sep=';')
+            df = pd.concat([custom_data, df], ignore_index=True)
         df = fetcher.clean_data(df)
         fetcher.save_data(df, args.project_name)
     elif input_file.endswith('.fasta'):
@@ -126,19 +130,20 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 
 
 def dimred_clust(df, X, dim_method):
-    labels, G, Gsl = visualizer.clustering_HDBSCAN(X, df, min_samples=5, min_cluster_size=50)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
+    labels, G, Gsl, X_centroids = visualizer.clustering_HDBSCAN(X, min_samples=3, min_cluster_size=10)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
     df['cluster'] = labels
     df = custom_plotting(df)
 
     dim_method = dim_method.upper()
     if dim_method == 'PCA':
-        X_red = visualizer.pca(X)
+        X_red, X_red_centroids = visualizer.pca(X, X_centroids)
     elif dim_method == 'TSNE':
         X_red = visualizer.tsne(X, random_state=42)
+        X_red_centroids = np.empty((0, 2))
     elif dim_method == 'UMAP':
-        X_red = visualizer.umap(X, n_neighbors=15, random_state=42)
+        X_red, X_red_centroids = visualizer.umap(X, X_centroids, n_neighbors=15, random_state=42)
 
-    return df, X_red, G, Gsl
+    return df, X_red, G, Gsl, X_red_centroids
 
 
 def main(app):
@@ -147,26 +152,6 @@ def main(app):
 
     X = database_access(df, args.project_name)
     df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
-
-    # # minimal spanning tree app
-    # pos = nx.nx_agraph.graphviz_layout(G)  # alternative layout: pos = nx.nx_pydot.graphviz_layout(G)  # conda install anaconda::pydot
-    # nx.set_node_attributes(G, pos, 'pos')  # Assign positions as attributes
-    # app = run_dash_app(G, df, app)  # network and table setting
-    # # todo mst: table selection not working: use same table from landscape, no new one. also annotation from table data or df - color selections in tree
-
-    # # single linkage tree app
-    # # pos = nx.spring_layout(Gsl)
-    # # nx.set_node_attributes(Gsl, pos, 'pos')  # Assign positions as attributes
-    # # app = run_dash_app(Gsl, df, app)  # network and table setting    
-    # # todo slt: make graph layout phylogenetic tree-like, perf: graph creation quite slow
-    # # convert slt to another format usable for cytoscape and use dash-phylogeny
-    # if nx.is_tree(Gsl):
-    #     newick_str = g_to_newick(Gsl)  # if wrong root got selected, fewer datapoints are displayed
-    #     fig = create_tree(newick_str)
-    # else:
-    #     ValueError("Graph is not a tree. Phylogenetic tree creation is only possible for trees.")
-    # app = run_dash_app(Gsl, df, app, fig)  # network and table setting 
-    # # todo: tree is not displayed properly
 
     # TSNE plot and table app
     # app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)  # plot and table: from dash_app import run_dash_app
