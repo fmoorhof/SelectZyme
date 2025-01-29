@@ -130,8 +130,23 @@ def tsne(X, dimension: int = 2, **kwargs):
     """
     tsne = TSNE(n_components=dimension, **kwargs)
     X_tsne = tsne.fit_transform(X)
-    logging.info("tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE as it not learning representations so it can not transform centroids meaningfully.")
+    logging.info("tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE. You might want to try openTSNE.")
     return X_tsne
+
+
+def opentsne(X, X_centroids, dimension: int = 2, **kwargs):
+    """Dimensionality reduction with open tSNE.
+    Currently TSNE supports n_components = 2. Non GPU implementation but tsne.transform is possible to integrate cluster centroids.
+    Despite, non GPU runtime is very good and scales less computationally complex in comparison to t-SNE.
+
+    :param kwargs: Additional parameters for sklearn.manifold.TSNE
+    """
+    from openTSNE import TSNE
+    tsne = TSNE(n_components=dimension, **kwargs)
+    X_tsne = tsne.fit(X)
+    X_tsne_centroid = X_tsne.transform(X_centroids)
+    logging.info("Open tSNE done.")
+    return X_tsne, X_tsne_centroid
 
 
 # Dim reduced visualization with UMAP: super slow!! and .5GB output files wtf.
@@ -195,6 +210,7 @@ def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, le
                 size=10,
                 symbol='x',
                 color='red',
+                opacity=0.3
             ),             
             hovertext=[f"Cluster {i} centroid" for i in range(X_red_centroids.shape[0])],
             hoverinfo='text'
