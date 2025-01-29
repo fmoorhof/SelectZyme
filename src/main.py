@@ -14,7 +14,7 @@ import numpy as np
 from preprocessing import Parsing
 from preprocessing import Preprocessing
 from embed import load_or_createDB
-import visualizer
+import ml
 from customizations import custom_plotting
 from fetch_data_uniprot import UniProtFetcher
 from dash_app import run_dash_app
@@ -130,21 +130,23 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 
 
 def dimred_clust(df, X, dim_method):
-    labels, G, Gsl, X_centroids = visualizer.clustering_HDBSCAN(X, min_samples=10, min_cluster_size=25)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
+    labels, G, Gsl, X_centroids = ml.clustering_HDBSCAN(X, min_samples=10, min_cluster_size=25)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
     df['cluster'] = labels
     df = custom_plotting(df)
 
     dim_method = dim_method.upper()
     if dim_method == 'PCA':
-        X_red, X_red_centroids = visualizer.pca(X, X_centroids)
+        X_red, X_red_centroids = ml.pca(X, X_centroids)
     elif dim_method == 'TSNE':
-        X_red = visualizer.tsne(X, random_state=42)
+        X_red = ml.tsne(X, random_state=42)
         X_red_centroids = np.empty((0, 2))
-    elif dim_method == 'openTSNE':
-        X_red, X_red_centroids = visualizer.opentsne(X, X_centroids, random_state=42)
+    elif dim_method == 'OPENTSNE':
+        X_red, X_red_centroids = ml.opentsne(X, X_centroids, random_state=42)
     elif dim_method == 'UMAP':
-        X_red, X_red_centroids = visualizer.umap(X, X_centroids, n_neighbors=15, random_state=42)
-
+        X_red, X_red_centroids = ml.umap(X, X_centroids, n_neighbors=15, random_state=42)
+    else:
+        raise ValueError(f"Dimensionality reduction method {dim_method} not implemented. Choose from 'PCA', 'TSNE', 'openTSNE', 'UMAP'.")
+    
     return df, X_red, G, Gsl, X_red_centroids
 
 
