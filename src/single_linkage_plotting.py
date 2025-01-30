@@ -58,7 +58,6 @@ def _value_to_color(values):
         Values to map to a color scale.
     Returns:
     --------
-    color_mapping : dict
         A dictionary mapping unique values to corresponding colors in the colormap.
     """
     # Normalize the values to [0, 1]
@@ -68,10 +67,8 @@ def _value_to_color(values):
     # Get the Plotly colormap
     colorscale = pc.get_colorscale('Viridis')
     colormap_func = pc.sample_colorscale(colorscale, norm, low=0, high=1)
-    
-    # Map each unique value to a color
-    color_mapping = dict(zip(unique_values, colormap_func))
-    return color_mapping
+
+    return dict(zip(unique_values, colormap_func))  # Map each unique value to a color
 
 
 

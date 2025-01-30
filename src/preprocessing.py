@@ -12,14 +12,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class Parsing():
     """This class should assist in the parsing of the data."""
-    def parse_fasta(filepath: str) -> pd.DataFrame:
-        """Parse a fasta file and return a df with the header and sequences in columns.
-        params: filepath: path to the fasta file
-        return: headers: list of headers
-        return: sequences: list of sequences"""
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        
+    def parse_fasta(self) -> pd.DataFrame:
+        """Parse a fasta file and return a df with the header and sequences in columns."""
         headers = []
         sequences = []
-        with open(filepath, 'r') as file:
+        with open(self, 'r') as file:
             sequence = ""
             for line in file:
                 if line.startswith('>'):
@@ -31,22 +31,15 @@ class Parsing():
                     sequence += line.strip()
             sequences.append(sequence)  # Append the last sequence
 
-        df = pd.DataFrame({'accession': headers, 'sequence': sequences})
-        return df
+        return pd.DataFrame({'accession': headers, 'sequence': sequences})
     
-    def parse_tsv(filepath: str) -> pd.DataFrame:
-        """Parse a tsv file and return a dataframe.
-        params: filepath: path to the tsv file
-        return: df: dataframe containing the sequences"""
-        df = pd.read_csv(filepath, sep='\t')
-        return df    
+    def parse_tsv(self) -> pd.DataFrame:
+        """Parse a tsv file and return a dataframe."""
+        return pd.read_csv(self, sep='\t')
     
-    def parse_csv(filepath: str) -> pd.DataFrame:
-        """Parse a tsv file and return a dataframe.
-        params: filepath: path to the tsv file
-        return: df: dataframe containing the sequences"""
-        df = pd.read_csv(filepath, sep=',')
-        return df 
+    def parse_csv(self) -> pd.DataFrame:
+        """Parse a tsv file and return a dataframe"""
+        return pd.read_csv(self, sep=',')
     
 
 class Preprocessing:

@@ -16,8 +16,7 @@ def set_columns_of_interest(df_cols: list) -> list:
     """
     columns_to_avoid_hover = ['sequence', 'BRENDA URL', 'lineage', 'marker_size', 'marker_symbol', 'selected', 'organism_id']
     # columns_of_interest= ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
-    columns_to_plot = [col for col in df_cols if col not in columns_to_avoid_hover]
-    return columns_to_plot
+    return [col for col in df_cols if col not in columns_to_avoid_hover]
 
 
 def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
