@@ -19,7 +19,7 @@ class TestML(unittest.TestCase):
     @unittest.skip("not fixed yet: FAILED tests/test_ml.py::TestML::test_weighted_cluster_centroid - ZeroDivisionError: Weights sum to zero, can't be normalized")
     def test_weighted_cluster_centroid(self):
         # Arrange
-        model = HDBSCAN(min_samples=5, min_cluster_size=10)
+        model = HDBSCAN(min_samples=2, min_cluster_size=4)
         model.fit(self.X)
         cluster_id = model.labels_[0]  # Example cluster ID
 
@@ -80,13 +80,16 @@ class TestML(unittest.TestCase):
 
     def test_tsne(self):
         # Act
-        X_tsne = tsne(self.X)
+        X_tsne, X_tsne_centroid = tsne(self.X)
 
         # Assert
         self.assertIsInstance(X_tsne, np.ndarray)
+        self.assertIsInstance(X_tsne_centroid, np.ndarray)
         self.assertEqual(X_tsne.shape[1], 2)
+        self.assertEqual(X_tsne_centroid.shape[1], 2)
+        self.assertEqual(X_tsne_centroid.shape[0], 0)  # Centroid array should be empty
 
-    def test_opentsne(self):
+    def test_opentsne(self):  # test is quite slow
         # Act
         X_tsne, X_tsne_centroid = opentsne(self.X, self.X_centroids)
 
