@@ -15,5 +15,6 @@ dash-bootstrap-components==1.6.0
 sentencepiece
 tiktoken
 blobfile
+opentsne
 # cudf-cu11==24.2.*  # do manually for fixing: OSError: [Errno 28] No space left on device
 # cuml-cu11==24.2.*

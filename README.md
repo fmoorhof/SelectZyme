@@ -62,6 +62,33 @@ Additional information about the parsing options can be displayed by:
 python src/main.py -h
 ```
 
+## Core functionality
+```mermaid
+graph TD
+    subgraph Data Acquisition
+        A[Fetch Data from Uniprot] --> B(NCBI Taxonomy Resolver)
+        B --> C{Data Cleaning/Preprocessing}
+    end
+    C --> D[Data Analysis]
+    subgraph "Data Analysis"
+        D --> I(HDBSCAN)
+        subgraph Clustering
+            I --> J(Single Linkage, MST)
+        end
+        D --> K(Dimensionality Reduction)
+        subgraph Dimensionality Reduction Methods
+            K --> L(PCA)
+            K --> M(t-SNE)
+            K --> N(UMAP)
+        end
+    end
+    D --> E[Visualization]
+    subgraph "Dash App"
+        E --> F(Dimensionality reduction)
+        E --> G(Phylogeny)
+        E --> H(Minimal Spanning Tree)
+    end
+```
 
 #### Development tools
 This project uses the following tools to improve code quality:

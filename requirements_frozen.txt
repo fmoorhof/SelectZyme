@@ -4,7 +4,7 @@ h5py==3.10.0
 hdbscan==0.8.33
 matplotlib==3.8.4
 pandas==1.5.3
-qdrant-client==1.9.0
+qdrant-client==1.7.1
 scikit-learn==1.5.0
 taxoniq==1.0.1
 tqdm==4.66.3
@@ -15,3 +15,4 @@ dash-bootstrap-components==1.6.0
 sentencepiece==0.2.0
 tiktoken==0.8.0
 blobfile==3.0.0
+opentsne==1.0.1  # conda forge version, dont know if thats best pip version

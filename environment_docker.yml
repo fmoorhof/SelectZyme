@@ -8,6 +8,7 @@ dependencies:
   - python=3.10  # todo: can i remove this since RAPIDSai container anyways ships with python 3.10?
   - pytorch::pytorch
   - pygraphviz  # conda-forge  # nohup time conda install -y --channel conda-forge pygraphviz  
+  - opentsne
   - pip
   - pip:
     - pytest
