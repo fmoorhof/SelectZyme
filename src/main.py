@@ -13,7 +13,7 @@ import numpy as np
 
 from preprocessing import Parsing
 from preprocessing import Preprocessing
-from embed import load_or_createDB
+from vector_db import load_or_createDB
 import ml
 from customizations import custom_plotting
 from fetch_data_uniprot import UniProtFetcher
