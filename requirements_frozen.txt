@@ -4,7 +4,7 @@ h5py==3.10.0
 hdbscan==0.8.33
 matplotlib==3.8.4
 pandas==1.5.3
-qdrant-client==1.7.1
+qdrant-client==1.9.0
 scikit-learn==1.5.0
 taxoniq==1.0.1
 tqdm==4.66.3
