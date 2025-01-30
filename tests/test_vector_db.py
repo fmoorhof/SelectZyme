@@ -11,7 +11,7 @@ def setup_and_teardown():
     """Fixture for setting up and tearing down resources."""
     # Setup: This code runs before the tests in the class.
     print("Setting up for the test...")
-    qdrant = QdrantClient(path="datasets/Vector_db/")
+    qdrant = QdrantClient(location=":memory:")
     collection_name = 'pytest'
 
     yield qdrant, collection_name  # The test functions will run at this point.
