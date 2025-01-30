@@ -78,10 +78,16 @@ def pca(X, X_centroids, dimension: int = 2, **kwargs):
     :param kwargs: Additional parameters"""
     pca = PCA(n_components=dimension, output_type="numpy")
     X_pca = pca.fit_transform(X)
-    X_pca_centroid = pca.transform(X_centroids)
     variance = pca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
+
+    if X_centroids.size != 0:
+        X_pca_centroid = pca.transform(X_centroids)
+    else:
+        X_pca_centroid = np.empty((0, 2))
+        logging.info("HDBSCAN cluster parameter yielded no clusters. Concludingly, no cluster centroids are returned.")
+
     logging.info("PCA done")
     return X_pca, X_pca_centroid
 
@@ -121,8 +127,9 @@ def tsne(X, dimension: int = 2, **kwargs):
     """
     tsne = TSNE(n_components=dimension, **kwargs)
     X_tsne = tsne.fit_transform(X)
+    X_tsne_centroid = np.empty((0, 2))
     logging.info("tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE. You might want to try openTSNE.")
-    return X_tsne
+    return X_tsne, X_tsne_centroid
 
 
 def opentsne(X, X_centroids, dimension: int = 2, **kwargs):
@@ -135,7 +142,13 @@ def opentsne(X, X_centroids, dimension: int = 2, **kwargs):
     from openTSNE import TSNE
     tsne = TSNE(n_components=dimension, n_jobs=8, **kwargs)
     X_tsne = tsne.fit(X)
-    X_tsne_centroid = X_tsne.transform(X_centroids)
+
+    if X_centroids.size != 0:
+        X_tsne_centroid = X_tsne.transform(X_centroids)
+    else:
+        X_tsne_centroid = np.empty((0, 2))
+        logging.info("HDBSCAN cluster parameter yielded no clusters. Concludingly, no cluster centroids are returned.")
+    
     logging.info("Open tSNE done.")
     return X_tsne, X_tsne_centroid
 
@@ -147,6 +160,13 @@ def umap(X, X_centroids, dimension: int = 2, **kwargs):
     """
     umap = UMAP(n_components=dimension, **kwargs)  # unittest params: n_neighbors=10, min_dist=0.01
     X_umap = umap.fit_transform(X)
-    X_umap_centroid = umap.transform(X_centroids)
+    
+
+    if X_centroids.size != 0:
+        X_umap_centroid = umap.transform(X_centroids)
+    else:
+        X_umap_centroid = np.empty((0, 2))
+        logging.info("HDBSCAN cluster parameter yielded no clusters. Concludingly, no cluster centroids are returned.")
+
     logging.info("UMAP done")
     return X_umap, X_umap_centroid

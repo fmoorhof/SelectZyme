@@ -138,8 +138,7 @@ def dimred_clust(df, X, dim_method):
     if dim_method == 'PCA':
         X_red, X_red_centroids = ml.pca(X, X_centroids)
     elif dim_method == 'TSNE':
-        X_red = ml.tsne(X, random_state=42)
-        X_red_centroids = np.empty((0, 2))
+        X_red, X_red_centroids = ml.tsne(X, random_state=42)
     elif dim_method == 'OPENTSNE':
         X_red, X_red_centroids = ml.opentsne(X, X_centroids, random_state=42)
     elif dim_method == 'UMAP':
