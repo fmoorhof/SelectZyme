@@ -62,7 +62,10 @@ def _value_to_color(values):
     """
     # Normalize the values to [0, 1]
     unique_values = np.unique(values)
-    norm = (unique_values - unique_values.min()) / (unique_values.max() - unique_values.min())
+    if unique_values.max() == unique_values.min():
+        norm = np.zeros_like(unique_values)
+    else:
+        norm = (unique_values - unique_values.min()) / (unique_values.max() - unique_values.min())
     
     # Get the Plotly colormap
     colorscale = pc.get_colorscale('Viridis')
