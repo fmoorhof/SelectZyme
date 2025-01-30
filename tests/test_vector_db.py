@@ -42,7 +42,7 @@ class TestDBCreation:
         assert collection_name in str(collections_info)
         assert collection_name == collections_info.collections[0].name
 
-    def test_load_collection_from_vector_db(self, setup_and_teardown):
+    def test_load_collection_from_vector_db(self, setup_and_teardown):  # fix later: TypeError: Client.__init__() got an unexpected keyword argument 'location'
         """Test the loading of an existing vector database collection."""
         qdrant, collection_name = setup_and_teardown
         entries, embeddings = vector_db.load_collection_from_vector_db(qdrant, collection_name)

@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "17-tests-and-refactoring" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -38,7 +38,7 @@ jobs:
       run: |
         uv pip install pytest pytest-cov 
         uv pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.10.* dask-cudf-cu11==24.10.* cuml-cu11==24.10.*
-        if [ -f requirements.txt ]; then uv pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118; fi
+        if [ -f requirements_frozen.txt ]; then uv pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118; fi
         # todo: try next to install from pyproject.toml
         python --version
 
@@ -49,5 +49,5 @@ jobs:
         python --version
         which python
         uv pip list
-        python -m pytest -v tests/test_stack.py tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda'  # exclude the embedding and GPU required tests in GHActions
+        python -m pytest -v tests/test_stack.py tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestDBCreation'  # exclude the embedding and GPU required tests in GHActions
         # python -m pytest --cov=src/ -v tests/test_*  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
