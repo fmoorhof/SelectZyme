@@ -60,3 +60,13 @@ class TestGenEmbedding:
         sequences = ["MKTIIALSYIFCLVFADYKDDDDK", "MKAILVVLLYTFATANAD"]
         with pytest.raises(ValueError, match="Model invalid_model not supported. Please choose one of: 'esm1b' \(default\), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'"):
             embed.gen_embedding(sequences, plm_model='invalid_model')
+
+    def test_gen_embedding_empty_sequences(self):
+        sequences = []
+        embeddings = embed.gen_embedding(sequences, plm_model='esm1b')
+        assert embeddings.shape == (0,)
+
+    def test_gen_embedding_single_sequence(self):
+        sequences = ["MKTIIALSYIFCLVFADYKDDDDK"]
+        embeddings = embed.gen_embedding(sequences, plm_model='esm1b')
+        assert embeddings.shape == (1, 1280)

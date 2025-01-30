@@ -66,8 +66,8 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     annotation = []
     for i in tqdm(records[0]):  # access only the Records: [0]
         vector = i.vector
-        id = i.payload.get('accession')
-        id_embed[id] = vector
+        idd = i.payload.get('accession')
+        id_embed[idd] = vector
         # annotation.append(i.payload)  # theoretically more information than only 'Entry' could be stored/retrieved
         annotation.append(i.payload['accession'])
     embeddings = np.array(list(id_embed.values()))  # dimension error if dataset has duplicates
