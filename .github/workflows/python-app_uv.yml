@@ -49,5 +49,5 @@ jobs:
         python --version
         which python
         uv pip list
-        python -m pytest -v tests/test_stack.py tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestDBCreation'  # exclude the embedding and GPU required tests in GHActions
+        python -m pytest -v tests/test_stack.py tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda'  # exclude the embedding and GPU required tests in GHActions
         # python -m pytest --cov=src/ -v tests/test_*  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
