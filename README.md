@@ -47,6 +47,13 @@ docker exec -it CONTAINERID
 docker exec -it CONTAINERID /bin/bash
 ```
 
+#### Advanced usage
+For extensive usage you might want to setup the Qdrant vector database in a separate docker container. Qdrant suggest to only save up to 20,000 vectors locally and the access time is indeed very slow. However, there is no need to do so, i also once stored up to 1M vectors locally:D
+A nice and very simple manual how to do so is provided [here](https://qdrant.tech/documentation/quickstart/#)
+keep in mind to also adapt the codebase accordingly and set the
+`QdrantClient(url="http://localhost:6333")`
+
+
 ## Usage
 ```
 conda activate ec
