@@ -8,7 +8,7 @@ COPY . /app
 COPY environment_docker.yml /app/environment_docker.yml
 
 # rapids env needs to be used unfortunately, else some packages are missing (cudf etc.)
-RUN conda env update --name rapids --file environment_docker.yml
+RUN conda env update --name rapids --file environment_docker.yml  && conda clean --all -y  ## reduce the image size and remove unnecessary package cache files
 
 # Expose the port Dash will run on
 EXPOSE 8050
