@@ -16,3 +16,4 @@ sentencepiece==0.2.0
 tiktoken==0.8.0
 blobfile==3.0.0
 opentsne==1.0.1  # conda forge version, dont know if thats best pip version
+# ydata-profiling==4.12.2  # numpy dependency conflict: better use: conda install -c conda-forge ydata-profiling

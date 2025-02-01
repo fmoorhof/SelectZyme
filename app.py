@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 import pages.mst as mst
 import pages.single_linkage as sl
 import pages.dimred as dimred
+import pages.eda as eda
 from src.main import parse_data, preprocessing, database_access, dimred_clust
 
 
@@ -29,9 +30,10 @@ def main(app):
     df, X_red, G, Gsl, X_red_centroids = dimred_clust(df, X, args.dim_red)
 
     # Create page layouts
+    dash.register_page('eda', name="Explanatory data analysis", layout=eda.layout(df))
     dash.register_page('dim', name="Dimensionality reduction and clustering", layout=dimred.layout(df, X_red, X_red_centroids))
+    dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df))    
     dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
-    dash.register_page('sl', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df))
 
     # Register callbacks
     dimred.register_callbacks(app, df, X_red, X_red_centroids)
@@ -85,9 +87,9 @@ if __name__ == "__main__":
     # args = argparse.Namespace(project_name='lefos', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LeFOS/custom_seqs.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = argparse.Namespace(project_name='lefos_prostt5', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LeFOS/custom_seqs.csv", dim_red='TSNE', plm_model='prostt5', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     
-    args = argparse.Namespace(project_name='PapE', query_terms=["IPR001616", "IPR034720", "PF01771"], length='350 TO 800', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    # args = argparse.Namespace(project_name='PapE', query_terms=["IPR001616", "IPR034720", "PF01771"], length='350 TO 800', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = argparse.Namespace(project_name='PapE_prostt5', query_terms=["IPR001616", "IPR034720", "PF01771", "IPR011335"], length='200 TO 1020', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv", dim_red='umap', plm_model='prostt5', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    args = argparse.Namespace(project_name='PapEC', query_terms=["IPR001616", "IPR034720", "PF01771", "3.1.12"], length='350 TO 800', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    # args = argparse.Namespace(project_name='PapEC', query_terms=["IPR001616", "IPR034720", "PF01771", "3.1.12"], length='350 TO 800', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/PapE/custom_seqs.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
 
     # query_terms = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
     # args = argparse.Namespace(project_name='petase', query_terms=query_terms, length='50 TO 1020', custom_data_location='/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv', dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
@@ -95,4 +97,4 @@ if __name__ == "__main__":
     # args = parse_args()
 
     main(app=app)
-    app.run_server(host="0.0.0.0", port=8052, debug=False)
+    app.run_server(host="0.0.0.0", port=8050, debug=False)
