@@ -1,12 +1,15 @@
+import logging
+
 from dash import html
 from ydata_profiling import ProfileReport
 
 
 def layout(df) -> html.Div:
     """Generates a Dash layout for the EDA using ydata"""
-    df.pop('sequence')  # fix: column too long ValueError: Couldn't find space to draw. Either the Canvas size is too small or too much of the image is masked out.
+    logging.info("Generating EDA report. This may take a while...")
 
-    profile = ProfileReport(df, title="Profiling Report")
+    df_profile = df.drop(columns=['sequence'])  # fix: column too long ValueError: Couldn't find space to draw. Either the Canvas size is too small or too much of the image is masked out.
+    profile = ProfileReport(df_profile, title="Profiling Report")
     profile.to_file("assets/census_report.html")
 
     return html.Div(

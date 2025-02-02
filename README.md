@@ -2,7 +2,7 @@
 Explore and navigate protein sequence space interactively.
 
 ## Install
-For optimal GPU support, the conda installation is reccomended.
+For optimal GPU support, the conda installation is reccommended.
 Please clone the repository:
 ```
 git clone https://github.com/fmoorhof/ec.git
@@ -10,7 +10,7 @@ cd ec
 ```
 
 ### Conda
-For optimal GPU support, the conda installation is reccomended.
+For optimal GPU support, the conda installation is reccommended.
 ```
 conda env create -f environment.yml
 # in case some pip dependencies could not be installed use:
@@ -60,7 +60,7 @@ keep in mind to also adapt the codebase accordingly and set the
 ## Usage
 ```
 conda activate selectzyme
-# use config.yml files (reccomended for reproducibly saving input)
+# use config.yml files (reccommended for reproducibly saving input)
 python app.py --config=results/test_config.yml
 # or parameter passing
 python src/main.py -p 'argparse_test' -q="ec:1.13.11.85" -q "ec:1.13.11.84" --length '200 TO 601' -loc "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv" -o 'argparse_test'
