@@ -6,12 +6,15 @@ For optimal GPU support, the conda installation is reccomended.
 Please clone the repository:
 ```
 git clone https://github.com/fmoorhof/ec.git
+cd ec
 ```
 
 ### Conda
 For optimal GPU support, the conda installation is reccomended.
 ```
 conda env create -f environment.yml
+# in case some pip dependencies could not be installed use:
+pip install -e .
 ```
 
 ### Pip
@@ -38,8 +41,8 @@ pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extr
 
 ### Docker
 ```
-docker build -t fmoorhof/enzynavi:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
-docker run --gpus all -it --entrypoint /bin/bash fmoorhof/enzynavi
+docker build -t fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
+docker run --gpus all -it --entrypoint /bin/bash fmoorhof/selectzyme
 
 # optional: re-start your container later
 docker start CONTAINERID (find CONTAINERID with `docker ps` or `docker ps -a`)
@@ -56,7 +59,7 @@ keep in mind to also adapt the codebase accordingly and set the
 
 ## Usage
 ```
-conda activate ec
+conda activate selectzyme
 # use config.yml files (reccomended for reproducibly saving input)
 python app.py --config=results/test_config.yml
 # or parameter passing

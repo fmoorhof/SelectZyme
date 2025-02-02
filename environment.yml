@@ -1,32 +1,18 @@
-name: my-env
+name: selectzyme
 channels:
   - rapidsai
   - conda-forge
   - nvidia
 dependencies:
   - python=3.10
-  - cudf=23.12
-  - cuml=23.12
-  # - cuda-version=11.1  # 12.1
+  - cudf=24.12
+  - cuml=24.12
+  # - cuda-version=11.1  # insert your CUDA versions, you can get it from typing `nvidia-smi` in your terminal and upper right corner see the required version (might be 12.1)
   - pytorch
   - dash
-  - pygraphviz  # conda-forge  # conda install -y --channel conda-forge pygraphviz 
-  - ydata-profiling  # conda install -c conda-forge ydata-profiling -y
-  - opentsne  # "-"
+  - pygraphviz  # maybe soon deprecated if GPU MST layout is available and integrated
+  - ydata-profiling
+  - opentsne
   - pip
   - pip:
-    - tqdm
-    - plotly
-    - requests
-    - transformers
-    - qdrant-client
-    - hdbscan
-    - h5py
-    - taxoniq
-    - biopython==1.84
-    - dash-bootstrap-components==1.6.0
-    - sentencepiece==0.2.0    
-    - tiktoken==0.8.0
-    - blobfile==3.0.0
-    # - -r file:requirements.txt
-    
+    - -r requirements_frozen.txt
