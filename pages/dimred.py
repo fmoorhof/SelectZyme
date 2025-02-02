@@ -4,7 +4,7 @@ import io
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 
-from visualizer import plot_2d
+from src.visualizer import plot_2d
 
 
 # def layout(df, X_red):        

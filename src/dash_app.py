@@ -9,7 +9,7 @@ import dash
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 
-from visualizer import plot_2d
+from src.visualizer import plot_2d
 
 
 def run_dash_app(df, X_red):

@@ -5,7 +5,7 @@ import pandas as pd
 from pages.dimred import html_export_figure
 from src.customizations import set_columns_of_interest
 # from src.hdbscan_plotting import SingleLinkageTree
-from single_linkage_plotting import create_dendrogram
+from src.single_linkage_plotting import create_dendrogram
 
 
 def layout(G, df: pd.DataFrame) -> html.Div:
