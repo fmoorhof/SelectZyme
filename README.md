@@ -2,16 +2,19 @@
 Explore and navigate protein sequence space interactively.
 
 ## Install
-For optimal GPU support, the conda installation is reccomended.
+For optimal GPU support, the conda installation is reccommended.
 Please clone the repository:
 ```
 git clone https://github.com/fmoorhof/ec.git
+cd ec
 ```
 
 ### Conda
-For optimal GPU support, the conda installation is reccomended.
+For optimal GPU support, the conda installation is reccommended.
 ```
 conda env create -f environment.yml
+# in case some pip dependencies could not be installed use:
+pip install -e .
 ```
 
 ### Pip
@@ -38,8 +41,8 @@ pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extr
 
 ### Docker
 ```
-docker build -t fmoorhof/enzynavi:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
-docker run --gpus all -it --entrypoint /bin/bash fmoorhof/enzynavi
+docker build -t fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
+docker run --gpus all -it --entrypoint /bin/bash fmoorhof/selectzyme
 
 # optional: re-start your container later
 docker start CONTAINERID (find CONTAINERID with `docker ps` or `docker ps -a`)
@@ -56,8 +59,8 @@ keep in mind to also adapt the codebase accordingly and set the
 
 ## Usage
 ```
-conda activate ec
-# use config.yml files (reccomended for reproducibly saving input)
+conda activate selectzyme
+# use config.yml files (reccommended for reproducibly saving input)
 python app.py --config=results/test_config.yml
 # or parameter passing
 python src/main.py -p 'argparse_test' -q="ec:1.13.11.85" -q "ec:1.13.11.84" --length '200 TO 601' -loc "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv" -o 'argparse_test'

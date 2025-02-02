@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import cudf
 
-from ncbi_taxonomy_resolver import lineage_resolver
+from src.ncbi_taxonomy_resolver import lineage_resolver
 
 
 def set_columns_of_interest(df_cols: list) -> list:

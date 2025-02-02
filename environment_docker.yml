@@ -4,29 +4,13 @@ channels:
   - pytorch
   - conda-forge  # needs to be lowest hierarchy (last channel)
 dependencies:
-  - cudatoolkit=11.8
-  - python=3.10  # todo: can i remove this since RAPIDSai container anyways ships with python 3.10?
+  - cudatoolkit=11.8  # insert your CUDA versions, you can get it from typing `nvidia-smi` in your terminal and upper right corner see the required version.
   - pytorch::pytorch
-  - pygraphviz  # conda-forge  # nohup time conda install -y --channel conda-forge pygraphviz  
+  - dash
+  - pygraphviz
+  - ydata-profiling
   - opentsne
   - pip
   - pip:
-    - pytest
-    - transformers==4.48.0
-    - h5py==3.10.0
-    - hdbscan==0.8.39  # ==0.8.33  # error: command 'gcc' failed: No such file or directory [is indeed not installed in container]
-    - matplotlib==3.8.4
-    - pandas==1.5.3
-    - qdrant-client==1.13.2
-    - scikit-learn==1.4.0
-    - taxoniq==1.0.1
-    - tqdm==4.66.1
-    - requests==2.31.0
-    - plotly==5.24.1
-    - biopython==1.84
-    - dash-bootstrap-components==1.6.0
-    - sentencepiece==0.2.0    
-    - tiktoken==0.8.0
-    - blobfile==3.0.0
-    # - -r file:requirements.txt
+    - -r requirements_pip_conda_docker.txt
     

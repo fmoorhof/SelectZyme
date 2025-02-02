@@ -4,14 +4,13 @@ plotly
 requests
 transformers
 qdrant-client
-h5py
+pandas
 taxoniq
 torch==2.2.1+cu118  # cu118 requires --extra-index-url https://download.pytorch.org/whl/cu118
 torchaudio==2.2.1+cu118
 torchvision==0.17.1+cu118
 hdbscan
-biopython==1.84
-dash-bootstrap-components==1.6.0
+dash-bootstrap-components
 sentencepiece
 tiktoken
 blobfile

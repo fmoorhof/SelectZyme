@@ -9,15 +9,14 @@ import yaml
 import pandas as pd
 from qdrant_client import QdrantClient
 import dash
-import numpy as np
 
-from preprocessing import Parsing
-from preprocessing import Preprocessing
-from vector_db import load_or_createDB
-import ml
-from customizations import custom_plotting
-from fetch_data_uniprot import UniProtFetcher
-from dash_app import run_dash_app
+from src.preprocessing import Parsing
+from src.preprocessing import Preprocessing
+from src.vector_db import load_or_createDB
+from src import ml
+from src.customizations import custom_plotting
+from src.fetch_data_uniprot import UniProtFetcher
+from src.dash_app import run_dash_app
 
 
 logging.basicConfig(

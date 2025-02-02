@@ -5,6 +5,7 @@ FROM nvcr.io/nvidia/rapidsai/rapidsai:23.06-cuda11.8-base-ubuntu22.04-py3.10
 WORKDIR /app
 
 COPY . /app
+# should be included in COPY from above, remove line because also requirements_pip_conda_docker.txt is dependency of environment_docker.yml
 COPY environment_docker.yml /app/environment_docker.yml
 
 # rapids env needs to be used unfortunately, else some packages are missing (cudf etc.)

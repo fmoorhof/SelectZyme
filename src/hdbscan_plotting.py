@@ -17,7 +17,7 @@ import numpy as np
 import networkx as nx
 import plotly.graph_objects as go
 
-from customizations import set_columns_of_interest
+from src.customizations import set_columns_of_interest
 
 
 class MinimumSpanningTree:
