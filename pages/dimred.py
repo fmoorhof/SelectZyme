@@ -7,11 +7,6 @@ from dash.dependencies import Input, Output, State
 from src.visualizer import plot_2d
 
 
-# def layout(df, X_red):        
-#     layout, register_callbacks = run_dash_app(df, X_red)
-#     return layout, register_callbacks
-
-
 def layout(df, X_red, X_red_centroids):
     """
     Generate the layout for a Dash app with a 2D plot, dropdown for selecting legend attribute, 

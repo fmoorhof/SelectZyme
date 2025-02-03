@@ -1,6 +1,6 @@
 from dash import dcc, html, dash_table
 
-from src.hdbscan_plotting import MinimumSpanningTree
+from src.mst_plotting import MinimumSpanningTree
 from pages.dimred import html_export_figure
 
 
