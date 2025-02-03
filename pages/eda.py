@@ -9,7 +9,7 @@ def layout(df) -> html.Div:
     logging.info("Generating EDA report. This may take a while...")
 
     df_profile = df.drop(columns=['sequence'])  # fix: column too long ValueError: Couldn't find space to draw. Either the Canvas size is too small or too much of the image is masked out.
-    profile = ProfileReport(df_profile, title="Profiling Report")
+    profile = ProfileReport(df_profile, title="Profiling Report", config_file="")  # empty string to fix docker TypeCheckError
     profile.to_file("assets/census_report.html")
 
     return html.Div(
