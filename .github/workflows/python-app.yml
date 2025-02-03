@@ -1,7 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
-# if OS out of memory comes again, continue with these steps: https://github.com/actions/runner-images/issues/709
+# This workflow runs the conda build and pytests the tests
 
 name: Python application with conda
 
@@ -32,12 +29,6 @@ jobs:
         with:
           path: ~/conda_pkgs_dir
           key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
-
-      # - name: Create Conda environment (if needed)  # already covered by: activate-environment: selectzyme
-      #   if: steps.conda-cache.outputs.cache-hit != 'true'
-      #   run: |
-      #     conda env create --name selectzyme --file environment.yml
-      #     conda clean --all --yes
 
       - name: Test with pytest
         shell: bash -l {0}  # Ensures the Conda environment is correctly sourced
