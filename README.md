@@ -42,8 +42,12 @@ pip install -r requirements.txt --extra-index-url=https://pypi.nvidia.com --extr
 ### Docker
 ```
 docker build -t fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
-docker run --gpus all -it --entrypoint /bin/bash fmoorhof/selectzyme
+docker run --gpus all -it -p 8050:8050 --entrypoint /bin/bash fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10
+```
+You can now access the app via your webbrowser by typing either the *server_IP* or *localhost* and the exposed port (8050):
+`https://localhost:8050` or `https://server_IP:8050`
 
+```
 # optional: re-start your container later
 docker start CONTAINERID (find CONTAINERID with `docker ps` or `docker ps -a`)
 docker exec -it CONTAINERID
