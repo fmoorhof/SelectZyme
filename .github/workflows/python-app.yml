@@ -31,7 +31,7 @@ jobs:
           auto-activate-base: false
           use-only-tar-bz2: true  # Ensures Conda reuses cached package files
           python-version: 3.10
-          # miniforge-variant: Mambaforge  # Faster Conda solver (optional), requires cache to be built with Mambaforge (which was not my case)
+          miniforge-variant: Mambaforge  # Faster Conda solver (optional), requires also cache to be built with Mambaforge
 
       - name: Restore Conda environment from cache (if available)
         shell: bash -l {0}
