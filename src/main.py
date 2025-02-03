@@ -117,7 +117,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
     :param project_name: name of the collection
     return: embeddings: numpy array containing the embeddings"""
     logging.info("Instantiating Qdrant vector DB. This takes quite a while.")
-    qdrant = QdrantClient(url="http://localhost:6333")  # fire up container with  # docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
+    qdrant = QdrantClient(url="http://localhost:6333", timeout=15)  # fire up container with  # docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name, plm_model=plm_model)
     if df.shape[0] != embeddings.shape[0]:  # todo: recreate the collection instead and make user aware (press [Yn] or dont know yet to report)
         qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
@@ -129,7 +129,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
 
 
 def dimred_clust(df, X, dim_method):
-    labels, G, Gsl, X_centroids = ml.clustering_HDBSCAN(X, min_samples=10, min_cluster_size=25)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
+    labels, G, Gsl, X_centroids = ml.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=10)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
     df['cluster'] = labels
     df = custom_plotting(df)
 
