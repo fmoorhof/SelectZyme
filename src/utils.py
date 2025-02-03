@@ -1,5 +1,3 @@
-"""This file soon can be deleted together with dash_app.py but before merge some functions required by app.py
-into there or a utils file."""
 import logging
 import sys
 import os
@@ -8,7 +6,6 @@ import argparse
 import yaml
 import pandas as pd
 from qdrant_client import QdrantClient
-import dash
 
 from src.preprocessing import Parsing
 from src.preprocessing import Preprocessing
@@ -16,12 +13,6 @@ from src.vector_db import load_or_createDB
 from src import ml
 from src.customizations import custom_plotting
 from src.fetch_data_uniprot import UniProtFetcher
-from src.dash_app import run_dash_app
-
-
-logging.basicConfig(
-    format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG
-)
 
 
 def parse_args() -> argparse.Namespace:
@@ -146,38 +137,3 @@ def dimred_clust(df, X, dim_method):
         raise ValueError(f"Dimensionality reduction method {dim_method} not implemented. Choose from 'PCA', 'TSNE', 'openTSNE', 'UMAP'.")
     
     return df, X_red, G, Gsl, X_red_centroids
-
-
-def main(app):
-    df = parse_data(args)
-    df = preprocessing(df)
-
-    X = database_access(df, args.project_name, args.plm_model)
-    df, X_red, G, Gsl = dimred_clust(df, X, args.dim_red)
-
-    # TSNE plot and table app
-    # app = run_dash_app(df, X_red, args.dim_red, args.project_name, app)  # plot and table: from dash_app import run_dash_app
-    app.layout, register_callbacks = run_dash_app(df, X_red)  # plot and table: from dash_app import run_dash_app
-    register_callbacks(app)
-
-
-
-if __name__ == "__main__":
-    app = dash.Dash(__name__)
-    args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    # args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='PCA', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    args = parse_args()  # comment for debugging
-
-    # our manual mining
-    # args = argparse.Namespace(project_name='batch7', query_terms=["ec:1.14.11", "ec:1.14.20","xref%3Abrenda-1.14.11", "xref%3Abrenda-1.14.20", "IPR005123", "IPR003819", "IPR026992", "PF03171", "2OG-FeII_Oxy", "cd00250"], length='201 TO 500', custom_data_location="/raid/data/fmoorhof/PhD/Data/SKD022_2nd-order/custom_seqs_full.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    # args = argparse.Namespace(project_name='test', query_terms=["xref%3Abrenda-1.14.20", "xref%3Abrenda-1.14.11"], length='201 TO 500', custom_data_location="/raid/data/fmoorhof/PhD/Data/SKD022_2nd-order/expoImpoTest.csv", dim_red='TSNE', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-    # query_terms = ["ec:1.13.11.85", "xref%3Abrenda-1.13.11.85", "ec:1.13.11.87", "xref%3Abrenda-1.13.11.87", "ec:1.13.99.B1", "xref%3Abrenda-1.13.99.B1", "IPR037473", "IPR018713", "latex clearing protein"]  # define your query terms for UniProt here
-    # args = argparse.Namespace(project_name='petase', query_terms=query_terms, length='50 TO 1020', custom_data_location='/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed.csv', dim_red='PCA', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
-
-    main(app=app)
-    app.run_server(host='0.0.0.0', port=8050, debug=False)  # debug=True triggers main() execution twice
-    
-    # old project names to remember: batch5, test_project, lcp, lcp_no_signals, lefos, lefos_no_signals
-    # main(input_file='/raid/data/fmoorhof/PhD/Data/SKD001_Literature_Mining/Batch5/batch5_annotated.tsv', project_name='batch5', app=app)    
-    # from docker (no matter is docker or not) to local machine: http://192.168.3.156:8050/
-    # http://10.10.142.201:8050/
