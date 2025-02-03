@@ -15,4 +15,4 @@ dependencies:
   - opentsne
   - pip
   - pip:
-    - -r requirements_frozen.txt
+    - -r requirements_pip_conda_docker.txt

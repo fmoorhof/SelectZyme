@@ -1,42 +1,31 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
-# if OS out of memory comes again, continue with these steps: https://github.com/actions/runner-images/issues/709
-
-name: Python application
+name: Python application with conda
 
 on:
   push:
-    branches: [ "main", "7-CI-fix" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  contents: read
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    - name: Free up memory  # https://github.com/actions/runner-images/issues/709
-      run: |
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-    - name: Install dependencies
-      run: |
-        if [ -f requirements.txt ]; then pip install --user --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118; fi
-        pip install --user --no-cache-dir --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
-        pip install pytest pytest-cov        
-        # todo: try next to install from pyproject.toml
-    - name: Test with pytest
-      run: |
-        python --version
-        python -m pytest --cov=src/ -v tests/test_stack.py
-        python -m pytest --cov=src/ -v tests/test_*
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: selectzyme
+          environment-file: environment.yml
+          auto-activate-base: false
+
+      - name: Test with pytest
+        shell: bash -l {0}  # Ensures the Conda environment is correctly sourced
+        run: |
+          python --version
+          pip list
+          conda install -y pytest pytest-cov
+          pip list
+          python -m pytest --cov=src/ -v tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestDBCreation'  # exclude the embedding and GPU required tests in GHActions  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
