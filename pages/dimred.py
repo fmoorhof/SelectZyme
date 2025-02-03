@@ -132,7 +132,7 @@ def register_callbacks(app, df, X_red, X_red_centroids):
         if data_table is not None and data_table != shared_table:
             shared_table = data_table  # set modified changes of user to shared_table (dcc.Store)
 
-        if shared_table is None:
+        if shared_table is None or isinstance(shared_table, dict):
             shared_table = []
 
         def process_selection(point):
