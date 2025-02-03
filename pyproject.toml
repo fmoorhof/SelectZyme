@@ -1,7 +1,7 @@
 [project]
-name = "ec"
+name = "selectzyme"
 version = "0.0.1"
-description = "Predict EC numbers for protein sequences"
+description = "Selectzyme: Interactive Protein Space Visualization for Enzyme Discovery, Selection, and Mining"
 readme = "README.md"
 authors = [
     { name = "Felix Moorhoff", email = "fmoorhof@ipb-halle.de" },
@@ -53,6 +53,7 @@ test = [
     "pytest-cov",
 ]
 dev = [
+    "conda-lock",
     "black",
     "isort",
     "pytest",
@@ -79,6 +80,7 @@ full = [
     "pyproject-flake8",
     "pytest",
     "pytest-cov",
+    "conda-lock",
     "sphinx",
     "sphinxcontrib-napoleon",
     "sphinxcontrib-runcmd",
@@ -109,9 +111,6 @@ exclude_lines = [
     "pragma: no cover",
     "raise NotImplementedError",
     "if TYPE_CHECKING",
-]
-omit = [
-    "setup.py",
 ]
 precision = 2
 
