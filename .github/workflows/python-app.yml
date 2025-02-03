@@ -16,13 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: selectzyme
-          environment-file: environment.yml
-          auto-activate-base: false
-
       - name: Cache Conda environment
         uses: actions/cache@v4
         id: conda-cache
@@ -30,8 +23,25 @@ jobs:
           path: ~/conda_pkgs_dir
           key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
 
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: selectzyme
+          environment-file: environment.yml
+          auto-activate-base: false
+          use-only-tar-bz2: true  # Ensures Conda reuses cached package files
+          python-version: 3.10
+          miniforge-variant: Mambaforge  # Faster Conda solver (optional)
+
+      - name: Restore Conda environment from cache (if available)
+        shell: bash -l {0}
+        run: |
+          conda config --set pkgs_dirs ~/conda_pkgs_dir
+          conda info
+          conda list
+
       - name: Test with pytest
-        shell: bash -l {0}  # Ensures the Conda environment is correctly sourced
+        shell: bash -l {0}
         run: |
           python --version
           pip list
