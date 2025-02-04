@@ -13,12 +13,12 @@ from src.utils import parse_data, preprocessing, database_access, dimred_clust
 
 def main(app):
     # backend calculations
-    df = parse_data(args)
+    df = parse_data(config['project']['name'], config['project']['data']['query_terms'], config['project']['data']['length'], config['project']['data']['custom_data_location'], config['project']['data']['out_dir'], config['project']['data']['df_coi'])
     logging.info(f"df columns have the dtypes: {df.dtypes}")
     df = preprocessing(df)
-    logging.info(args.plm_model)
-    X = database_access(df, args.project_name, args.plm_model)
-    df, X_red, G, Gsl, X_red_centroids = dimred_clust(df, X, args.dim_red)
+    logging.info(config['project']['plm']['plm_model'])
+    X = database_access(df, config['project']['name'], config['project']['plm']['plm_model'])
+    df, X_red, G, Gsl, X_red_centroids = dimred_clust(df, X, config['project']['dimred']['method'])
 
 
     # Create page layouts
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     server = app.server
 
     # load real minimal data
-    args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='PCA', plm_model='prott5', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
+    # args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='PCA', plm_model='prott5', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = argparse.Namespace(project_name='argparse_test', query_terms=["ec:1.13.11.85", "latex clearing protein"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='PCA', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = argparse.Namespace(project_name='batch7', query_terms=["ec:1.14.11", "ec:1.14.20","xref%3Abrenda-1.14.11", "xref%3Abrenda-1.14.20", "IPR005123", "IPR003819", "IPR026992", "PF03171", "2OG-FeII_Oxy", "cd00250"], length='201 TO 500', custom_data_location="/raid/data/fmoorhof/PhD/Data/SKD022_2nd-order/custom_seqs_full.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = argparse.Namespace(project_name='lefos', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LeFOS/custom_seqs.csv", dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
@@ -87,5 +87,14 @@ if __name__ == "__main__":
     # args = argparse.Namespace(project_name='petase2', query_terms=query_terms, length='50 TO 1020', custom_data_location='/raid/data/fmoorhof/PhD/Data/SKD021_Case_studies/PETase/pet_plasticDB_preprocessed_final.csv', dim_red='TSNE', plm_model='esm1b', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
     # args = parse_args()
 
+    # new argparsing implementation
+    # CLI way
+    config = parse_args()
+    # Debugging way
+    import yaml
+    args = argparse.Namespace(config='results/lcp.yml')
+    with open(args.config, 'r') as f:
+            config = yaml.safe_load(f)
+
     main(app=app)
-    app.run_server(host="0.0.0.0", port=8051, debug=False)
+    app.run_server(host="0.0.0.0", port=config['project']['port'], debug=False)
