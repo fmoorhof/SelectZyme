@@ -1,5 +1,5 @@
 [project]
-name = "selectzyme"
+name = "ec"
 version = "0.0.1"
 description = "Selectzyme: Interactive Protein Space Visualization for Enzyme Discovery, Selection, and Mining"
 readme = "README.md"
