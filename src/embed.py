@@ -96,10 +96,11 @@ if __name__=='__main__':
     from preprocessing import Preprocessing
 
     df = Parsing.parse_tsv('tests/head_10.tsv')
+    # df = Parsing.parse_tsv('datasets/output/petase2_annotated.tsv')
     # df = Preprocessing(df).preprocess()
     pp = Preprocessing(df)
     # pp.remove_long_sequences()
-    pp.remove_sequences_without_Metheonin()
+    # pp.remove_sequences_without_Metheonin()
     # pp.remove_sequences_with_undertermined_amino_acids()
     pp.remove_duplicate_entries()
     pp.remove_duplicate_sequences()    
@@ -110,3 +111,7 @@ if __name__=='__main__':
     embeddings = gen_embedding(df['sequence'].tolist(), plm_model='esm2')  # , no_pad=True)
     print(embeddings.shape)
     print(embeddings)
+
+    # # quickly generate embeddings
+    # from utils import database_access
+    # database_access(df, project_name='petase2', plm_model='prott5')
