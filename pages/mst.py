@@ -31,8 +31,11 @@ def layout(G, df, X_red) -> html.Div:
     """
     logging.info('Start building the MST...')
     mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
-    fig = mst.plot_mst_in_DimRed_landscape()  # NOT favored implementation
-    # fig = mst.plot_mst_force_directed(G)
+
+    if df.shape[0] > 10000:
+        fig = mst.plot_mst_in_DimRed_landscape()
+    else:
+        fig = mst.plot_mst_force_directed(G)
 
     return html.Div(
         [
