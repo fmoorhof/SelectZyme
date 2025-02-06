@@ -1,3 +1,5 @@
+import logging
+
 from dash import dcc, html, dash_table
 
 from src.mst_plotting import MinimumSpanningTree
@@ -27,9 +29,10 @@ def layout(G, df, X_red) -> html.Div:
     Note:
     - The `modify_graph_data` function is assumed to be defined elsewhere and is responsible for creating the edge and node traces.
     """
+    logging.info('Start building the MST...')
     mst = MinimumSpanningTree(G._mst, G._data, X_red, df)
-    # fig = mst.plot_mst_in_DimRed_landscape()  # NOT favored implementation
-    fig = mst.plot_mst_force_directed(G)
+    fig = mst.plot_mst_in_DimRed_landscape()  # NOT favored implementation
+    # fig = mst.plot_mst_force_directed(G)
 
     return html.Div(
         [

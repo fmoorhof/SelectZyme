@@ -1,3 +1,5 @@
+import logging
+
 from dash import html, dcc, dash_table
 import pandas as pd
 # import plotly.figure_factory as ff
@@ -8,6 +10,7 @@ from src.single_linkage_plotting import create_dendrogram
 
 
 def layout(G, df: pd.DataFrame) -> html.Div:
+    logging.info('Start building the dendrogram...')
     # shiny hover text
     columns_of_interest = set_columns_of_interest(df.columns)
     hover_text = ["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest) for i in range(len(df))]
