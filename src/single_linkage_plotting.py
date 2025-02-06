@@ -24,7 +24,7 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
 
     # Get the color mapping and apply it to the DataFrame
     color_mapping = _value_to_color(df[legend_attribute])
-    df['cluster_colors'] = df[legend_attribute].map(color_mapping)
+    df_colors = df[legend_attribute].map(color_mapping)
 
     # create scatter traces
     for i in range(len(icoord)):  # perf: very very slow, breaking performance for large datasets
@@ -37,7 +37,7 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
             marker=dict(
                 size=df['marker_size'][i],
                 symbol=df['marker_symbol'][i],
-                color=df['cluster_colors'][i],
+                color=df_colors[i],
                 opacity=0.8
             ),
             customdata=df['accession'],
