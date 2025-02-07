@@ -58,7 +58,8 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     records = qdrant.scroll(collection_name=collection_name,
                             with_payload=True,  # If List of string - include only specified fields
                             with_vectors=True,
-                            limit=collection.points_count)
+                            limit=collection.points_count,
+                            timeout=25)
     # qdrant.delete_collection(collection_name)
 
     # extract the header and vector from the Qdrant data structure

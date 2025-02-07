@@ -3,12 +3,15 @@ import logging
 from dash import html
 from ydata_profiling import ProfileReport
 
+from src.customizations import set_columns_of_interest
+
 
 def layout(df) -> html.Div:
     """Generates a Dash layout for the EDA using ydata"""
     logging.info("Generating EDA report. This may take a while...")
-
-    df_profile = df.drop(columns=['sequence'])  # fix: column too long ValueError: Couldn't find space to draw. Either the Canvas size is too small or too much of the image is masked out.
+    columns_of_interest = set_columns_of_interest(df.columns)
+    df_profile = df[columns_of_interest]  # discard columns that are not of interest such as marker_symbols etc.
+    
     profile = ProfileReport(df_profile, title="Profiling Report", config_file="")  # empty string to fix docker TypeCheckError
     profile.to_file("assets/census_report.html")
 

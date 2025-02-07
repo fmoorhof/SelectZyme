@@ -10,7 +10,6 @@ possible outlook on networkx implementation:
 Conclusion on the adapted hdbscan implementation:
 - MST in DimRed landscape is not really nice. The force directed layout is better. Apart from this only the connectivity information is really usefull there which can also maybe extracted differently.
 """
-from warnings import warn
 import logging
 
 import numpy as np
@@ -64,11 +63,6 @@ class MinimumSpanningTree:
         """
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
         """
-        logging.info("Generating MST in dimensionality reduced plot.")
-        if self._data.shape[0] > 50000:
-            warn("Too many data points for safe rendering of a minimum spanning tree!")
-            return None
-
         # Vary line width if enabled  # todo: use line_width to display edge weights either as color, transparency or width
         if vary_line_width:
             line_width = edge_linewidth * (np.log(self._mst.T[2].max() / self._mst.T[2]) + 1.0)
@@ -114,10 +108,6 @@ class MinimumSpanningTree:
         if not isinstance(G, nx.Graph):
             G = G.to_networkx()
 
-        if len(G.nodes()) > 5000:
-            logging.warning("Minimal Spanning Tree (MST) will with over 5000 nodes will be too large for nice visualizations. Concludingly, a reduced MST is created that only shows nodes with connectivity greater than 1.")
-            G = self._prune_graph(G)
-
         # define graph layout and coordinates
         # pos = nx.spring_layout(G)  # some overlaying nodes, NOT favored layout
         pos = nx.nx_agraph.graphviz_layout(G, prog="twopi", root=0)  # Warning: specified root node "0" was not found.Using default calculation for root node
@@ -144,27 +134,6 @@ class MinimumSpanningTree:
         node_trace.marker.color = node_adjacencies
 
         return edge_trace, node_trace
-
-    def _prune_graph(self, G: nx.Graph):
-        """
-        Prune the graph to keep only nodes with connectivity > 1 and update the DataFrame accordingly.
-        !Assumes that the DataFrame index corresponds to the node IDs in the graph.!
-
-        Parameters:
-        G (networkx.Graph): The input graph.
-        Returns:
-        tuple: A tuple containing:
-            - G (networkx.Graph): The pruned graph.
-        """
-        # Filter nodes with connectivity > 1
-        nodes_to_keep = [node for node in G.nodes() if len(list(G.adj[node])) > 4]
-        G = G.subgraph(nodes_to_keep).copy()
-
-        # Update the DataFrame to keep only rows corresponding to the retained nodes
-        self.df = self.df.loc[nodes_to_keep].copy()
-        self.df.reset_index(inplace=True)
-
-        return G
     
     @staticmethod
     def create_edge_trace(edge_x, edge_y, edge_alpha=0.3, edge_width=1.0):
