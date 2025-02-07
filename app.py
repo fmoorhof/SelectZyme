@@ -70,7 +70,7 @@ if __name__ == "__main__":
         suppress_callback_exceptions=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP],  # Optional for styling
     )
-    server = app.server
+    # server = app.server  # this line is only needed when deployed on a (public) server
 
     # load real minimal data
     # args = argparse.Namespace(project_name='argparse_test_minimal', query_terms=["ec:1.13.11.85", "ec:1.13.11.84"], length='200 TO 601', custom_data_location="/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv", dim_red='PCA', plm_model='prott5', out_dir='datasets/output/', df_coi=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'])
@@ -97,4 +97,4 @@ if __name__ == "__main__":
             config = yaml.safe_load(f)
 
     main(app=app)
-    app.run_server(host="0.0.0.0", port=config['project']['port'], debug=False)
+    app.run_server(host="127.0.0.1", port=config['project']['port'], debug=False)
