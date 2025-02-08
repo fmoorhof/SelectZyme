@@ -1,6 +1,6 @@
 import pytest
 
-from preprocessing import Parsing
+from parsing import Parsing
 from preprocessing import Preprocessing
 
 

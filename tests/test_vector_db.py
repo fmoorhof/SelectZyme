@@ -2,7 +2,7 @@ import pytest
 from qdrant_client import QdrantClient
 
 import vector_db
-from preprocessing import Parsing
+from parsing import Parsing
 from preprocessing import Preprocessing
 
 
