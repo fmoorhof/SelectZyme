@@ -8,14 +8,15 @@ import pages.mst as mst
 import pages.single_linkage as sl
 import pages.dimred as dimred
 import pages.eda as eda
-from src.utils import parse_data, preprocessing, database_access, dimred_clust
+from src.utils import parse_data, database_access, dimred_clust
+from src.preprocessing import Preprocessing
 
 
 def main(app):
     # backend calculations
     df = parse_data(config['project']['name'], config['project']['data']['query_terms'], config['project']['data']['length'], config['project']['data']['custom_data_location'], config['project']['data']['out_dir'], config['project']['data']['df_coi'])
     logging.info(f"df columns have the dtypes: {df.dtypes}")
-    df = preprocessing(df)
+    df = Preprocessing(df).preprocess()
     logging.info(config['project']['plm']['plm_model'])
     X = database_access(df, config['project']['name'], config['project']['plm']['plm_model'])
     df, X_red, G, Gsl, X_red_centroids = dimred_clust(df, X, config['project']['dimred']['method'])
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     config = parse_args()
     # Debugging way
     import yaml
-    args = argparse.Namespace(config='results/lcp.yml')
+    args = argparse.Namespace(config='results/upo.yml')
     with open(args.config, 'r') as f:
             config = yaml.safe_load(f)
 

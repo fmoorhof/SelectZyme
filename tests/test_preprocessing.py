@@ -1,28 +1,17 @@
+"""Test depends on parsing and the minimal data. This is maybe not very ideal but enables to define 
+the test cases and occurences more stringend despite violating the isolation principle of unit tests."""
 import pytest
 
 from parsing import Parsing
 from preprocessing import Preprocessing
 
 
-def test_parse_fasta(fasta_file = 'tests/head_10.fasta'):
-    """Test parsing of a fasta file that consists of headers and sequences."""
-    df = Parsing.parse_fasta(fasta_file)
-
-    assert df is not []
-
-def test_parse_tsv(tsv_file = 'tests/head_10.tsv'):
-    """Test parsing of a tsv file that consists of headers and sequences."""
-    df = Parsing.parse_tsv(tsv_file)
-
-    assert df is not None
-
-
 class TestPreprocessing:
     """Test the preprocessing functions."""
     @pytest.fixture(params=[Parsing.parse_tsv, Parsing.parse_fasta])  # parse tsv and fasta files
     def setup_method(self, request):
-        parse_method = request.param
-        self.df = parse_method('tests/head_10.tsv') if parse_method.__name__ == 'parse_tsv' else parse_method('tests/head_10.fasta')
+        parser = Parsing('tests/head_10.tsv') if request.param.__name__ == 'parse_tsv' else Parsing('tests/head_10.fasta')
+        self.df = parser.parse_tsv() if request.param.__name__ == 'parse_tsv' else parser.parse_fasta()
         self.length = self.df.shape[0]  # original length of the dataframe
         self.pp = Preprocessing(self.df)  # instantiate the Preprocessing class
 
@@ -74,3 +63,19 @@ class TestPreprocessing:
 
         assert df is not None
         assert df.shape[0] != self.length
+
+    def test_preprocess(self, setup_method):
+        """Test the preprocess function that applies all preprocessing steps."""
+        initial_length = self.df.shape[0]
+        self.pp.preprocess()
+        df = self.pp.df
+
+        assert df is not None
+        assert df.shape[0] <= initial_length  # The number of rows should be less than or equal to the initial length
+
+        # Check if all preprocessing steps were applied
+        assert all(df['sequence'].str.len() < 1024)  # No sequences longer than 1024 amino acids
+        assert all(df['sequence'].str.startswith('M'))  # All sequences start with Methionine
+        assert not any(df['sequence'].str.contains('X'))  # No sequences contain undetermined amino acids
+        assert df['accession'].is_unique  # No duplicate accessions
+        assert df['sequence'].is_unique  # No duplicate sequences

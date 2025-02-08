@@ -9,7 +9,6 @@ from qdrant_client import QdrantClient
 
 from src.fetch_data_uniprot import UniProtFetcher
 from src.parsing import Parsing
-from src.preprocessing import Preprocessing
 from src.vector_db import load_or_createDB
 from src import ml
 from src.customizations import custom_plotting
@@ -32,37 +31,12 @@ def parse_args():
     return config
 
 
-def preprocessing(df: pd.DataFrame):
-    # df needs to contain a column 'sequence' with the sequences
-    pp = Preprocessing(df)
-    pp.remove_long_sequences()
-    pp.remove_sequences_without_Metheonin()
-    pp.remove_sequences_with_undertermined_amino_acids()
-    pp.remove_duplicate_entries()
-    pp.remove_duplicate_sequences()
-    return pp.df
-
-
-def parse_data(project_name, query_terms, length, custom_data_location, out_dir, df_coi):
-    """Parse data or read it from file
-    todo: implement .xlsx reader with spreadsheet name"""
-    input_file = out_dir+project_name+'_annotated.tsv'
-    if not os.path.isfile(input_file):  # generate it
-        fetcher = UniProtFetcher(df_coi, out_dir)
-        df = fetcher.query_uniprot(query_terms, length)
-        if custom_data_location != '':
-            if custom_data_location.endswith('.fasta'):
-                custom_data = fetcher.load_custom_fasta(custom_data_location)
-            else:
-                custom_data = fetcher.load_custom_csv(file_path=custom_data_location, sep=';')
-            df = pd.concat([custom_data, df], ignore_index=True)
-        df = fetcher.clean_data(df)
-        fetcher.save_data(df, project_name)
-    elif input_file.endswith('.fasta'):
-        headers, sequences = Parsing.parse_fasta(input_file)
-        df = pd.DataFrame({'Header': headers, 'Sequence': sequences})
-    else:
-        df = Parsing.parse_tsv(input_file)
+def parse_data(project_name, query_terms, length, custom_file, out_dir, df_coi):
+    exisiting_file = out_dir+project_name+'.tsv'
+    output_file_corpus = out_dir+project_name
+    df = _parse_data(exisiting_file, custom_file, query_terms, length, df_coi)
+    df = _clean_data(df)
+    _save_data(df, output_file_corpus)
     return df
 
 
@@ -104,55 +78,45 @@ def dimred_clust(df, X, dim_method, n_neighbors=15, random_state=42):
     return df, X_red, G, Gsl, X_red_centroids
 
 
-@DeprecationWarning
-def parse_args_old() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Process parameters.')
+def _parse_data(exisiting_file: str, custom_file: str, query_terms: list, length: str, df_coi: list):
+    if os.path.isfile(exisiting_file):
+        return Parsing(exisiting_file).parse()
     
-    # Add --config argument for YAML file
-    parser.add_argument('--config', type=str, help='Path to config.yml file')
-    
-    # Required arguments (if no config file is provided)
-    parser.add_argument('-p', '--project_name', help='Project name')
-    parser.add_argument('-q', '--query_terms', nargs='+', help='Query terms for UniProt')
-    parser.add_argument('-l', '--length', help='Length range for sequences to retrieve from UniProt')
+    if query_terms != ['']:
+        fetcher = UniProtFetcher(df_coi)
+    if custom_file != '':
+        df_custom = Parsing(custom_file).parse()
+        if query_terms == ['']:
+            return df_custom
+        df = fetcher.query_uniprot(query_terms, length)
+        df = pd.concat([df_custom, df], ignore_index=True)  # custom data first that they are displayed first in plot legends
+        return df
+    elif query_terms != ['']:
+        return fetcher.query_uniprot(query_terms, length)
+    else:
+        raise ValueError("No query terms or custom data location provided. Please provide either one.")
 
-    # Optional arguments with defaults
-    parser.add_argument('-loc', '--custom_data_location', default='', help='Location of your custom data CSV')
-    parser.add_argument('--dim_red', default='PCA', 
-                        help='Dimensionality reduction technique (default: PCA), other methods: TSNE, openTSNE, UMAP')
-    parser.add_argument('--plm_model', default='esm1b', 
-                        help="Protein language model (default: 'esm1b') other models: 'esm2', 'esm3', 'prott5', 'prostt5'")
-    parser.add_argument('--out_dir', default='datasets/output/', 
-                        help='Output directory (default: datasets/output/)')
-    parser.add_argument('--df_coi', nargs='+', default=['accession', 'reviewed', 'ec', 'organism_id', 'length', 'xref_brenda', 'xref_pdb', 'sequence'], 
-                        help=('Define the columns of interest for the dataframe '
-                              '(default: accession, reviewed, ec, organism_id, length, xref_brenda, xref_pdb, sequence)'))
 
-    # Parse CLI arguments
-    args = parser.parse_args()
+def _save_data(df: pd.DataFrame, out_file: str):
+    df.to_csv(f"{out_file}.tsv", sep='\t', index=False)
+    # _export_annotated_fasta(df, f"{out_file}.fasta")
+    # df = df[(df['reviewed'] == True) | (df['xref_brenda'].notnull())]  # | = OR
+    # df.to_csv(f"{out_file}.tsv", sep='\t', index=False)
 
-    # If a config file is provided, load it and override CLI arguments
-    if args.config:
-        with open(args.config, 'r') as f:
-            config = yaml.safe_load(f)
-        
-        # Override CLI arguments with values from the config file
-        for key, value in config.items():
-            if hasattr(args, key) and getattr(args, key) is None:
-                setattr(args, key, value)
 
-    # Validate required arguments
-    if not args.config and not all([args.project_name, args.query_terms, args.length, args.custom_data_location]):
-        parser.error("Either a config file or all required arguments (--project_name, --query_terms, --length, --custom_data_location) must be provided.")
+def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    df = df[df['accession'] != 'Entry']  # remove concatenated headers that are introduced by each query term
+    logging.info(f'Total amount of retrieved entries: {df.shape[0]}')
+    df.drop_duplicates(subset='accession', keep='first', inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    logging.info(f'Total amount of non redundant entries: {df.shape[0]}')
+    logging.info(f"Amount of BRENDA reviewed entries: {df['xref_brenda'].notna().sum()}")
+    return df
 
-    # Log the final arguments
-    logging.debug(f"Project name: {args.project_name}")
-    logging.debug(f"Query terms: {args.query_terms}")
-    logging.debug(f"Length range: {args.length}")
-    logging.debug(f"Custom data location: {args.custom_data_location}")
-    logging.debug(f"Dimensionality reduction: {args.dim_red}")
-    logging.debug(f"Protein Language Model: {args.plm_model}")        
-    logging.debug(f"Output directory: {args.out_dir}")
-    logging.debug(f"Dataframe columns of interest: {args.df_coi}")
 
-    return args
+def _export_annotated_fasta(df: pd.DataFrame, out_file: str):
+    with open(out_file, 'w') as f_out:
+        for index, row in df.iterrows():
+            fasta = '>', '|'.join(row.iloc[:-1].map(str)), '\n', row.loc["sequence"], '\n'  # todo: exclude seq in header (-1=last column potentially broken)
+            f_out.writelines(fasta)
+    logging.info(f"FASTA file written to {out_file}")

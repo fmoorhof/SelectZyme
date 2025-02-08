@@ -20,7 +20,7 @@ def layout(df, X_red, X_red_centroids):
     """
     cols = df.columns.values.tolist()
 
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute=cols[7])
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute=cols[8])
 
     return html.Div(
         [
@@ -33,7 +33,7 @@ def layout(df, X_red, X_red_centroids):
                         options=[
                             {'label': col, 'value': col} for col in cols  # todo: hide some unnecessary columns like shapes and sizes
                         ],  # cols[:12]
-                        value=cols[7],  # set default column to show on loading to 'query_terms' if no custom import columns were added in front
+                        value=cols[8],  # set default column to show on loading to 'query_terms' if no custom import columns were added in front
                     )
                 ],
                 style={'width': '30%', 'display': 'inline-block'},
