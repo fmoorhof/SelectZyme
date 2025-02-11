@@ -2,6 +2,7 @@ import logging
 import sys
 import os
 import argparse
+from time import time
 
 import yaml
 import pandas as pd
@@ -12,7 +13,6 @@ from src.parsing import Parsing
 from src.vector_db import load_or_createDB
 from src import ml
 from src.customizations import custom_plotting
-
 
 
 def parse_args():
@@ -49,7 +49,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
     qdrant = QdrantClient(url="http://localhost:6333", timeout=15)  # fire up container with  # docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
     annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name, plm_model=plm_model)
     if df.shape[0] != embeddings.shape[0]:  # todo: recreate the collection instead and make user aware (press [Yn] or dont know yet to report)
-        qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
+        # qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
         raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
 
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
@@ -120,3 +120,23 @@ def _export_annotated_fasta(df: pd.DataFrame, out_file: str):
             fasta = '>', '|'.join(row.iloc[:-1].map(str)), '\n', row.loc["sequence"], '\n'  # todo: exclude seq in header (-1=last column potentially broken)
             f_out.writelines(fasta)
     logging.info(f"FASTA file written to {out_file}")
+
+
+def run_time(func):
+    """
+    A decorator that measures the execution time of a function.
+
+    Args:
+        func: The function to be decorated.
+
+    Returns:
+        The wrapped function.
+
+    """
+    def wrapper(*args, **kwargs):
+        start_time = time()
+        result = func(*args, **kwargs)
+        end_time = time()
+        print(f"Execution time of the function {func.__name__}: {end_time - start_time} seconds")
+        return result
+    return wrapper    

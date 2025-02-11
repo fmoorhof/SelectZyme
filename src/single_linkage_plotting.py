@@ -7,7 +7,10 @@ from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
 import plotly.colors as pc
 
+from src.utils import run_time
 
+
+@run_time
 def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
     P = dendrogram(Z, no_plot=True)
     icoord = np.array(P["icoord"])
