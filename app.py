@@ -8,18 +8,41 @@ import pages.mst as mst
 import pages.single_linkage as sl
 import pages.dimred as dimred
 import pages.eda as eda
-from src.utils import parse_data, database_access, dimred_clust
+from src.utils import parse_data, database_access
 from src.preprocessing import Preprocessing
+from src.ml import dimred_caller, clustering_HDBSCAN
+from src.customizations import custom_plotting
 
 
 def main(app):
     # backend calculations
-    df = parse_data(config['project']['name'], config['project']['data']['query_terms'], config['project']['data']['length'], config['project']['data']['custom_data_location'], config['project']['data']['out_dir'], config['project']['data']['df_coi'])
+    df = parse_data(config['project']['name'], 
+                    config['project']['data']['query_terms'], 
+                    config['project']['data']['length'], 
+                    config['project']['data']['custom_data_location'], 
+                    config['project']['data']['out_dir'], 
+                    config['project']['data']['df_coi'])
     logging.info(f"df columns have the dtypes: {df.dtypes}")
+
     df = Preprocessing(df).preprocess()
-    logging.info(config['project']['plm']['plm_model'])
-    X = database_access(df, config['project']['name'], config['project']['plm']['plm_model'])
-    df, X_red, G, Gsl, X_red_centroids = dimred_clust(df, X, config['project']['dimred']['method'])
+
+    # Load embeddings from Vector DB
+    X = database_access(df, config['project']['name'], 
+                        config['project']['plm']['plm_model'])
+
+    # Clustering
+    labels, G, Gsl, X_centroids = clustering_HDBSCAN(X, 
+                                                     config['project']['clustering']['min_samples'], 
+                                                     config['project']['clustering']['min_cluster_size'])
+    df['cluster'] = labels
+    df = custom_plotting(df)
+
+    # Dimensionality reduction
+    X_red, X_red_centroids = dimred_caller(X, 
+                                           X_centroids, 
+                                           config['project']['dimred']['method'],
+                                           config['project']['dimred']['n_neighbors'],
+                                           config['project']['dimred']['random_state'])
 
 
     # Create page layouts

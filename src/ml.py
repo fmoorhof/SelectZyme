@@ -12,6 +12,25 @@ from cuml.manifold import (
     UMAP
 )
 
+from src.utils import run_time
+
+
+@run_time
+def dimred_caller(X, X_centroids, dim_method, n_neighbors=15, random_state=42, **kwargs):
+    dim_method = dim_method.upper()
+    if dim_method == 'PCA':
+        X_red, X_red_centroids = pca(X, X_centroids, **kwargs)
+    elif dim_method == 'TSNE':
+        X_red, X_red_centroids = tsne(X, random_state=random_state, **kwargs)
+    elif dim_method == 'OPENTSNE':
+        X_red, X_red_centroids = opentsne(X, X_centroids, random_state=random_state, **kwargs)
+    elif dim_method == 'UMAP':
+        X_red, X_red_centroids = umap(X, X_centroids, n_neighbors=n_neighbors, random_state=random_state, **kwargs)
+    else:
+        raise ValueError(f"Dimensionality reduction method {dim_method} not implemented. Choose from 'PCA', 'TSNE', 'openTSNE', 'UMAP'.")
+    
+    return X_red, X_red_centroids
+
 
 def _weighted_cluster_centroid(model, X, cluster_id: int) -> np.ndarray:
     """
@@ -35,6 +54,7 @@ def _weighted_cluster_centroid(model, X, cluster_id: int) -> np.ndarray:
     return np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
 
 
+@run_time
 def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
@@ -76,7 +96,7 @@ def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **
 def pca(X, X_centroids, dimension: int = 2, **kwargs):
     """Dimensionality reduction with PCA.
     :param kwargs: Additional parameters"""
-    pca = PCA(n_components=dimension, output_type="numpy")
+    pca = PCA(n_components=dimension, output_type="numpy", **kwargs)
     X_pca = pca.fit_transform(X)
     variance = pca.explained_variance_ratio_ * 100
     variance = ["%.1f" % i for i in variance]  # 1 decimal only

@@ -11,8 +11,6 @@ from qdrant_client import QdrantClient
 from src.fetch_data_uniprot import UniProtFetcher
 from src.parsing import Parsing
 from src.vector_db import load_or_createDB
-from src import ml
-from src.customizations import custom_plotting
 
 
 def parse_args():
@@ -55,27 +53,6 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b
     sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
 
     return embeddings
-
-
-def dimred_clust(df, X, dim_method, n_neighbors=15, random_state=42):
-    # todo: adapt argparsing for HDBSCAN to
-    labels, G, Gsl, X_centroids = ml.clustering_HDBSCAN(X, min_samples=5, min_cluster_size=10)  # min samples for batch7: 50  # perf: the higher the parameters, the quicker HDBSCAN runs
-    df['cluster'] = labels
-    df = custom_plotting(df)
-
-    dim_method = dim_method.upper()
-    if dim_method == 'PCA':
-        X_red, X_red_centroids = ml.pca(X, X_centroids)
-    elif dim_method == 'TSNE':
-        X_red, X_red_centroids = ml.tsne(X, random_state=random_state)
-    elif dim_method == 'OPENTSNE':
-        X_red, X_red_centroids = ml.opentsne(X, X_centroids, random_state=random_state)
-    elif dim_method == 'UMAP':
-        X_red, X_red_centroids = ml.umap(X, X_centroids, n_neighbors=n_neighbors, random_state=random_state)
-    else:
-        raise ValueError(f"Dimensionality reduction method {dim_method} not implemented. Choose from 'PCA', 'TSNE', 'openTSNE', 'UMAP'.")
-    
-    return df, X_red, G, Gsl, X_red_centroids
 
 
 def _parse_data(exisiting_file: str, custom_file: str, query_terms: list, length: str, df_coi: list):
