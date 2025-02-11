@@ -101,18 +101,21 @@ class MinimumSpanningTree:
 
         return fig
     
-    @staticmethod
-    def create_edge_trace(edge_x, edge_y, edge_opacity=None, edge_width=1.0):
+    def create_edge_trace(self, edge_x, edge_y, edge_opacity=None, edge_width=1.0):
         """
         Create a Plotly edge trace for the graph.
         """
+        columns_of_interest = set_columns_of_interest(self.df.columns)
+        hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
+        
         return go.Scattergl(
             x=edge_x,
             y=edge_y,
             mode="lines",
             line=dict(color="black", width=edge_width),
             opacity=edge_opacity,
-            hoverinfo="none"
+            hovertext=hover_text,
+            hoverinfo="text",
         )
 
     def create_node_trace(self, node_x, node_y):
@@ -138,7 +141,7 @@ class MinimumSpanningTree:
                 # connectivity legend
                 showscale=True,
                 colorscale='YlGnBu',
-                reversescale=True,
+                reversescale=False,
                 color=[],  # Will be populated with node adjacencies
                 colorbar=dict(
                     thickness=15,
