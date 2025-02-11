@@ -27,7 +27,7 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
     # Prepare data for scatter plot
     x_lines = []
     y_lines = []
-    line_colors = []
+    # line_colors = []  # not implemented yet
     marker_x = []
     marker_y = []
     marker_colors = []
@@ -41,11 +41,11 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         x_lines.append(None)  # Add None to separate lines
         y_lines.extend(dcoord[i])
         y_lines.append(None)  # Add None to separate lines
-        line_colors.extend(["red" if df['selected'][i] else "black"] * 4)
-        line_colors.append(None)  # Add None to separate lines
+        # line_colors.extend(["red" if df['selected'][i] else "black"] * 4)
+        # line_colors.append(None)  # Add None to separate lines
 
-        marker_x.append(icoord[i].mean())
-        marker_y.append(dcoord[i].mean())
+        marker_x.append(icoord[i][0])  # always use left branch to place marker
+        marker_y.append(dcoord[i][0] + 0.01)  # if set [0], hover breaks because of axis interference - idk on this unexpected behaviour. 0.1 offset to avoid interference
         marker_colors.append(df_colors[i])
         marker_symbols.append(df['marker_symbol'][i])
         marker_sizes.append(df['marker_size'][i])
