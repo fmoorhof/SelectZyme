@@ -45,7 +45,7 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         # line_colors.append(None)  # Add None to separate lines
 
         marker_x.append(icoord[i][0])  # always use left branch to place marker
-        marker_y.append(dcoord[i][0] + 0.01)  # if set [0], hover breaks because of axis interference - idk on this unexpected behaviour. 0.1 offset to avoid interference
+        marker_y.append(dcoord[i][1] - 0.01)  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.01 offset to avoid interference
         marker_colors.append(df_colors[i])
         marker_symbols.append(df['marker_symbol'][i])
         marker_sizes.append(df['marker_size'][i])
