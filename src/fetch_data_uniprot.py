@@ -49,7 +49,7 @@ class UniProtFetcher:
             raw_data = b''
             url = f"https://rest.uniprot.org/uniprotkb/search?" \
                   f"&format=tsv" \
-                  f"&query=({qry}) AND (length:[{length}])" \
+                  f"&query={qry} AND length:[{length}]" \
                   f"&fields={coi}" \
                   f"&size=500"  # UniProt pagination to fetch more than 500 entries
 
