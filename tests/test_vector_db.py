@@ -2,7 +2,7 @@ import pytest
 from qdrant_client import QdrantClient
 
 import vector_db
-from preprocessing import Parsing
+from parsing import Parsing
 from preprocessing import Preprocessing
 
 
@@ -27,7 +27,7 @@ class TestDBCreation:
     @pytest.fixture(autouse=True)
     def setup_method(self):
         # Replace this with the code to create your DataFrame
-        self.df = Parsing.parse_tsv('tests/head_10.tsv')
+        self.df = Parsing('tests/head_10.tsv').parse_tsv()
         pp = Preprocessing(self.df)
         pp.remove_long_sequences()
         self.df = pp.df

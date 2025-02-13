@@ -1,13 +1,12 @@
-"""Finally, simplest implementation, inspired by
-plotly.figure_factory.create_dendrogram
-but removed all additional functionalities and adapted template to my needs.
-"""
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
 import plotly.colors as pc
 
+from src.utils import run_time
 
+
+@run_time
 def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
     P = dendrogram(Z, no_plot=True)
     icoord = np.array(P["icoord"])
@@ -18,37 +17,51 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis_title="Distance",
         showlegend=False,
-        # legend_title_text=legend_attribute,
-        )
+    )
     fig = go.Figure(layout=layout)
-
-    # Get the color mapping and apply it to the DataFrame
+    
+    # set color mapping for legend_attribute (mostly 'cluster')
     color_mapping = _value_to_color(df[legend_attribute])
-    df_colors = df[legend_attribute].map(color_mapping)
 
-    # create scatter traces
-    for i in range(len(icoord)):  # perf: very very slow, breaking performance for large datasets
-        fig.add_traces(go.Scattergl(
-            x=icoord[i],
-            y=dcoord[i],
-            # name=str(legend_attribute),  # Legend name
-            mode="lines+markers",
-            line=dict(color="red" if df['selected'][i] == True else "black"),
-            marker=dict(
-                size=df['marker_size'][i],
-                symbol=df['marker_symbol'][i],
-                color=df_colors[i],
-                opacity=0.8
-            ),
-            customdata=df['accession'],
-            text=hovertext[i],
-            hoverinfo="text",
-        ))
+    # Pre-calculate all plot data
+    x_lines = _insert_separator(icoord)
+    y_lines = _insert_separator(dcoord)
+    marker_x = icoord[:, 0]  # always use left branch to place marker
+    marker_y = dcoord[:, 1] - 0.001  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
+    marker_colors = df[legend_attribute].map(color_mapping).to_numpy()
+    marker_symbols = df['marker_symbol'].to_numpy()
+    marker_sizes = df['marker_size'].to_numpy()
+    customdata = df['accession'].to_numpy()
+    hovertexts = np.array(hovertext)
+
+    # Add lines trace
+    fig.add_trace(go.Scattergl(
+        x=x_lines,
+        y=y_lines,
+        mode='lines',
+        # line=dict(color=line_colors),  # not possible to pass list
+        hoverinfo='none',
+    ))
+
+    # Add markers trace
+    fig.add_trace(go.Scattergl(
+        x=marker_x,
+        y=marker_y,
+        mode='markers',
+        marker=dict(
+            color=marker_colors,
+            symbol=marker_symbols,
+            size=marker_sizes,
+            opacity=0.8
+        ),
+        customdata=customdata,
+        text=hovertexts,
+        hoverinfo="text",
+    ))
 
     return fig
 
-
-def _value_to_color(values):
+def _value_to_color(values) -> dict:
     """
     Maps a list of values to a continuous color scale.
 
@@ -74,13 +87,13 @@ def _value_to_color(values):
     return dict(zip(unique_values, colormap_func))  # Map each unique value to a color
 
 
+def _insert_separator(arrays: np.ndarray) -> np.ndarray:
+    # Append NaN to each array and concatenate
+    return np.hstack([np.append(a, np.nan) for a in arrays])
+    
+
 
 if __name__ == "__main__":
-    # from scipy.cluster import hierarchy as sch
-    # # Example data
-    # ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268.,
-    #                    400., 754., 564., 138., 219., 869., 669.])
-    # Z = sch.linkage(ytdist, "single")
     import hdbscan
     import numpy as np
     from sklearn.datasets import make_blobs

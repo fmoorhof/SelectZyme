@@ -13,12 +13,12 @@ def layout(df) -> html.Div:
     df_profile = df[columns_of_interest]  # discard columns that are not of interest such as marker_symbols etc.
     
     profile = ProfileReport(df_profile, title="Profiling Report", config_file="")  # empty string to fix docker TypeCheckError
-    profile.to_file("assets/census_report.html")
+    profile.to_file("assets/eda.html")
 
     return html.Div(
     children=[
         html.Iframe(
-            src="assets/census_report.html",  # must be under assets/ to be properly served
+            src="assets/eda.html",  # must be under assets/ to be properly served
             style={"height": "1080px", "width": "100%"},
         )
     ]

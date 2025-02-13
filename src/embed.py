@@ -92,11 +92,11 @@ def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
 
 if __name__=='__main__':
     # load example data
-    from preprocessing import Parsing
+    from parsing import Parsing
     from preprocessing import Preprocessing
 
-    df = Parsing.parse_tsv('tests/head_10.tsv')
-    # df = Parsing.parse_tsv('datasets/output/petase2_annotated.tsv')
+    df = Parsing('tests/head_10.tsv').parse_tsv()
+    # df = Parsing('datasets/output/petase.tsv').parse_tsv()
     # df = Preprocessing(df).preprocess()
     pp = Preprocessing(df)
     # pp.remove_long_sequences()
@@ -114,4 +114,4 @@ if __name__=='__main__':
 
     # # quickly generate embeddings
     # from utils import database_access
-    # database_access(df, project_name='petase2', plm_model='prott5')
+    # database_access(df, project_name='petase', plm_model='prott5')

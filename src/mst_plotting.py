@@ -17,15 +17,16 @@ import networkx as nx
 import plotly.graph_objects as go
 
 from src.customizations import set_columns_of_interest
+from src.utils import run_time
 
 
 class MinimumSpanningTree:
-    def __init__(self, mst, data, X_red, df):
+    def __init__(self, mst, X_red, df):
         self._mst = mst  # struct: (node1, node2, weight)
-        self._data = data  # what is _data actually? -> read HDBSCAN source code again
         self.X_red = X_red
         self.df = df
     
+    @run_time
     def plot_mst_force_directed(self, G: nx.Graph):
         """
         Plots a Minimum Spanning Tree (MST) using a force-directed layout.
@@ -58,27 +59,33 @@ class MinimumSpanningTree:
         
         return fig
 
-    # Not really nice visualization and connectivity information not displayed because no access of information implemented
-    def plot_mst_in_DimRed_landscape(self, edge_alpha=0.3, edge_linewidth=1, vary_line_width=True):
+    @run_time
+    def plot_mst_in_DimRed_landscape(self):
         """
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
         """
-        # Vary line width if enabled  # todo: use line_width to display edge weights either as color, transparency or width
-        if vary_line_width:
-            line_width = edge_linewidth * (np.log(self._mst.T[2].max() / self._mst.T[2]) + 1.0)
-        else:
-            line_width = edge_linewidth
+        # Normalize edge weights to be between 0 and 1 for opacity
+        edge_opac = (self._mst.T[2] - self._mst.T[2].min()) / (self._mst.T[2].max() - self._mst.T[2].min())
 
         # Edge coordinates and weights
         line_coords = self.X_red[self._mst[:, :2].astype(int)]  # X_red[node connections] = coordinates of the nodes in X_red
-        edge_x, edge_y = [], []
-        for (x1, y1), (x2, y2) in zip(line_coords[:, 0], line_coords[:, 1]):
+        edge_x, edge_y, edge_opacity = [], [], []
+        for (x1, y1), (x2, y2), alpha in zip(line_coords[:, 0], line_coords[:, 1], edge_opac):
             edge_x.extend([x1, x2, None])  # None: A separator indicating the end of this edge
             edge_y.extend([y1, y2, None])
+            edge_opacity.append(alpha)
 
         # Create edge and node traces
-        edge_trace = self.create_edge_trace(edge_x, edge_y, edge_alpha, line_width.mean())
+        edge_trace = self.create_edge_trace(edge_x, edge_y, edge_opacity=0.5)  # todo: use edge_opacity but requires looping over all edges to create individually
         node_trace = self.create_node_trace(self.X_red[:, 0], self.X_red[:, 1])
+
+        # Calculate node adjacencies (degree of connections)
+        node_adjacencies = np.zeros(len(self.X_red), dtype=int)
+        for node1, node2 in self._mst[:, :2].astype(int):
+            node_adjacencies[node1] += 1
+            node_adjacencies[node2] += 1
+        # Color nodes by their number of connections
+        node_trace.marker.color = node_adjacencies
 
         # Create the figure
         fig = go.Figure()
@@ -93,7 +100,57 @@ class MinimumSpanningTree:
         )
 
         return fig
+    
+    def create_edge_trace(self, edge_x, edge_y, edge_opacity=None, edge_width=1.0):
+        """
+        Create a Plotly edge trace for the graph.
+        """
+        columns_of_interest = set_columns_of_interest(self.df.columns)
+        hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
+        
+        return go.Scattergl(
+            x=edge_x,
+            y=edge_y,
+            mode="lines",
+            line=dict(color="black", width=edge_width),
+            opacity=edge_opacity,
+            hovertext=hover_text,
+            hoverinfo="text",
+        )
 
+    def create_node_trace(self, node_x, node_y):
+        """
+        Create a Plotly node trace for the graph.
+        """
+        columns_of_interest = set_columns_of_interest(self.df.columns)
+        hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
+        
+        return go.Scattergl(
+            x=node_x,
+            y=node_y,
+            mode="markers",
+            customdata=self.df['accession'],
+            hovertext=hover_text,
+            hoverinfo="text",
+            marker=dict(
+                size=self.df['marker_size'],
+                symbol=self.df['marker_symbol'],
+                opacity=0.7,
+                line_width=1,
+
+                # connectivity legend
+                showscale=True,
+                colorscale='YlGnBu',
+                reversescale=False,
+                color=[],  # Will be populated with node adjacencies
+                colorbar=dict(
+                    thickness=15,
+                    title='Node Connections',
+                    xanchor='left',
+                )
+            )
+        )
+    
     def _modify_graph_data(self, G) -> tuple:
         """
         Modify the graph data for visualization.
@@ -134,52 +191,7 @@ class MinimumSpanningTree:
         node_trace.marker.color = node_adjacencies
 
         return edge_trace, node_trace
-    
-    @staticmethod
-    def create_edge_trace(edge_x, edge_y, edge_alpha=0.3, edge_width=1.0):
-        """
-        Create a Plotly edge trace for the graph.
-        """
-        return go.Scattergl(
-            x=edge_x,
-            y=edge_y,
-            mode="lines",
-            line=dict(color=f"rgba(0,0,0,{edge_alpha})", width=edge_width),
-            hoverinfo="none"
-        )
 
-    def create_node_trace(self, node_x, node_y):
-        """
-        Create a Plotly node trace for the graph.
-        """
-        columns_of_interest = set_columns_of_interest(self.df.columns)
-        hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
-        
-        return go.Scattergl(
-            x=node_x,
-            y=node_y,
-            mode="markers",
-            customdata=self.df['accession'],
-            hovertext=hover_text,
-            hoverinfo="text",
-            marker=dict(
-                size=self.df['marker_size'],
-                symbol=self.df['marker_symbol'],
-                opacity=0.7,
-                line_width=1,
-
-                # connectivity legend
-                showscale=True,
-                colorscale='YlGnBu',
-                reversescale=True,
-                color=[],  # Will be populated with node adjacencies
-                colorbar=dict(
-                    thickness=15,
-                    title='Node Connections',
-                    xanchor='left',
-                )
-            )
-        )    
 
 
 if __name__ == "__main__":
@@ -206,8 +218,7 @@ if __name__ == "__main__":
     hdbscan.fit(data)
 
     # debug and develop here
-    mst = MinimumSpanningTree(hdbscan.minimum_spanning_tree_._mst, hdbscan.minimum_spanning_tree_._data, X_red, df)
-    fig = mst.plot_mst_in_DimRed_landscape()  # NOT favored visualization
-    fig = mst.plot_mst_force_directed(hdbscan.minimum_spanning_tree_)
-
+    mst = MinimumSpanningTree(hdbscan.minimum_spanning_tree_._mst, X_red, df)
+    fig = mst.plot_mst_in_DimRed_landscape()
+    # fig = mst.plot_mst_force_directed(hdbscan.minimum_spanning_tree_)
     fig.show()

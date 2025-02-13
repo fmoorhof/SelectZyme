@@ -3,8 +3,10 @@ import numpy as np
 import plotly.graph_objects as go
 
 from src.customizations import set_columns_of_interest
+from src.utils import run_time
 
 
+@run_time
 def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, legend_attribute: str):
     """
     Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.

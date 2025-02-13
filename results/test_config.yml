@@ -1,4 +1,7 @@
-# Doubts about the synthax for configuration? check out: https://yamline.com/tutorial/
+# Doubts about:
+# - the synthax for configuration? check out: https://yamline.com/tutorial/
+# - how query terms match UniProt (query_terms)? https://www.uniprot.org/help/text-search
+# - additional return fields (df_coi): https://www.uniprot.org/help/query-fields
 
 project: 
   name: "argparse_test_minimal"
@@ -11,10 +14,10 @@ project:
     length: "200 TO 601"
     custom_data_location: "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv"
     out_dir: "datasets/output/"
-    df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists
+    df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 
   plm:
-    plm_model: "prott5"
+    plm_model: "prott5"  # [esm1b, esm2, prott5, prostt5]
 
   clustering:
     min_samples: 10
@@ -22,5 +25,5 @@ project:
 
   dimred:
     random_state: 42
-    method: "TSNE"
+    method: "TSNE"  # [PCA, TSNE, UMAP]
     n_neighbors: 15

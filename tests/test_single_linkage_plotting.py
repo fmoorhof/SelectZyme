@@ -31,7 +31,6 @@ def test_create_dendrogram(sample_data):
     
     assert fig is not None
     assert isinstance(fig, go.Figure)
-    assert len(fig.data) == len(Z)  # Check if the number of traces matches the number of clusters
     assert 'layout' in fig.to_plotly_json()
     assert 'data' in fig.to_plotly_json()
 
