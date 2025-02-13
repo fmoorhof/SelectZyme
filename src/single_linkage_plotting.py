@@ -19,38 +19,20 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         showlegend=False,
     )
     fig = go.Figure(layout=layout)
-
-    # Get the color mapping and apply it to the DataFrame
+    
+    # set color mapping for legend_attribute (mostly 'cluster')
     color_mapping = _value_to_color(df[legend_attribute])
-    df_colors = df[legend_attribute].map(color_mapping)
 
-    # Prepare data for scatter plot
-    x_lines = []
-    y_lines = []
-    # line_colors = []  # not implemented yet
-    marker_x = []
-    marker_y = []
-    marker_colors = []
-    marker_symbols = []
-    marker_sizes = []
-    customdata = []
-    hovertexts = []
-
-    for i in range(len(icoord)):
-        x_lines.extend(icoord[i])
-        x_lines.append(None)  # Add None to separate lines
-        y_lines.extend(dcoord[i])
-        y_lines.append(None)  # Add None to separate lines
-        # line_colors.extend(["red" if df['selected'][i] else "black"] * 4)
-        # line_colors.append(None)  # Add None to separate lines
-
-        marker_x.append(icoord[i][0])  # always use left branch to place marker
-        marker_y.append(dcoord[i][1] - 0.01)  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.01 offset to avoid interference
-        marker_colors.append(df_colors[i])
-        marker_symbols.append(df['marker_symbol'][i])
-        marker_sizes.append(df['marker_size'][i])
-        customdata.append(df['accession'][i])
-        hovertexts.append(hovertext[i])
+    # Pre-calculate all plot data
+    x_lines = _insert_separator(icoord)
+    y_lines = _insert_separator(dcoord)
+    marker_x = icoord[:, 0]  # always use left branch to place marker
+    marker_y = dcoord[:, 1] - 0.001  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
+    marker_colors = df[legend_attribute].map(color_mapping).to_numpy()
+    marker_symbols = df['marker_symbol'].to_numpy()
+    marker_sizes = df['marker_size'].to_numpy()
+    customdata = df['accession'].to_numpy()
+    hovertexts = np.array(hovertext)
 
     # Add lines trace
     fig.add_trace(go.Scattergl(
@@ -79,7 +61,7 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
 
     return fig
 
-def _value_to_color(values):
+def _value_to_color(values) -> dict:
     """
     Maps a list of values to a continuous color scale.
 
@@ -103,6 +85,13 @@ def _value_to_color(values):
     colormap_func = pc.sample_colorscale(colorscale, norm, low=0, high=1)
 
     return dict(zip(unique_values, colormap_func))  # Map each unique value to a color
+
+
+def _insert_separator(arrays: np.ndarray) -> np.ndarray:
+    # Append NaN to each array and concatenate
+    return np.hstack([np.append(a, np.nan) for a in arrays])
+    
+
 
 if __name__ == "__main__":
     import hdbscan
