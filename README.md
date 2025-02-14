@@ -28,8 +28,6 @@ Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire 
 docker build -t fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
 docker run --gpus all -it -p 8050:8050 --entrypoint /bin/bash fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10
 ```
-You can now access the app via your web browser by typing either the *server_IP* or *localhost* and the exposed port (8050):
-`http://localhost:8050` or `http://server_IP:8050`
 
 ```
 # optional: re-start your container later;  (find CONTAINERID with `docker ps` or `docker ps -a`)
@@ -41,7 +39,10 @@ docker exec -it CONTAINERID /bin/bash
 ```
 python app.py --config=results/test_config.yml
 ```
-You can seamlessly edit or create new `config.yml` files for your jobs. 
+The terminal output will inform you about the execution status. Once done you can click on the URL to open the app via your web browser. Alternatively, you can access by typing either your *server_IP* or *localhost* and the exposed `port` (8050), you defined in the `config.yml`:
+`http://localhost:8050` or `http://server_IP:8050`
+
+To run your custom searches, seamlessly edit or create new `config.yml` files for your different jobs. 
 
 ### Extensive usage
 For extensive usage you might want to setup the Qdrant vector database in a separate docker container. Qdrant suggest to only save up to 20,000 vectors locally and the access time is indeed very slow. However, there is no need to do so, i also once stored up to 1M vectors locally.

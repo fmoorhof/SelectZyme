@@ -99,6 +99,16 @@ def _export_annotated_fasta(df: pd.DataFrame, out_file: str):
     logging.info(f"FASTA file written to {out_file}")
 
 
+# todo: integrate this function into export excel function to also generate a .fasta output
+def convert_tabular_to_fasta(in_file: str, out_file: str):
+    df = Parsing(in_file).parse()
+    with open(out_file, 'w') as f_out:
+        for index, row in df.iterrows():
+            fasta = '>', index, '\n', row.loc["sequence"], '\n'
+            f_out.writelines(fasta)
+    logging.info(f"FASTA file written to {out_file}")
+
+
 def run_time(func):
     """
     A decorator that measures the execution time of a function.
@@ -117,3 +127,7 @@ def run_time(func):
         print(f"Execution time of the function {func.__name__}: {end_time - start_time} seconds")
         return result
     return wrapper    
+
+
+if __name__ == "__main__":
+    convert_tabular_to_fasta('results/datasets/2ogd_minimal.csv', 'results/datasets/2ogd_minimal.fasta')

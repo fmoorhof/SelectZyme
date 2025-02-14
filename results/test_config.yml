@@ -4,16 +4,18 @@
 # - additional return fields (df_coi): https://www.uniprot.org/help/query-fields
 
 project: 
-  name: "argparse_test_minimal"
+  name: "minimal_test"
   port: 8050
 
   data:
-    query_terms: 
-      - "ec:1.13.11.85"
-      - "ec:1.13.11.84"
+    query_terms:  # create in ascending manner: smallest return sets first
+      - "xref:brenda-1.13.11.1"  # external reference (xref) to BRENDA database
+      - "xref:brenda-1.13.11.1*"  # wildcard search
+      # - "ec:1.13.11.1"  # EC number
+      - "catchol 1,2-dioxygenases"  # free text search
     length: "200 TO 601"
-    custom_data_location: "/raid/data/fmoorhof/PhD/SideShit/LCP/custom_seqs_no_signals.csv"
-    out_dir: "datasets/output/"
+    custom_data_location: "tests/head_10.tsv"
+    out_dir: "results/datasets/"
     df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 
   plm:
@@ -25,5 +27,5 @@ project:
 
   dimred:
     random_state: 42
-    method: "TSNE"  # [PCA, TSNE, UMAP]
-    n_neighbors: 15
+    method: "UMAP"  # [PCA, TSNE, UMAP]
+    n_neighbors: 15  # >1 else RuntimeError: cuSparse error cuml.manifold.umap.UMAP.fit
