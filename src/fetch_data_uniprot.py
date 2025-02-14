@@ -58,6 +58,9 @@ class UniProtFetcher:
                   f"&size=500"  # UniProt pagination to fetch more than 500 entries
 
             for batch, total in self._get_batch(batch_url=url):
+                if int(total) > 100000:
+                    logging.warning(f"Query term '{qry}' skipped: Exceeds maximum allowed entries (100,000) per query term. Total entries: {total}. You might want to specify the query term more specifically.")
+                    continue
                 raw_data += batch.content
 
             logging.info(f"Retrieved {total} entires for query term: {qry}")
