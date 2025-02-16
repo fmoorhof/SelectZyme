@@ -76,7 +76,7 @@ class MinimumSpanningTree:
             edge_opacity.append(alpha)
 
         # Create edge and node traces
-        edge_trace = self.create_edge_trace(edge_x, edge_y, edge_opacity=0.5)  # todo: use edge_opacity but requires looping over all edges to create individually
+        edge_trace = self.create_edge_trace(edge_x, edge_y, edge_opacity=0.5, edge_width=0.3)
         node_trace = self.create_node_trace(self.X_red[:, 0], self.X_red[:, 1])
 
         # Calculate node adjacencies (degree of connections)
@@ -94,14 +94,14 @@ class MinimumSpanningTree:
 
         # Update layout
         fig.update_layout(
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            xaxis=dict(showgrid=True, zeroline=True, showticklabels=True),
+            yaxis=dict(showgrid=True, zeroline=True, showticklabels=True),
             showlegend=False
         )
 
         return fig
     
-    def create_edge_trace(self, edge_x, edge_y, edge_opacity=None, edge_width=1.0):
+    def create_edge_trace(self, edge_x, edge_y, edge_opacity=None, edge_width=1):
         """
         Create a Plotly edge trace for the graph.
         """
