@@ -47,6 +47,10 @@ def gen_embedding(sequences: list[str], plm_model: str = 'esm1b', no_pad: bool =
             embedding = last_hidden_states.mean(dim=0).cpu().numpy()  # Move embedding back to CPU
         embeddings.append(embedding)
 
+    # Free up GPU memory (somehow not done by default)
+    del inputs, outputs, last_hidden_states
+    torch.cuda.empty_cache()
+
     return np.array(embeddings)
 
 

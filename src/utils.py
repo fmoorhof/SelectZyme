@@ -59,7 +59,7 @@ def _parse_data(exisiting_file: str, custom_file: str, query_terms: list, length
     if os.path.isfile(exisiting_file):
         return Parsing(exisiting_file).parse()
     
-    if query_terms != ['']:
+    if query_terms != ['']:  # todo: handle if query_terms NoneType -> breaks execution when query_terms not defined in config.yml
         fetcher = UniProtFetcher(df_coi)
     if custom_file != '':
         df_custom = Parsing(custom_file).parse()
@@ -104,7 +104,7 @@ def convert_tabular_to_fasta(in_file: str, out_file: str):
     df = Parsing(in_file).parse()
     with open(out_file, 'w') as f_out:
         for index, row in df.iterrows():
-            fasta = '>', index, '\n', row.loc["sequence"], '\n'
+            fasta = '>', str(row.iloc[0]), '\n', row.loc["sequence"], '\n'
             f_out.writelines(fasta)
     logging.info(f"FASTA file written to {out_file}")
 
@@ -130,4 +130,4 @@ def run_time(func):
 
 
 if __name__ == "__main__":
-    convert_tabular_to_fasta('results/datasets/2ogd_minimal.csv', 'results/datasets/2ogd_minimal.fasta')
+    convert_tabular_to_fasta('results/datasets/pet_active_region.csv', 'results/datasets/pet_active_region.fasta')

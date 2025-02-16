@@ -29,10 +29,6 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
     marker_x = icoord[:, 0]  # always use left branch to place marker
     marker_y = dcoord[:, 1] - 0.001  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
     marker_colors = df[legend_attribute].map(color_mapping).to_numpy()
-    marker_symbols = df['marker_symbol'].to_numpy()
-    marker_sizes = df['marker_size'].to_numpy()
-    customdata = df['accession'].to_numpy()
-    hovertexts = np.array(hovertext)
 
     # Add lines trace
     fig.add_trace(go.Scattergl(
@@ -50,12 +46,12 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         mode='markers',
         marker=dict(
             color=marker_colors,
-            symbol=marker_symbols,
-            size=marker_sizes,
+            symbol=df['marker_symbol'].to_numpy(),
+            size=df['marker_size'].to_numpy(),
             opacity=0.8
         ),
-        customdata=customdata,
-        text=hovertexts,
+        customdata=df['accession'].to_numpy(),
+        text=np.array(hovertext),
         hoverinfo="text",
     ))
 

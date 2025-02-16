@@ -23,7 +23,7 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
         collection_name=collection_name,
         vectors_config=models.VectorParams(
             size=embeddings.shape[1], # Vector size is defined by used model
-            distance=models.Distance.COSINE
+            distance=models.Distance.EUCLID
         )
         )
     

@@ -29,31 +29,32 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The modified DataFrame.
     """
-    # replace empty ECs because they will not get plottet (if color='ec' or 'xref_brenda')
-    df['xref_brenda'] = df['xref_brenda'].fillna('')
+    # replace empty BRENDA entries because else they will not get plottet upon dropdown selection
+    df['xref_brenda'] = df['xref_brenda'].fillna('unknown')
     values_to_replace = ['NA', '0']
-    df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, '')
-    
-    df['ec'] = df['ec'].fillna('unknown')  # replace empty ECs because they will not get plottet (if color='ec')
-    df['ec'] = df['ec'].str.replace(r'\..\..\..\.-;', '', regex=True)  # 1.1.1.- to 0.0.0.0    
-    df['ec'] = df['ec'].str.replace(r'.*\..*\..*\.-; ?|; .*\..*\..*\.-', '', regex=True)  # extract only complete ec of 1.14.11.-; -.1.11.-; 1.14.11.29; X.-.11.-
+    df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, 'unknown')
+    df.loc[df['xref_brenda'] != 'unknown', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
+
+    # Same for UniProt EC numbers
+    df['ec'] = df['ec'].fillna('unknown')
     logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
-    logging.info(f"{(df['xref_brenda'] != '').sum()} Brenda entries are found.")
+    logging.info(f"{(df['xref_brenda'] != 'unknown').sum()} Brenda entries are found.")
 
     # define markers for the plot
+    condition0 = (df['reviewed'] == True) | (df['reviewed'] == 'true')
     if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
+        condition = df['xref_brenda'].to_pandas() != 'unknown'
         condition2 = (df['ec'].to_pandas() != 'unknown')
     else:  # pandas DataFrame
-        condition = (df['reviewed'] == True) | (df['reviewed'] == 'true')
+        condition = df['xref_brenda'] != 'unknown'
         condition2 = (df['ec'] != 'unknown')
     df['marker_size'] = 6
     df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 8 # Set to other value for data points that meet the condition
-    df.loc[condition2, 'marker_symbol'] = 'diamond'
-    df.loc[condition, 'marker_size'] = 10
-    df.loc[condition, 'marker_symbol'] = 'cross'
-    # df.loc[condition & condition2, 'marker_size'] = 14  # 2 conditions possible
+    df.loc[condition2, 'marker_size'] = 8
+    df.loc[condition2, 'marker_symbol'] = 'diamond'  # UniProt EC numbered entries
+    df.loc[condition0, 'marker_size'] = 8
+    df.loc[condition0, 'marker_symbol'] = 'cross'  # reviewed entries (includes if custom data is set)
+    df.loc[condition0 & condition, 'marker_size'] = 14  # if reviewed and BRENDA entry (usually not applies to custom data)
 
     # provide taxonomic names and lineages from taxid (organism_id)
     taxa = [lineage_resolver(i) for i in df['organism_id'].values]
@@ -63,8 +64,5 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
     # df['lineage'] = [tax[3] for tax in taxa]  # full lineage
 
     df['selected'] = False
-    df.loc[df['xref_brenda'] != '', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
 
-    # todo: remove later
-    # df['activity_on_PET'] = df['activity_on_PET'].apply(lambda x: True if x == 1.0 else False)
     return df
