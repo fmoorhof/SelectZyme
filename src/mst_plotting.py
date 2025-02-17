@@ -75,15 +75,16 @@ class MinimumSpanningTree:
             edge_y.extend([y1, y2, None])
             edge_opacity.append(alpha)
 
-        # Create edge and node traces
-        edge_trace = self.create_edge_trace(edge_x, edge_y, edge_opacity=0.5, edge_width=0.3)
-        node_trace = self.create_node_trace(self.X_red[:, 0], self.X_red[:, 1])
-
         # Calculate node adjacencies (degree of connections)
         node_adjacencies = np.zeros(len(self.X_red), dtype=int)
         for node1, node2 in self._mst[:, :2].astype(int):
             node_adjacencies[node1] += 1
             node_adjacencies[node2] += 1
+
+        # Create edge and node traces
+        edge_trace = self.create_edge_trace(edge_x, edge_y, node_adjacencies, edge_opacity=0.5, edge_width=0.3)
+        node_trace = self.create_node_trace(self.X_red[:, 0], self.X_red[:, 1], node_adjacencies)
+
         # Color nodes by their number of connections
         node_trace.marker.color = node_adjacencies
 
@@ -101,13 +102,15 @@ class MinimumSpanningTree:
 
         return fig
     
-    def create_edge_trace(self, edge_x, edge_y, edge_opacity=None, edge_width=1):
+    def create_edge_trace(self, edge_x: list, edge_y: list, node_adjacencies: np.ndarray, edge_opacity=None, edge_width: int = 1):
         """
         Create a Plotly edge trace for the graph.
         """
         columns_of_interest = set_columns_of_interest(self.df.columns)
-        hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
-        
+        hover_text = [
+            "<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) + f"<br>connectivity: {node_adjacencies[i]}"
+            for i in range(len(self.df))
+        ]        
         return go.Scattergl(
             x=edge_x,
             y=edge_y,
@@ -118,19 +121,23 @@ class MinimumSpanningTree:
             hoverinfo="text",
         )
 
-    def create_node_trace(self, node_x, node_y):
+    def create_node_trace(self, node_x: np.ndarray, node_y: np.ndarray, node_adjacencies: np.ndarray):
         """
         Create a Plotly node trace for the graph.
         """
-        columns_of_interest = set_columns_of_interest(self.df.columns)
-        hover_text = ["<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) for i in range(len(self.df))]
+        # todo: why not really needed here but at edge_trace?
+        # columns_of_interest = set_columns_of_interest(self.df.columns)
+        # hover_text = [
+        #     "<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) + f"<br>connectivity: {node_adjacencies[i]}"
+        #     for i in range(len(self.df))
+        # ]
         
         return go.Scattergl(
             x=node_x,
             y=node_y,
             mode="markers",
             customdata=self.df['accession'],
-            hovertext=hover_text,
+            # hovertext=hover_text,
             hoverinfo="text",
             marker=dict(
                 size=self.df['marker_size'],
@@ -179,15 +186,17 @@ class MinimumSpanningTree:
             edge_x.extend([x0, x1, None])  # Use extend for cleaner code
             edge_y.extend([y0, y1, None])
 
-        edge_trace = self.create_edge_trace(edge_x, edge_y)
+        # Calculate nodes connectivity
+        node_adjacencies = [len(list(G.adj[node])) for node in G.nodes()]
+
+        edge_trace = self.create_edge_trace(edge_x, edge_y, node_adjacencies)
 
         # Node traces
         node_x = [G.nodes[node]['pos'][0] for node in G.nodes()]
         node_y = [G.nodes[node]['pos'][1] for node in G.nodes()]
-        node_trace = self.create_node_trace(node_x, node_y)
+        node_trace = self.create_node_trace(node_x, node_y, node_adjacencies)
 
         # Color nodes by their number of connections
-        node_adjacencies = [len(list(G.adj[node])) for node in G.nodes()]
         node_trace.marker.color = node_adjacencies
 
         return edge_trace, node_trace
