@@ -5,6 +5,7 @@ from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 
 from src.visualizer import plot_2d
+from src.customizations import set_columns_of_interest
 
 
 def layout(df, X_red, X_red_centroids):
@@ -18,9 +19,10 @@ def layout(df, X_red, X_red_centroids):
     Returns:
     html.Div: A Dash HTML Div containing the layout of the app.
     """
-    cols = df.columns.values.tolist()
+    cols = set_columns_of_interest(df.columns)
+    cols.remove('accession')
 
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute=cols[8])
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute=cols[0])
 
     return html.Div(
         [
@@ -31,9 +33,9 @@ def layout(df, X_red, X_red_centroids):
                     dcc.Dropdown(
                         id='legend-attribute',
                         options=[
-                            {'label': col, 'value': col} for col in cols  # todo: hide some unnecessary columns like shapes and sizes
-                        ],  # cols[:12]
-                        value=cols[8],  # set default column to show on loading to 'query_terms' if no custom import columns were added in front
+                            {'label': col, 'value': col} for col in cols
+                        ],
+                        value=cols[0],  # set default column to show on loading
                     )
                 ],
                 style={'width': '30%', 'display': 'inline-block'},
@@ -43,9 +45,7 @@ def layout(df, X_red, X_red_centroids):
                 html.A(
                     html.Button("Download plot as HTML"),
                     id="download-button",
-                    href=html_export_figure(
-                        fig
-                    ),  # if other column got selected see callback (update_plot_and_download) for export definition
+                    href=html_export_figure(fig),  # if other column got selected see callback (update_plot_and_download) for export definition
                     download="plotly_graph.html",
                 ),
                 style={'float': 'right', 'display': 'inline-block'},
@@ -130,19 +130,11 @@ def register_callbacks(app, df, X_red, X_red_centroids):
         if shared_table is None or isinstance(shared_table, dict):
             shared_table = []
 
-        def process_selection(point):
-            accession = point['customdata']
-            selected_row = df[df['accession'] == accession].iloc[0]
-            selected_row[df.columns.get_loc('selected')] = True
-            if selected_row['xref_brenda'] != '':
-                selected_row['BRENDA URL'] = f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
-            shared_table.append(selected_row.to_dict())
-
         if boxSelect and boxSelect['points'] != []:
             for point in boxSelect['points']:
-                process_selection(point)
+                _process_selection(df, shared_table, point)
         else:  # avoid adding previous clickData after box select
-            process_selection(clickData['points'][0])
+            _process_selection(df, shared_table, clickData['points'][0])
 
         return shared_table, shared_table
 
@@ -166,15 +158,34 @@ def register_callbacks(app, df, X_red, X_red_centroids):
     
 
 def html_export_figure(fig):
-        """
-        Converts a Plotly figure to an HTML string and encodes it in base64 format.
-        Args:
-            fig (plotly.graph_objs._figure.Figure): The Plotly figure to be converted.
-        Returns:
-            str: A base64 encoded HTML string representing the figure.
-        """
-        buffer = io.StringIO()
-        fig.write_html(buffer)
-        html_bytes = buffer.getvalue().encode()
-        encoded = b64encode(html_bytes).decode()
-        return f"data:text/html;base64,{encoded}" 
+    """
+    Converts a Plotly figure to an HTML string and encodes it in base64 format.
+    Args:
+        fig (plotly.graph_objs._figure.Figure): The Plotly figure to be converted.
+    Returns:
+        str: A base64 encoded HTML string representing the figure.
+    """
+    buffer = io.StringIO()
+    fig.write_html(buffer)
+    html_bytes = buffer.getvalue().encode()
+    encoded = b64encode(html_bytes).decode()
+    return f"data:text/html;base64,{encoded}" 
+
+
+def _process_selection(df, shared_table, point):
+    """
+    Processes the selection of a data point and updates the shared table.
+    Args:
+        df (pd.DataFrame): The DataFrame containing the data.
+        shared_table (list): A list to which the selected row's dictionary will be appended.
+        point (dict): A dictionary containing information about the selected point, 
+                      including 'customdata' which holds the accession value.
+    Returns:
+        None
+    """
+    accession = point['customdata']
+    selected_row = df[df['accession'] == accession].iloc[0]
+    selected_row[df.columns.get_loc('selected')] = True
+    if selected_row['xref_brenda'] != 'unknown':  # todo: anyways not displayed!! add in template DataTable
+        selected_row['BRENDA URL'] = f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
+    shared_table.append(selected_row.to_dict())
