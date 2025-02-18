@@ -1,7 +1,8 @@
 import numpy as np
-from scipy.cluster.hierarchy import dendrogram
 import plotly.graph_objects as go
-import plotly.colors as pc
+import plotly.express as px
+from scipy.cluster.hierarchy import dendrogram
+from pandas import unique
 
 from src.utils import run_time
 
@@ -19,15 +20,15 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         showlegend=False,
     )
     fig = go.Figure(layout=layout)
-    
-    # set color mapping for legend_attribute (mostly 'cluster')
-    color_mapping = _value_to_color(df[legend_attribute])
 
     # Pre-calculate all plot data
     x_lines = _insert_separator(icoord)
     y_lines = _insert_separator(dcoord)
     marker_x = icoord[:, 0]  # always use left branch to place marker
     marker_y = dcoord[:, 1] - 0.001  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
+
+    # set color mapping for legend_attribute (mostly 'cluster')
+    color_mapping = _value_to_color(df[legend_attribute])
     marker_colors = df[legend_attribute].map(color_mapping).to_numpy()
 
     # Add lines trace
@@ -69,18 +70,17 @@ def _value_to_color(values) -> dict:
     --------
         A dictionary mapping unique values to corresponding colors in the colormap.
     """
-    # Normalize the values to [0, 1]
-    unique_values = np.unique(values)
-    if unique_values.max() == unique_values.min():
-        norm = np.zeros_like(unique_values)
-    else:
-        norm = (unique_values - unique_values.min()) / (unique_values.max() - unique_values.min())
-    
-    # Get the Plotly colormap
-    colorscale = pc.get_colorscale('Viridis')
-    colormap_func = pc.sample_colorscale(colorscale, norm, low=0, high=1)
+    # Get the unique values
+    unique_values = unique(values)
 
-    return dict(zip(unique_values, colormap_func))  # Map each unique value to a color
+    # Use Plotly's default qualitative color sequence
+    default_colors = px.colors.qualitative.Plotly
+    n_colors = len(default_colors)
+
+    return {
+        val: default_colors[i % n_colors]
+        for i, val in enumerate(unique_values)
+    }
 
 
 def _insert_separator(arrays: np.ndarray) -> np.ndarray:
