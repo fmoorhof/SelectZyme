@@ -28,7 +28,7 @@ class Parsing():
                     if sequence != "":
                         sequences.append(sequence)
                         sequence = ""
-                    headers.append(line.strip())
+                    headers.append(line.strip().strip('>'))
                 else:
                     sequence += line.strip()
             sequences.append(sequence)  # Append the last sequence
