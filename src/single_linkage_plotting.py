@@ -5,13 +5,15 @@ from scipy.cluster.hierarchy import dendrogram
 from pandas import unique
 
 from src.utils import run_time
+from src.customizations import set_columns_of_interest
 
 
 @run_time
-def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
+def create_dendrogram(Z, df, legend_attribute: str = 'cluster'):
     P = dendrogram(Z, no_plot=True)
     icoord = np.array(P["icoord"])
     dcoord = np.array(P["dcoord"])
+    leaves = P["leaves"]  # Indices of df rows corresponding to leaves
 
     layout = go.Layout(
         xaxis_title="Cluster/Variant",
@@ -21,16 +23,9 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
     )
     fig = go.Figure(layout=layout)
 
-    # Pre-calculate all plot data
+    # Pre-calculate traces
     x_lines = _insert_separator(icoord)
     y_lines = _insert_separator(dcoord)
-    marker_x = icoord[:, 0]  # always use left branch to place marker
-    marker_y = dcoord[:, 1] - 0.001  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
-
-    # set color mapping for legend_attribute (mostly 'cluster')
-    color_mapping = _value_to_color(df[legend_attribute])
-    marker_colors = df[legend_attribute].map(color_mapping).to_numpy()
-
     # Add lines trace
     fig.add_trace(go.Scattergl(
         x=x_lines,
@@ -40,19 +35,34 @@ def create_dendrogram(Z, df, hovertext=None, legend_attribute: str = 'cluster'):
         hoverinfo='none',
     ))
 
-    # Add markers trace
+    # Pre-calculate markers
+    marker_x = icoord[:, 0]  # always use left branch to place marker
+    marker_y = dcoord[:, 1] - 0.001  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
+
+    # Create a copy of the dataframe and sort it based on the indices 'leaves' deep copy needed, else not working!
+    df_copy = df.iloc[leaves].copy(deep=True)
+    df_copy = df_copy.sort_index()
+
+    columns_of_interest = set_columns_of_interest(df_copy.columns)
+    hover_text = ["<br>".join(f"{col}: {df_copy[col][i]}" for col in columns_of_interest) for i in range(len(df_copy))]
+
+    # set color mapping for marker´s legend_attribute (mostly 'cluster')
+    color_mapping = _value_to_color(df[legend_attribute])  # use 'old' unsorted df of other pages
+    marker_colors = df_copy[legend_attribute].map(color_mapping).to_numpy()
+
+    # Add markers trace using the sorted dataframe
     fig.add_trace(go.Scattergl(
         x=marker_x,
         y=marker_y,
         mode='markers',
         marker=dict(
             color=marker_colors,
-            symbol=df['marker_symbol'].to_numpy(),
-            size=df['marker_size'].to_numpy(),
+            symbol=df_copy['marker_symbol'].to_numpy(),
+            size=df_copy['marker_size'].to_numpy(),
             opacity=0.8
         ),
-        customdata=df['accession'].to_numpy(),
-        text=np.array(hovertext),
+        customdata=df_copy['accession'].to_numpy(),
+        text=np.array(hover_text),
         hoverinfo="text",
     ))
 

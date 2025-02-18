@@ -5,22 +5,19 @@ import pandas as pd
 # import plotly.figure_factory as ff
 
 from pages.dimred import html_export_figure
-from src.customizations import set_columns_of_interest
+# from src.customizations import set_columns_of_interest
 from src.single_linkage_plotting import create_dendrogram
 
 
 def layout(G, df: pd.DataFrame) -> html.Div:
     logging.info('Start building the dendrogram...')
-    # shiny hover text
-    columns_of_interest = set_columns_of_interest(df.columns)
-    hover_text = ["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest) for i in range(len(df))]
+
+    fig = create_dendrogram(Z=G._linkage, df=df)  # leanest SL implementation and current go-to. Callback also working
 
     # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. also dendrogram creation and figure creation
+    # columns_of_interest = set_columns_of_interest(df.columns)
+    # hover_text = ["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest) for i in range(len(df))]
     # fig = ff.create_dendrogram(G._linkage, hovertext=hover_text)  # labels=df['accession'].to_list()  # root node causes probably different dimensions of G._linkage and df
-
-    fig = create_dendrogram(Z=G._linkage, df=df, hovertext=hover_text)  # leanest SL implementation and current go-to. Callback also working
-
-
     return html.Div(
         [
             # plot download button
