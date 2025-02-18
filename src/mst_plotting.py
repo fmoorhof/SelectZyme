@@ -82,7 +82,7 @@ class MinimumSpanningTree:
             node_adjacencies[node2] += 1
 
         # Create edge and node traces
-        edge_trace = self.create_edge_trace(edge_x, edge_y, node_adjacencies, edge_opacity=0.5, edge_width=0.3)
+        edge_trace = self.create_edge_trace(edge_x, edge_y, edge_opacity=0.5, edge_width=0.3)
         node_trace = self.create_node_trace(self.X_red[:, 0], self.X_red[:, 1], node_adjacencies)
 
         # Color nodes by their number of connections
@@ -90,8 +90,8 @@ class MinimumSpanningTree:
 
         # Create the figure
         fig = go.Figure()
+        fig.add_trace(node_trace)  # if nodes are not first, hover data randomly get only displayed for some nodes!
         fig.add_trace(edge_trace)
-        fig.add_trace(node_trace)
 
         # Update layout
         fig.update_layout(
@@ -102,42 +102,34 @@ class MinimumSpanningTree:
 
         return fig
     
-    def create_edge_trace(self, edge_x: list, edge_y: list, node_adjacencies: np.ndarray, edge_opacity=None, edge_width: int = 1):
+    def create_edge_trace(self, edge_x: list, edge_y: list, edge_opacity=None, edge_width: int = 1):
         """
         Create a Plotly edge trace for the graph.
-        """
-        columns_of_interest = set_columns_of_interest(self.df.columns)
-        hover_text = [
-            "<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) + f"<br>connectivity: {node_adjacencies[i]}"
-            for i in range(len(self.df))
-        ]        
+        """      
         return go.Scattergl(
             x=edge_x,
             y=edge_y,
             mode="lines",
             line=dict(color="black", width=edge_width),
             opacity=edge_opacity,
-            hovertext=hover_text,
-            hoverinfo="text",
         )
 
     def create_node_trace(self, node_x: np.ndarray, node_y: np.ndarray, node_adjacencies: np.ndarray):
         """
         Create a Plotly node trace for the graph.
         """
-        # todo: why not really needed here but at edge_trace?
-        # columns_of_interest = set_columns_of_interest(self.df.columns)
-        # hover_text = [
-        #     "<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) + f"<br>connectivity: {node_adjacencies[i]}"
-        #     for i in range(len(self.df))
-        # ]
+        columns_of_interest = set_columns_of_interest(self.df.columns)
+        hover_text = [
+            "<br>".join(f"{col}: {self.df[col][i]}" for col in columns_of_interest) + f"<br>connectivity: {node_adjacencies[i]}"
+            for i in range(len(self.df))
+        ]
         
         return go.Scattergl(
             x=node_x,
             y=node_y,
             mode="markers",
             customdata=self.df['accession'],
-            # hovertext=hover_text,
+            hovertext=hover_text,
             hoverinfo="text",
             marker=dict(
                 size=self.df['marker_size'],
