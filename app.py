@@ -9,6 +9,7 @@ import pages.mst as mst
 import pages.single_linkage as sl
 import pages.dimred as dimred
 import pages.eda as eda
+from pages.callbacks import register_callbacks
 from src.utils import parse_data, database_access
 from src.preprocessing import Preprocessing
 from src.ml import dimred_caller, clustering_HDBSCAN
@@ -28,7 +29,8 @@ def main(app):
     df = Preprocessing(df).preprocess()
 
     # Load embeddings from Vector DB
-    X = database_access(df, config['project']['name'], 
+    X = database_access(df, 
+                        config['project']['name'], 
                         config['project']['plm']['plm_model'])
 
     # Clustering
@@ -45,7 +47,6 @@ def main(app):
                                            config['project']['dimred']['n_neighbors'],
                                            config['project']['dimred']['random_state'])
 
-
     # Create page layouts
     dash.register_page('eda', name="Explanatory Data Analysis", layout=eda.layout(df))
     dash.register_page('dim', name="Dimensionality Reduction and Clustering", layout=dimred.layout(df, X_red, X_red_centroids))
@@ -53,7 +54,7 @@ def main(app):
     dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
 
     # Register callbacks
-    dimred.register_callbacks(app, df, X_red, X_red_centroids)
+    register_callbacks(app, df, X_red, X_red_centroids)
 
     # Layout with navigation links and page container
     app.layout = dbc.Container(
