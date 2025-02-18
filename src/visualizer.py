@@ -18,18 +18,17 @@ def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, le
     plotly.graph_objs._figure.Figure: A Plotly Figure object representing the 2D scatter plot.
     """
     fig = go.Figure()
+    columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
 
-    # Add a scatter trace for each unique value in the legend_attribute column
-    for value in df[legend_attribute].unique():
-        subset = df[df[legend_attribute] == value]
-
-        columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
+    # Add a scatter trace for each unique attribute in the desired legend_attribute column
+    for attribute in df[legend_attribute].unique():
+        subset = df[df[legend_attribute] == attribute]
 
         fig.add_trace(go.Scattergl(
             x=X_red[subset.index, 0],
             y=X_red[subset.index, 1],
             mode='markers',
-            name=str(value),  # Legend name
+            name=str(attribute),
             marker=dict(
                 size=subset['marker_size'],
                 symbol=subset['marker_symbol'],
@@ -63,5 +62,5 @@ def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, le
         )
     )
 
-    # fig.write_html(f'datasets/test_landscape.html')
+    # fig.write_html(f'datasets/dimred.html')
     return fig

@@ -88,6 +88,7 @@ class MinimumSpanningTree:
             mode="lines",
             line=dict(color="black", width=edge_width),
             opacity=edge_opacity,
+            hoverinfo="none"
         )
 
     @run_time

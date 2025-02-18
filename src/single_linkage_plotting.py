@@ -19,7 +19,7 @@ def create_dendrogram(Z, df, legend_attribute: str = 'cluster'):
         xaxis_title="Cluster/Variant",
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis_title="Distance",
-        showlegend=False,
+        showlegend=True,
     )
     fig = go.Figure(layout=layout)
 
@@ -64,6 +64,7 @@ def create_dendrogram(Z, df, legend_attribute: str = 'cluster'):
         customdata=df_copy['accession'].to_numpy(),
         text=np.array(hover_text),
         hoverinfo="text",
+        showlegend=True,
     ))
 
     return fig
