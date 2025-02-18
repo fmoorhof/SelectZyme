@@ -4,6 +4,7 @@ logging.basicConfig(level=logging.INFO)
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
+from plotly.graph_objects import Figure
 
 import pages.mst as mst
 import pages.single_linkage as sl
@@ -13,6 +14,7 @@ from pages.callbacks import register_callbacks
 from src.utils import parse_data, database_access
 from src.preprocessing import Preprocessing
 from src.ml import dimred_caller, clustering_HDBSCAN
+from src.visualizer import plot_2d
 from src.customizations import custom_plotting
 
 
@@ -38,7 +40,7 @@ def main(app):
                                                      config['project']['clustering']['min_samples'], 
                                                      config['project']['clustering']['min_cluster_size'])
     df['cluster'] = labels
-    df = custom_plotting(df)
+    df = custom_plotting(df)  # apply plotting customizations
 
     # Dimensionality reduction
     X_red, X_red_centroids = dimred_caller(X, 
@@ -46,12 +48,16 @@ def main(app):
                                            config['project']['dimred']['method'],
                                            config['project']['dimred']['n_neighbors'],
                                            config['project']['dimred']['random_state'])
+    
+    # Perf: create DimRed and MST plot only once
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute='query_term')
+    fig_mst = Figure(fig)
 
     # Create page layouts
     dash.register_page('eda', name="Explanatory Data Analysis", layout=eda.layout(df))
-    dash.register_page('dim', name="Dimensionality Reduction and Clustering", layout=dimred.layout(df, X_red, X_red_centroids))
-    dash.register_page('slc', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df))    
-    dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red))
+    dash.register_page('dim', name="Dimensionality Reduction and Clustering", layout=dimred.layout(df, fig))   
+    dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red, fig_mst))
+    dash.register_page('slc', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df)) 
 
     # Register callbacks
     register_callbacks(app, df, X_red, X_red_centroids)

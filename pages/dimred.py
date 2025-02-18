@@ -1,11 +1,10 @@
 from dash import dcc, html, dash_table
 
-from src.visualizer import plot_2d
 from src.customizations import set_columns_of_interest
 from pages.callbacks import html_export_figure
 
 
-def layout(df, X_red, X_red_centroids):
+def layout(df, fig):
     """
     Generate the layout for a Dash app with a 2D plot, dropdown for selecting legend attribute, 
     download button, scatter plot, and data table.
@@ -18,9 +17,6 @@ def layout(df, X_red, X_red_centroids):
     """
     cols = set_columns_of_interest(df.columns)
     cols.remove('accession')
-
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute=cols[0])
-
     return html.Div(
         [
             # Dropdown to select legend attribute of df columns

@@ -21,10 +21,11 @@ from src.utils import run_time
 
 
 class MinimumSpanningTree:
-    def __init__(self, mst, X_red, df):
+    def __init__(self, mst, df, X_red, fig):
         self._mst = mst  # struct: (node1, node2, weight)
-        self.X_red = X_red
         self.df = df
+        self.X_red = X_red
+        self.fig = fig
     
     @run_time
     def plot_mst_force_directed(self, G: nx.Graph):
@@ -64,44 +65,19 @@ class MinimumSpanningTree:
         """
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
         """
-        # Normalize edge weights to be between 0 and 1 for opacity
-        edge_opac = (self._mst.T[2] - self._mst.T[2].min()) / (self._mst.T[2].max() - self._mst.T[2].min())
-
-        # Edge coordinates and weights
+        # Edge coordinates
         line_coords = self.X_red[self._mst[:, :2].astype(int)]  # X_red[node connections] = coordinates of the nodes in X_red
-        edge_x, edge_y, edge_opacity = [], [], []
-        for (x1, y1), (x2, y2), alpha in zip(line_coords[:, 0], line_coords[:, 1], edge_opac):
+        edge_x, edge_y = [], []
+        for (x1, y1), (x2, y2) in zip(line_coords[:, 0], line_coords[:, 1]):
             edge_x.extend([x1, x2, None])  # None: A separator indicating the end of this edge
             edge_y.extend([y1, y2, None])
-            edge_opacity.append(alpha)
 
-        # Calculate node adjacencies (degree of connections)
-        node_adjacencies = np.zeros(len(self.X_red), dtype=int)
-        for node1, node2 in self._mst[:, :2].astype(int):
-            node_adjacencies[node1] += 1
-            node_adjacencies[node2] += 1
-
-        # Create edge and node traces
+        # Create edge traces
         edge_trace = self.create_edge_trace(edge_x, edge_y, edge_opacity=0.5, edge_width=0.3)
-        node_trace = self.create_node_trace(self.X_red[:, 0], self.X_red[:, 1], node_adjacencies)
 
-        # Color nodes by their number of connections
-        node_trace.marker.color = node_adjacencies
-
-        # Create the figure
-        fig = go.Figure()
-        fig.add_trace(node_trace)  # if nodes are not first, hover data randomly get only displayed for some nodes!
-        fig.add_trace(edge_trace)
-
-        # Update layout
-        fig.update_layout(
-            xaxis=dict(showgrid=True, zeroline=True, showticklabels=True),
-            yaxis=dict(showgrid=True, zeroline=True, showticklabels=True),
-            showlegend=False
-        )
-
-        return fig
+        return self.fig.add_trace(edge_trace)  # if nodes are not first, hover data randomly get only displayed for some nodes!
     
+    @run_time
     def create_edge_trace(self, edge_x: list, edge_y: list, edge_opacity=None, edge_width: int = 1):
         """
         Create a Plotly edge trace for the graph.
@@ -114,6 +90,7 @@ class MinimumSpanningTree:
             opacity=edge_opacity,
         )
 
+    @run_time
     def create_node_trace(self, node_x: np.ndarray, node_y: np.ndarray, node_adjacencies: np.ndarray):
         """
         Create a Plotly node trace for the graph.
