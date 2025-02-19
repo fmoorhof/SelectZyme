@@ -5,6 +5,7 @@ from scipy.cluster.hierarchy import linkage
 import plotly.graph_objects as go
 
 from src.single_linkage_plotting import create_dendrogram, _value_to_color
+from src.customizations import set_columns_of_interest
 
 
 @pytest.fixture
@@ -22,12 +23,11 @@ def sample_data():
     })
     data = np.random.randn(sample_size, 2)
     Z = linkage(data, method='single')
-    hover_text = ["<br>".join(f"{col}: {df[col][i]}" for col in df.columns) for i in range(len(df))]
-    return Z, df, hover_text
+    return Z, df
 
 def test_create_dendrogram(sample_data):
-    Z, df, hover_text = sample_data
-    fig = create_dendrogram(Z, df, hover_text)
+    Z, df = sample_data
+    fig = create_dendrogram(Z, df)
     
     assert fig is not None
     assert isinstance(fig, go.Figure)
