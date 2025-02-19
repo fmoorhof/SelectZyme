@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "23-fix-CI-tests" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
