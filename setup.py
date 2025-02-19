@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ec",
-    version="0.0.1",
+    version="v0.0.1",
     author="Felix Moorhoff",
     author_email="fmoorhof@ipb-halle.de",
     url="https://www.ipb-halle.de/en/research/bioorganic-chemistry/research-groups/computational-chemistry/projects/",

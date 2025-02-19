@@ -1,11 +1,14 @@
 """
 Classes and functionalities around data parsing from UniProt or tabular or fasta files.
 """
-import io
+from io import StringIO
+import logging
+
+from gzip import decompress
+import pandas as pd
+from re import compile
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
-import re
-import pandas as pd
 
 
 class UniProtFetcher:
@@ -16,7 +19,7 @@ class UniProtFetcher:
     def __init__(self, df_coi: list[str]):
         self.df_coi = df_coi
         self.session = self._init_session()
-        self.re_next_link = re.compile(r'<(.+)>; rel="next"')
+        self.re_next_link = compile(r'<(.+)>; rel="next"')
 
     def _init_session(self):
         """
@@ -51,13 +54,19 @@ class UniProtFetcher:
                   f"&format=tsv" \
                   f"&query={qry} AND length:[{length}]" \
                   f"&fields={coi}" \
+                  f"&compressed=true" \
                   f"&size=500"  # UniProt pagination to fetch more than 500 entries
 
             for batch, total in self._get_batch(batch_url=url):
-                raw_data += batch.content  # append two bytes in python
+                if int(total) > 100000:
+                    logging.warning(f"Query term '{qry}' skipped: Exceeds maximum allowed entries (100,000) per query term. Total entries: {total}. You might want to specify the query term more specifically.")
+                    continue
+                raw_data += batch.content
 
-            # Decode the raw data and create a DataFrame
-            df = pd.read_csv(io.StringIO(raw_data.decode('utf-8')), delimiter='\t')
+            logging.info(f"Retrieved {total} entires for query term: {qry}")
+
+            decompressed_data = decompress(raw_data).decode('utf-8')  # Decompress raw data
+            df = pd.read_csv(StringIO(decompressed_data), delimiter='\t')
 
             df = self._process_dataframe(df, qry)
             dfs.append(df)

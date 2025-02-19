@@ -10,7 +10,7 @@ from pages.dimred import html_export_figure
 # dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
 
 
-def layout(G, df, X_red) -> html.Div:
+def layout(G, df, X_red, fig) -> html.Div:
     """
     Generates a Dash layout for visualizing a minimal spanning tree of a given graph.
     Parameters:
@@ -30,9 +30,9 @@ def layout(G, df, X_red) -> html.Div:
     - The `modify_graph_data` function is assumed to be defined elsewhere and is responsible for creating the edge and node traces.
     """
     logging.info('Start building the MST...')
-    mst = MinimumSpanningTree(G._mst, X_red, df)
+    mst = MinimumSpanningTree(G._mst, df, X_red, fig)
 
-    if df.shape[0] > 10000:
+    if df.shape[0] > 1:
         fig = mst.plot_mst_in_DimRed_landscape()
     else:
         fig = mst.plot_mst_force_directed(G)

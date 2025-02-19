@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from requests import Session
 import pandas as pd
+import gzip
 
 from src.fetch_data_uniprot import UniProtFetcher
 
@@ -22,7 +23,7 @@ class TestUniProtFetcher(unittest.TestCase):
     @patch('src.fetch_data_uniprot.UniProtFetcher._get_batch')
     def test_query_uniprot(self, mock_get_batch):
         mock_response = MagicMock()
-        mock_response.content = b'accession\tid\treviewed\tprotein_name\tgene_names\torganism_name\nP12345\tID1\treviewed\tProtein1\tGene1\tOrganism1\n'
+        mock_response.content = gzip.compress(b'accession\tid\treviewed\tprotein_name\tgene_names\torganism_name\nP12345\tID1\treviewed\tProtein1\tGene1\tOrganism1\n')
         mock_get_batch.return_value = [(mock_response, '1')]
 
         query_terms = ['kinase']

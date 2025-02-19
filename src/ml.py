@@ -2,11 +2,7 @@ import logging
 
 import numpy as np
 from cuml.cluster import HDBSCAN
-from cuml.decomposition import (
-    PCA,
-    TruncatedSVD,
-    IncrementalPCA
-)
+from cuml.decomposition import PCA
 from cuml.manifold import (
     TSNE,
     UMAP
@@ -16,7 +12,7 @@ from src.utils import run_time
 
 
 @run_time
-def dimred_caller(X, X_centroids, dim_method, n_neighbors=15, random_state=42, **kwargs):
+def dimred_caller(X, X_centroids, dim_method, n_neighbors: int = 15, random_state: int = 42, **kwargs):
     dim_method = dim_method.upper()
     if dim_method == 'PCA':
         X_red, X_red_centroids = pca(X, X_centroids, **kwargs)
@@ -112,47 +108,23 @@ def pca(X, X_centroids, dimension: int = 2, **kwargs):
     return X_pca, X_pca_centroid
 
 
-def incremental_pca(X, X_centroids, dimension: int = 2, **kwargs):
-    """Dimensionality reduction with Incremental PCA.
-    Incremental PCA (Principal Component Analysis) is a variant of PCA that is designed to handle very large datasets that may not fit into memory.
-    Standard PCA typically requires computing the covariance matrix of the entire dataset, which can be computationally expensive and memory-intensive, especially for large datasets. Incremental PCA, on the other hand, processes the dataset in smaller batches or chunks, allowing it to handle large datasets more efficiently.
-    :param kwargs: Additional parameters"""
-    ipca = IncrementalPCA(n_components=dimension, output_type="numpy", **kwargs)
-    X_ipca = ipca.fit_transform(X)
-    X_ipca_centroid = ipca.transform(X_centroids)
-    variance = ipca.explained_variance_ratio_ * 100
-    variance = ["%.1f" % i for i in variance]  # 1 decimal only
-    print(f"% Variance of the PCA components: {variance}")
-    logging.info("Incremental PCA done")
-    return X_ipca, X_ipca_centroid
 
-
-def truncated_svd(X, X_centroids, dimension: int = 2, **kwargs):
-    """Dimensionality reduction with Truncated SVD.
-    
-    :param kwargs: Additional parameters
-    """
-    svd = TruncatedSVD(n_components=dimension, output_type="numpy", **kwargs)
-    X_svd = svd.fit_transform(X)
-    X_svd_centroid = svd.transform(X_centroids)
-    logging.info("Truncated SVD done")
-    return X_svd, X_svd_centroid
-
-
-def tsne(X, dimension: int = 2, **kwargs):
+def tsne(X, dimension: int = 2, random_state: int = 42, **kwargs):
     """Dimensionality reduction with tSNE.
     Currently TSNE supports n_components = 2; so only 2D plots are possible in May 2024!
+    Despite random seed, also tSNE looks not 100% reproducible. May be related to this bug report for UMAP:
+    https://github.com/rapidsai/cuml/issues/5099
 
     :param kwargs: Additional parameters for sklearn.manifold.TSNE
     """
-    tsne = TSNE(n_components=dimension, **kwargs)
+    tsne = TSNE(n_components=dimension, random_state=random_state, **kwargs)
     X_tsne = tsne.fit_transform(X)
     X_tsne_centroid = np.empty((0, 2))
     logging.info("tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE. You might want to try openTSNE.")
     return X_tsne, X_tsne_centroid
 
 
-def opentsne(X, X_centroids, dimension: int = 2, **kwargs):
+def opentsne(X, X_centroids, dimension: int = 2, random_state: int = 42, **kwargs):
     """Dimensionality reduction with open tSNE.
     Currently TSNE supports n_components = 2. Non GPU implementation but tsne.transform is possible to integrate cluster centroids.
     Despite, non GPU runtime is very good and scales less computationally complex in comparison to t-SNE.
@@ -160,7 +132,7 @@ def opentsne(X, X_centroids, dimension: int = 2, **kwargs):
     :param kwargs: Additional parameters for sklearn.manifold.TSNE
     """
     from openTSNE import TSNE
-    tsne = TSNE(n_components=dimension, n_jobs=8, **kwargs)
+    tsne = TSNE(n_components=dimension, n_jobs=8, random_state=random_state, **kwargs)
     X_tsne = tsne.fit(X)
 
     if X_centroids.size != 0:
@@ -173,15 +145,16 @@ def opentsne(X, X_centroids, dimension: int = 2, **kwargs):
     return X_tsne, X_tsne_centroid
 
 
-# Dim reduced visualization with UMAP: super slow!! and .5GB output files wtf.
-def umap(X, X_centroids, dimension: int = 2, **kwargs):
+def umap(X, X_centroids, dimension: int = 2, n_neighbors: int = 15, random_state: int = 42, **kwargs):
     """Dimensionality reduction with UMAP.
-    :param kwargs: Additional parameters
-    """
-    umap = UMAP(n_components=dimension, **kwargs)  # unittest params: n_neighbors=10, min_dist=0.01
+    Reproducibity warning: Despite random_state, UMAP multi-threaded has race conditions between the threads. Unfortunately this means that the randomness in UMAP outputs for the multi-threaded case depends not only on the random seed input, but also on race conditions between threads during optimization, over which no control can be had
+    https://umap-learn.readthedocs.io/en/latest/reproducibility.html
+    Also CuML´s UMAP has random_state problems:
+    see unsolved bug issue: https://github.com/rapidsai/cuml/issues/5099
+    suggested workaround is init='random'"""
+    umap = UMAP(n_components=dimension, n_neighbors=n_neighbors, random_state=random_state, init="random", **kwargs)  # , init="random" is walkaround until random_seed is fixed @ CuML; default metric='euclidean'
     X_umap = umap.fit_transform(X)
     
-
     if X_centroids.size != 0:
         X_umap_centroid = umap.transform(X_centroids)
     else:

@@ -28,7 +28,7 @@ class Parsing():
                     if sequence != "":
                         sequences.append(sequence)
                         sequence = ""
-                    headers.append(line.strip())
+                    headers.append(line.strip().strip('>'))
                 else:
                     sequence += line.strip()
             sequences.append(sequence)  # Append the last sequence
@@ -37,7 +37,7 @@ class Parsing():
     
     def parse_tsv(self) -> pd.DataFrame:
         """Parse a tsv file and return a dataframe."""
-        return pd.read_csv(self.filepath, sep='\t')
+        return pd.read_csv(self.filepath, sep='\t')  # on failures, try: , encoding='ISO-8859-1'
     
     def parse_csv(self) -> pd.DataFrame:
         """Parse a tsv file and return a dataframe"""

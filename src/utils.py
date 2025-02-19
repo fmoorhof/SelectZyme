@@ -59,7 +59,7 @@ def _parse_data(exisiting_file: str, custom_file: str, query_terms: list, length
     if os.path.isfile(exisiting_file):
         return Parsing(exisiting_file).parse()
     
-    if query_terms != ['']:
+    if query_terms != ['']:  # todo: handle if query_terms NoneType -> breaks execution when query_terms not defined in config.yml
         fetcher = UniProtFetcher(df_coi)
     if custom_file != '':
         df_custom = Parsing(custom_file).parse()
@@ -99,6 +99,16 @@ def _export_annotated_fasta(df: pd.DataFrame, out_file: str):
     logging.info(f"FASTA file written to {out_file}")
 
 
+# todo: integrate this function into export excel function to also generate a .fasta output
+def convert_tabular_to_fasta(in_file: str, out_file: str):
+    df = Parsing(in_file).parse()
+    with open(out_file, 'w') as f_out:
+        for index, row in df.iterrows():
+            fasta = '>', str(row.iloc[0]), '\n', row.loc["sequence"], '\n'
+            f_out.writelines(fasta)
+    logging.info(f"FASTA file written to {out_file}")
+
+
 def run_time(func):
     """
     A decorator that measures the execution time of a function.
@@ -117,3 +127,7 @@ def run_time(func):
         print(f"Execution time of the function {func.__name__}: {end_time - start_time} seconds")
         return result
     return wrapper    
+
+
+if __name__ == "__main__":
+    convert_tabular_to_fasta('results/datasets/pet_active_region.csv', 'results/datasets/pet_active_region.fasta')

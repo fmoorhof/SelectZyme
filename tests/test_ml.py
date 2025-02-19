@@ -4,8 +4,7 @@ import numpy as np
 from cuml.cluster import HDBSCAN
 
 from ml import (
-    _weighted_cluster_centroid, clustering_HDBSCAN, pca, incremental_pca,
-    truncated_svd, tsne, opentsne, umap
+    _weighted_cluster_centroid, clustering_HDBSCAN, pca, tsne, opentsne, umap
 )
 
 
@@ -57,26 +56,6 @@ class TestML(unittest.TestCase):
         self.assertIsInstance(X_pca_centroid, np.ndarray)
         self.assertEqual(X_pca.shape[1], 2)
         self.assertEqual(X_pca_centroid.shape[1], 2)
-
-    def test_incremental_pca(self):
-        # Act
-        X_ipca, X_ipca_centroid = incremental_pca(self.X, self.X_centroids)
-
-        # Assert
-        self.assertIsInstance(X_ipca, np.ndarray)
-        self.assertIsInstance(X_ipca_centroid, np.ndarray)
-        self.assertEqual(X_ipca.shape[1], 2)
-        self.assertEqual(X_ipca_centroid.shape[1], 2)
-
-    def test_truncated_svd(self):
-        # Act
-        X_svd, X_svd_centroid = truncated_svd(self.X, self.X_centroids)
-
-        # Assert
-        self.assertIsInstance(X_svd, np.ndarray)
-        self.assertIsInstance(X_svd_centroid, np.ndarray)
-        self.assertEqual(X_svd.shape[1], 2)
-        self.assertEqual(X_svd_centroid.shape[1], 2)
 
     def test_tsne(self):
         # Act
