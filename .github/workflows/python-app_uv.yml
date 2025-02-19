@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "23-fix-CI-tests" ]
   pull_request:
     branches: [ "main" ]
 
@@ -36,6 +36,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        apt-get install graphviz graphviz-dev  # required for pygraphviz
         uv pip install pytest pytest-cov 
         uv pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.10.* dask-cudf-cu11==24.10.* cuml-cu11==24.10.*
         if [ -f requirements.txt ]; then uv pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu118; fi
