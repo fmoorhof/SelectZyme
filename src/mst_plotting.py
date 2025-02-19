@@ -6,9 +6,6 @@ MST networkx force directed layout implementation:
 This is a minimal example dash app to visualize a networkx graph. Tutorial taken from: https://plotly.com/python/network-graphs/
 possible outlook on networkx implementation:
 - Insights into Connectivity and Routes: Shortest Paths, Betweenness Centrality, critical nodes
-
-Conclusion on the adapted hdbscan implementation:
-- MST in DimRed landscape is not really nice. The force directed layout is better. Apart from this only the connectivity information is really usefull there which can also maybe extracted differently.
 """
 import logging
 
@@ -28,6 +25,7 @@ class MinimumSpanningTree:
         self.fig = fig
     
     @run_time
+    # @DeprecationWarning
     def plot_mst_force_directed(self, G: nx.Graph):
         """
         Plots a Minimum Spanning Tree (MST) using a force-directed layout.
@@ -92,6 +90,7 @@ class MinimumSpanningTree:
         )
 
     @run_time
+    # @DeprecationWarning
     def create_node_trace(self, node_x: np.ndarray, node_y: np.ndarray, node_adjacencies: np.ndarray):
         """
         Create a Plotly node trace for the graph.
@@ -128,6 +127,7 @@ class MinimumSpanningTree:
             )
         )
     
+    # @DeprecationWarning
     def _modify_graph_data(self, G) -> tuple:
         """
         Modify the graph data for visualization.
@@ -159,7 +159,7 @@ class MinimumSpanningTree:
         # Calculate nodes connectivity
         node_adjacencies = [len(list(G.adj[node])) for node in G.nodes()]
 
-        edge_trace = self.create_edge_trace(edge_x, edge_y, node_adjacencies)
+        edge_trace = self.create_edge_trace(edge_x, edge_y)
 
         # Node traces
         node_x = [G.nodes[node]['pos'][0] for node in G.nodes()]
