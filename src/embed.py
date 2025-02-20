@@ -58,7 +58,7 @@ def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
     Selects and loads a pre-trained language model (PLM) and its corresponding tokenizer based on the specified model name.
     Args:
         plm_model (str): The name of the pre-trained language model to load. 
-                         Options are 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5'.
+                         Options are 'esm1b' (default), 'esm2', 'prott5', 'prostt5'.
     Returns:
         tuple: A tuple containing the tokenizer and the model.
     Raises:
@@ -87,7 +87,7 @@ def _select_plm_model(plm_model: str = 'esm1b') -> tuple:
         model = T5EncoderModel.from_pretrained("Rostlab/ProstT5").to(device)
 
     else:
-        raise ValueError(f"Model {plm_model} not supported. Please choose one of: 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'")
+        raise ValueError(f"Model {plm_model} not supported. Please choose one of: 'esm1b', 'esm2', 'prott5', 'prostt5'")
     
     return tokenizer, model
 
