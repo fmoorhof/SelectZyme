@@ -87,7 +87,8 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df.drop_duplicates(subset='accession', keep='first', inplace=True)
     df.reset_index(drop=True, inplace=True)
     logging.info(f'Total amount of non redundant entries: {df.shape[0]}')
-    logging.info(f"Amount of BRENDA reviewed entries: {df['xref_brenda'].notna().sum()}")
+    if 'xref_brenda' in df.columns:
+        logging.info(f"Amount of BRENDA reviewed entries: {df['xref_brenda'].notna().sum()}")
     return df
 
 
