@@ -1,10 +1,30 @@
 import logging
+import sys
 
+import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from qdrant_client import QdrantClient, models
 
 from src.embed import gen_embedding
+from src.utils import run_time
+
+
+def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b'):
+    """Create a collection in Qdrant DB with embedded sequences
+    :param df: dataframe containing the sequences and the annotation
+    :param project_name: name of the collection
+    return: embeddings: numpy array containing the embeddings"""
+    logging.info("Instantiating Qdrant vector DB. This takes quite a while.")
+    qdrant = QdrantClient(url="http://localhost:6333", timeout=15)  # fire up container with  # docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
+    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name, plm_model=plm_model)
+    if df.shape[0] != embeddings.shape[0]:  # todo: recreate the collection instead and make user aware (press [Yn] or dont know yet to report)
+        # qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
+        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
+
+    sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
+
+    return embeddings
 
 
 def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) -> list:
@@ -43,7 +63,7 @@ def create_vector_db_collection(qdrant, df, embeddings, collection_name: str) ->
     
     return annotation, embeddings
 
-
+@run_time
 def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     """
     Load the collection from the vector database. 
@@ -59,7 +79,7 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
                             with_payload=True,  # If List of string - include only specified fields
                             with_vectors=True,
                             limit=collection.points_count,
-                            timeout=60)
+                            timeout=190)
     # qdrant.delete_collection(collection_name)
 
     # extract the header and vector from the Qdrant data structure

@@ -1,16 +1,13 @@
 import logging
-import sys
 import os
 import argparse
 from time import time
 
 import yaml
 import pandas as pd
-from qdrant_client import QdrantClient
 
 from src.fetch_data_uniprot import UniProtFetcher
 from src.parsing import Parsing
-from src.vector_db import load_or_createDB
 
 
 def parse_args():
@@ -36,23 +33,6 @@ def parse_data(project_name, query_terms, length, custom_file, out_dir, df_coi):
     df = _clean_data(df)
     _save_data(df, output_file_corpus)
     return df
-
-
-def database_access(df: pd.DataFrame, project_name: str, plm_model: str = 'esm1b'):
-    """Create a collection in Qdrant DB with embedded sequences
-    :param df: dataframe containing the sequences and the annotation
-    :param project_name: name of the collection
-    return: embeddings: numpy array containing the embeddings"""
-    logging.info("Instantiating Qdrant vector DB. This takes quite a while.")
-    qdrant = QdrantClient(url="http://localhost:6333", timeout=15)  # fire up container with  # docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
-    annotation, embeddings = load_or_createDB(qdrant, df, collection_name=project_name, plm_model=plm_model)
-    if df.shape[0] != embeddings.shape[0]:  # todo: recreate the collection instead and make user aware (press [Yn] or dont know yet to report)
-        # qdrant.delete_collection(collection_name=project_name)  # delete a collection because it is supposed to have changed in the meantime
-        raise ValueError(f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. As a consequence, the collection is deleted and you need to embed again. So just re-run.")
-
-    sys.setrecursionlimit(max(df.shape[0], 10000))  # fixed: RecursionError: maximum recursion depth exceeded
-
-    return embeddings
 
 
 def _parse_data(exisiting_file: str, custom_file: str, query_terms: list, length: str, df_coi: list):
