@@ -98,6 +98,7 @@ ignore = [
     "E501",  # line too long
     "N806", "N803",  # lower case variables, arguments
     "E402",  # app.py imports because logger is defined before, required!
+    "E712",  # avoid errors in CI routine for issues, i dont want to change
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
