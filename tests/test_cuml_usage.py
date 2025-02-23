@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from io import StringIO
 
+import cudf
 import pytest
+import requests
 import torch
-import cudf, requests
 
 
 @pytest.mark.tryfirst  # dont stop testing if this fails
@@ -25,12 +28,12 @@ def test_cuml_usage():
     This test asserts if RAPIDSAI CuML can be used for GPU accelerated programming.
     """
     url = "https://github.com/plotly/datasets/raw/master/tips.csv"
-    content = requests.get(url, timeout=10).content.decode('utf-8')
+    content = requests.get(url, timeout=10).content.decode("utf-8")
 
     tips_df = cudf.read_csv(StringIO(content))
-    tips_df['tip_percentage'] = tips_df['tip'] / tips_df['total_bill'] * 100
+    tips_df["tip_percentage"] = tips_df["tip"] / tips_df["total_bill"] * 100
 
     # display average tip by dining party size
-    print(tips_df.groupby('size').tip_percentage.mean())
-    
-    assert content != ''
+    print(tips_df.groupby("size").tip_percentage.mean())
+
+    assert content != ""

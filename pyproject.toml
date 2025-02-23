@@ -52,52 +52,18 @@ test = [
     "pytest",
     "pytest-cov",
 ]
-dev = [
-    "conda-lock",
-    "black",
-    "isort",
-    "pytest",
-    "pytest-cov",
-    "pyproject-flake8",
-]
-docs = [
-    "sphinx",
-    "sphinxcontrib-napoleon",
-    "sphinxcontrib-runcmd",
-]
-codegen = [
-    "black",
-    "isort",
-    "jinja2",
-    "typer",
-]
 full = [
-    "black",
-    "isort",
-    "jinja2",
-    # flake8 does not support pyproject.toml config natively; pyproject-flake8 does not support flake8 >= 5.0.0
-    "flake8 < 5.0.0",
-    "pyproject-flake8",
+    "conda-lock",
+    "ruff",
     "pytest",
     "pytest-cov",
-    "conda-lock",
-    "sphinx",
-    "sphinxcontrib-napoleon",
-    "sphinxcontrib-runcmd",
-    "typer",
-    "xmlschema",
 ]
-
 
 [tool.pytest.ini_options]
 pythonpath = "src/"
 filterwarnings = [
     "ignore:.*pkg_resources.*:DeprecationWarning",
 ]
-
-[tool.black]
-line-length = 120
-fast = true
 
 [tool.coverage.run]
 branch = true
@@ -114,16 +80,44 @@ exclude_lines = [
 ]
 precision = 2
 
-[tool.isort]
-line_length = 120
-profile = "black"
-skip = [
-    "venv",
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "FA",  # flake8-future-annotations
+]
+ignore = [
+    "E501",  # line too long
+    "N806", "N803",  # lower case variables, arguments
+    "E402",  # app.py imports because logger is defined before, required!
+    "E712",  # avoid errors in CI routine for issues, i dont want to change
 ]
 
-[tool.flake8]
-max-line-length = 120
-extend-ignore = "E203,E501,W293"
-exclude = [
-    "venv",
-]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
+
+[tool.black]
+line-length = 88
+fast = true

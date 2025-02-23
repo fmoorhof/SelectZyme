@@ -8,6 +8,9 @@ datasets/
 .vscode/
 app2/
 reports/
+.ruff_cache/
+results/
+assets/
 
 # C extensions
 *.so

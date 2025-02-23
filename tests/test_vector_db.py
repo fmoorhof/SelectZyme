@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from qdrant_client import QdrantClient
 
@@ -12,7 +14,7 @@ def setup_and_teardown():
     # Setup: This code runs before the tests in the class.
     print("Setting up for the test...")
     qdrant = QdrantClient(location=":memory:")
-    collection_name = 'pytest'
+    collection_name = "pytest"
 
     yield qdrant, collection_name  # The test functions will run at this point.
 
@@ -27,25 +29,31 @@ class TestDBCreation:
     @pytest.fixture(autouse=True)
     def setup_method(self):
         # Replace this with the code to create your DataFrame
-        self.df = Parsing('tests/head_10.tsv').parse_tsv()
+        self.df = Parsing("tests/head_10.tsv").parse_tsv()
         pp = Preprocessing(self.df)
         pp.remove_long_sequences()
         self.df = pp.df
-        self.embeddings = vector_db.gen_embedding(self.df['sequence'].tolist())
+        self.embeddings = vector_db.gen_embedding(self.df["sequence"].tolist())
 
     def test_create_vector_db_collection(self, setup_and_teardown):
         """Test the creation of a vector database collection."""
         qdrant, collection_name = setup_and_teardown
-        vector_db.create_vector_db_collection(qdrant, self.df, self.embeddings, collection_name)
+        vector_db.create_vector_db_collection(
+            qdrant, self.df, self.embeddings, collection_name
+        )
         collections_info = qdrant.get_collections()
 
         assert collection_name in str(collections_info)
         assert collection_name == collections_info.collections[0].name
 
-    def test_load_collection_from_vector_db(self, setup_and_teardown):  # fix later: TypeError: Client.__init__() got an unexpected keyword argument 'location'
+    def test_load_collection_from_vector_db(
+        self, setup_and_teardown
+    ):  # fix later: TypeError: Client.__init__() got an unexpected keyword argument 'location'
         """Test the loading of an existing vector database collection."""
         qdrant, collection_name = setup_and_teardown
-        entries, embeddings = vector_db.load_collection_from_vector_db(qdrant, collection_name)
+        entries, embeddings = vector_db.load_collection_from_vector_db(
+            qdrant, collection_name
+        )
 
         assert entries is not None
         assert embeddings is not None
