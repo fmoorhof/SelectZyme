@@ -5,6 +5,7 @@ import pandas as pd
 
 class Preprocessing:
     """This class should assist in the preprocessing of the data. Instead of returning the df, the self.df gets updated"""
+
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
@@ -26,9 +27,11 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a length <= 1024 amino acids
         """
-        mask = self.df['sequence'].str.len() < 1024
+        mask = self.df["sequence"].str.len() < 1024
         self.df = self.df[mask].reset_index(drop=True)
-        logging.info(f'{(~mask).sum()} sequences were excluded because of exaggerated size (>=1024 amino acids)')
+        logging.info(
+            f"{(~mask).sum()} sequences were excluded because of exaggerated size (>=1024 amino acids)"
+        )
 
     def remove_sequences_without_Metheonin(self) -> None:
         """
@@ -36,20 +39,24 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a Methionine at the beginning
         """
-        df = self.df[self.df['sequence'].str.startswith('M')]
+        df = self.df[self.df["sequence"].str.startswith("M")]
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of missing Methionins.')
+        logging.info(
+            f"{self.df.shape[0] - df.shape[0]} sequences were excluded because of missing Methionins."
+        )
         self.df = df
-    
+
     def remove_sequences_with_undertermined_amino_acids(self) -> None:
         """
         This function removes sequences with undertermined amino acids 'X'.
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences without undertermined amino acids
         """
-        df = self.df[~self.df['sequence'].str.contains('X')]
+        df = self.df[~self.df["sequence"].str.contains("X")]
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of undertermined amino acids.')
+        logging.info(
+            f"{self.df.shape[0] - df.shape[0]} sequences were excluded because of undertermined amino acids."
+        )
         self.df = df
 
     def remove_duplicate_entries(self) -> None:
@@ -58,9 +65,11 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only unique sequences
         """
-        df = self.df.drop_duplicates(subset='accession', keep='first')
+        df = self.df.drop_duplicates(subset="accession", keep="first")
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of duplicated accessions.')
+        logging.info(
+            f"{self.df.shape[0] - df.shape[0]} sequences were excluded because of duplicated accessions."
+        )
         self.df = df
 
     def remove_duplicate_sequences(self) -> None:
@@ -69,7 +78,9 @@ class Preprocessing:
         params: df: dataframe containing the sequences
         return: df: dataframe containing only unique sequences
         """
-        df = self.df.drop_duplicates(subset='sequence', keep='first')
+        df = self.df.drop_duplicates(subset="sequence", keep="first")
         df.reset_index(drop=True, inplace=True)
-        logging.info(f'{self.df.shape[0]-df.shape[0]} sequences were excluded because of duplicates.')
+        logging.info(
+            f"{self.df.shape[0] - df.shape[0]} sequences were excluded because of duplicates."
+        )
         self.df = df

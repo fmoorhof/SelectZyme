@@ -7,7 +7,12 @@ from src.utils import run_time
 
 
 @run_time
-def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, legend_attribute: str):
+def plot_2d(
+    df: pd.DataFrame,
+    X_red: np.ndarray,
+    X_red_centroids: np.ndarray,
+    legend_attribute: str,
+):
     """
     Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
     Parameters:
@@ -18,47 +23,50 @@ def plot_2d(df: pd.DataFrame, X_red: np.ndarray, X_red_centroids: np.ndarray, le
     plotly.graph_objs._figure.Figure: A Plotly Figure object representing the 2D scatter plot.
     """
     fig = go.Figure()
-    columns_of_interest = set_columns_of_interest(df.columns)  # Only show hover data for some df columns
+    columns_of_interest = set_columns_of_interest(
+        df.columns
+    )  # Only show hover data for some df columns
 
     # Add a scatter trace for each unique attribute in the desired legend_attribute column
     for attribute in df[legend_attribute].unique():
         subset = df[df[legend_attribute] == attribute]
 
-        fig.add_trace(go.Scattergl(
-            x=X_red[subset.index, 0],
-            y=X_red[subset.index, 1],
-            mode='markers',
-            name=str(attribute),
-            marker=dict(
-                size=subset['marker_size'],
-                symbol=subset['marker_symbol'],
-                opacity=0.5
-            ),
-            customdata=subset['accession'],
-            hovertext=subset.apply(lambda row: '<br>'.join([f'{col}: {row[col]}' for col in columns_of_interest]), axis=1),
-            hoverinfo='text'
-        ))
+        fig.add_trace(
+            go.Scattergl(
+                x=X_red[subset.index, 0],
+                y=X_red[subset.index, 1],
+                mode="markers",
+                name=str(attribute),
+                marker=dict(
+                    size=subset["marker_size"],
+                    symbol=subset["marker_symbol"],
+                    opacity=0.5,
+                ),
+                customdata=subset["accession"],
+                hovertext=subset.apply(
+                    lambda row: "<br>".join(
+                        [f"{col}: {row[col]}" for col in columns_of_interest]
+                    ),
+                    axis=1,
+                ),
+                hoverinfo="text",
+            )
+        )
 
-    fig.update_layout(
-        showlegend=True,
-        legend_title_text=legend_attribute
-    )
+    fig.update_layout(showlegend=True, legend_title_text=legend_attribute)
 
     # add cluster centroids trace
     fig.add_trace(
         go.Scattergl(
             x=X_red_centroids[:, 0],
             y=X_red_centroids[:, 1],
-            mode='markers',
-            name='Cluster Centroids',  # Set the legend name
-            marker=dict(
-                size=10,
-                symbol='x',
-                color='red',
-                opacity=0.3
-            ),             
-            hovertext=[f"Cluster {i} centroid" for i in range(X_red_centroids.shape[0])],
-            hoverinfo='text'
+            mode="markers",
+            name="Cluster Centroids",  # Set the legend name
+            marker=dict(size=10, symbol="x", color="red", opacity=0.3),
+            hovertext=[
+                f"Cluster {i} centroid" for i in range(X_red_centroids.shape[0])
+            ],
+            hoverinfo="text",
         )
     )
 

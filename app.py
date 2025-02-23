@@ -1,4 +1,5 @@
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 import dash
@@ -20,44 +21,56 @@ from src.customizations import custom_plotting
 
 def main(app):
     # backend calculations
-    df = parse_data(config['project']['name'], 
-                    config['project']['data']['query_terms'], 
-                    config['project']['data']['length'], 
-                    config['project']['data']['custom_data_location'], 
-                    config['project']['data']['out_dir'], 
-                    config['project']['data']['df_coi'])
+    df = parse_data(
+        config["project"]["name"],
+        config["project"]["data"]["query_terms"],
+        config["project"]["data"]["length"],
+        config["project"]["data"]["custom_data_location"],
+        config["project"]["data"]["out_dir"],
+        config["project"]["data"]["df_coi"],
+    )
     logging.info(f"df columns have the dtypes: {df.dtypes}")
 
     df = Preprocessing(df).preprocess()
 
     # Load embeddings from Vector DB
-    X = database_access(df, 
-                        config['project']['name'], 
-                        config['project']['plm']['plm_model'])
+    X = database_access(
+        df, config["project"]["name"], config["project"]["plm"]["plm_model"]
+    )
 
     # Clustering
-    labels, G, Gsl, X_centroids = clustering_HDBSCAN(X, 
-                                                     config['project']['clustering']['min_samples'], 
-                                                     config['project']['clustering']['min_cluster_size'])
-    df['cluster'] = labels
+    labels, G, Gsl, X_centroids = clustering_HDBSCAN(
+        X,
+        config["project"]["clustering"]["min_samples"],
+        config["project"]["clustering"]["min_cluster_size"],
+    )
+    df["cluster"] = labels
     df = custom_plotting(df)  # apply plotting customizations
 
     # Dimensionality reduction
-    X_red, X_red_centroids = dimred_caller(X, 
-                                           X_centroids, 
-                                           config['project']['dimred']['method'],
-                                           config['project']['dimred']['n_neighbors'],
-                                           config['project']['dimred']['random_state'])
-    
+    X_red, X_red_centroids = dimred_caller(
+        X,
+        X_centroids,
+        config["project"]["dimred"]["method"],
+        config["project"]["dimred"]["n_neighbors"],
+        config["project"]["dimred"]["random_state"],
+    )
+
     # Perf: create DimRed and MST plot only once
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute='query_term')
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute="query_term")
     fig_mst = Figure(fig)
 
     # Create page layouts
-    dash.register_page('eda', name="Explanatory Data Analysis", layout=eda.layout(df))
-    dash.register_page('dim', name="Dimensionality Reduction and Clustering", layout=dimred.layout(df, fig))   
-    dash.register_page('mst', name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red, fig_mst))
-    dash.register_page('slc', name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df)) 
+    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df))
+    dash.register_page(
+        "dim",
+        name="Dimensionality Reduction and Clustering",
+        layout=dimred.layout(df, fig),
+    )
+    dash.register_page(
+        "mst", name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red, fig_mst)
+    )
+    dash.register_page("slc", name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df))
 
     # Register callbacks
     register_callbacks(app, df, X_red, X_red_centroids)
@@ -72,12 +85,12 @@ def main(app):
             ),
             html.Div(
                 [
-                    dcc.Store(id='shared-data', data=[], storage_type='memory'),  # !saves table data from layouts via callbacks defined in the page layouts
+                    dcc.Store(
+                        id="shared-data", data=[], storage_type="memory"
+                    ),  # !saves table data from layouts via callbacks defined in the page layouts
                     dbc.Nav(
                         [
-                            dbc.NavItem(
-                                dbc.NavLink(page["name"], href=page["path"])
-                            )
+                            dbc.NavItem(dbc.NavLink(page["name"], href=page["path"]))
                             for page in dash.page_registry.values()
                         ],
                         pills=True,
@@ -89,7 +102,6 @@ def main(app):
         ],
         fluid=True,
     )
-
 
 
 if __name__ == "__main__":
@@ -108,9 +120,10 @@ if __name__ == "__main__":
     config = parse_args()
     # Debugging way, only runs always the test_config.yml
     import yaml
-    args = argparse.Namespace(config='results/test_config.yml')
-    with open(args.config, 'r') as f:
-            config = yaml.safe_load(f)
+
+    args = argparse.Namespace(config="results/test_config.yml")
+    with open(args.config, "r") as f:
+        config = yaml.safe_load(f)
 
     main(app=app)
-    app.run_server(host="127.0.0.1", port=config['project']['port'], debug=False)
+    app.run_server(host="127.0.0.1", port=config["project"]["port"], debug=False)

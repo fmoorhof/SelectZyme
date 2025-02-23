@@ -3,19 +3,18 @@ import unittest
 import numpy as np
 from cuml.cluster import HDBSCAN
 
-from ml import (
-    _weighted_cluster_centroid, clustering_HDBSCAN, pca, tsne, opentsne, umap
-)
+from ml import _weighted_cluster_centroid, clustering_HDBSCAN, pca, tsne, opentsne, umap
 
 
 class TestML(unittest.TestCase):
-
     def setUp(self):
         # Setup dummy data for tests
         self.X = np.random.rand(100, 10)  # Example data
         self.X_centroids = np.random.rand(5, 10)  # Example centroids
 
-    @unittest.skip("not fixed yet: FAILED tests/test_ml.py::TestML::test_weighted_cluster_centroid - ZeroDivisionError: Weights sum to zero, can't be normalized")
+    @unittest.skip(
+        "not fixed yet: FAILED tests/test_ml.py::TestML::test_weighted_cluster_centroid - ZeroDivisionError: Weights sum to zero, can't be normalized"
+    )
     def test_weighted_cluster_centroid(self):
         # Arrange
         model = HDBSCAN(min_samples=2, min_cluster_size=4)
@@ -30,7 +29,9 @@ class TestML(unittest.TestCase):
         self.assertEqual(centroid.shape[0], self.X.shape[1])
 
         # Test noise cluster handling
-        with self.assertRaisesRegex(ValueError, "Cannot calculate centroid for noise cluster"):
+        with self.assertRaisesRegex(
+            ValueError, "Cannot calculate centroid for noise cluster"
+        ):
             _weighted_cluster_centroid(model, self.X, -1)
 
     def test_clustering_HDBSCAN(self):
@@ -44,7 +45,9 @@ class TestML(unittest.TestCase):
         self.assertIsInstance(X_centroids, np.ndarray)
 
         # Test error handling
-        with self.assertRaisesRegex(ValueError, "The number of samples in X is less than min_samples."):
+        with self.assertRaisesRegex(
+            ValueError, "The number of samples in X is less than min_samples."
+        ):
             clustering_HDBSCAN(self.X, min_samples=self.X.shape[0] + 1)
 
     def test_pca(self):

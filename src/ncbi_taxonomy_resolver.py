@@ -1,11 +1,14 @@
 """Perform a statistical analysis on the data. Explanatory data analysis (EDA)"""
+
 import logging
 
 import taxoniq
 import pandas as pd
 
 
-logging.basicConfig(format='%(levelname)-8s| %(module)s.%(funcName)s: %(message)s', level=logging.DEBUG)
+logging.basicConfig(
+    format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG
+)
 
 
 def lineage_resolver(taxid: int) -> tuple[str, str, list[str]]:
@@ -21,12 +24,12 @@ def lineage_resolver(taxid: int) -> tuple[str, str, list[str]]:
         t = taxoniq.Taxon(taxid)
         for taxon in t.ranked_lineage:
             lineage.append(taxon.scientific_name)
-        species = lineage[0] if lineage else 'Unknown'
-        domain = lineage[-1] if lineage else 'Unknown'
-        kingdom = lineage[-2] if lineage else 'Unknown'
+        species = lineage[0] if lineage else "Unknown"
+        domain = lineage[-1] if lineage else "Unknown"
+        kingdom = lineage[-2] if lineage else "Unknown"
     except Exception:
-        name = 'Unknown'
-        lineage = [name]*3
+        name = "Unknown"
+        lineage = [name] * 3
         species = name
         domain = name
         kingdom = name
@@ -34,15 +37,14 @@ def lineage_resolver(taxid: int) -> tuple[str, str, list[str]]:
     return species, domain, kingdom, lineage
 
 
-
 if __name__ == "__main__":
     # read example data to test script
-    in_file = 'tests/head_10.tsv'
-    df = pd.read_csv(in_file, delimiter='\t')
+    in_file = "tests/head_10.tsv"
+    df = pd.read_csv(in_file, delimiter="\t")
 
-    taxa = [lineage_resolver(i) for i in df['Organism (ID)'].values]
-    df['species'] = [tax[0] for tax in taxa]
-    df['domain'] = [tax[1] for tax in taxa]
-    df['kingdom'] = [tax[2] for tax in taxa]
-    df['lineage'] = [tax[3] for tax in taxa]
+    taxa = [lineage_resolver(i) for i in df["Organism (ID)"].values]
+    df["species"] = [tax[0] for tax in taxa]
+    df["domain"] = [tax[1] for tax in taxa]
+    df["kingdom"] = [tax[2] for tax in taxa]
+    df["lineage"] = [tax[3] for tax in taxa]
     print(df)

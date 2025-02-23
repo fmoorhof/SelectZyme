@@ -1,6 +1,7 @@
 """
 Classes and functionalities around data parsing from UniProt or tabular or fasta files.
 """
+
 from io import StringIO
 import logging
 
@@ -16,6 +17,7 @@ class UniProtFetcher:
     Retrieve tsv from uniprot (in batches if size>500).
     Look here for UniProt API help: https://www.uniprot.org/help/api_queries
     """
+
     def __init__(self, df_coi: list[str]):
         self.df_coi = df_coi
         self.session = self._init_session()
@@ -30,7 +32,9 @@ class UniProtFetcher:
             Session: A configured requests.Session object.
         """
 
-        retries = Retry(total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504])
+        retries = Retry(
+            total=5, backoff_factor=0.25, status_forcelist=[500, 502, 503, 504]
+        )
         session = Session()
         session.mount("https://", HTTPAdapter(max_retries=retries))
         return session
@@ -46,39 +50,47 @@ class UniProtFetcher:
         Raises:
             ValueError: If the query to UniProt fails or returns an error.
         """
-        coi = str(self.df_coi).strip('[]').replace("'", "")
+        coi = str(self.df_coi).strip("[]").replace("'", "")
         dfs = []
         for qry in query_terms:
-            raw_data = b''
-            url = f"https://rest.uniprot.org/uniprotkb/search?" \
-                  f"&format=tsv" \
-                  f"&query={qry} AND length:[{length}]" \
-                  f"&fields={coi}" \
-                  f"&compressed=true" \
-                  f"&size=500"  # UniProt pagination to fetch more than 500 entries
+            raw_data = b""
+            url = (
+                f"https://rest.uniprot.org/uniprotkb/search?"
+                f"&format=tsv"
+                f"&query={qry} AND length:[{length}]"
+                f"&fields={coi}"
+                f"&compressed=true"
+                f"&size=500"
+            )  # UniProt pagination to fetch more than 500 entries
 
             for batch, total in self._get_batch(batch_url=url):
                 if int(total) > 100000:
-                    logging.warning(f"Query term '{qry}' skipped: Exceeds maximum allowed entries (100,000) per query term. Total entries: {total}. You might want to specify the query term more specifically.")
+                    logging.warning(
+                        f"Query term '{qry}' skipped: Exceeds maximum allowed entries (100,000) per query term. Total entries: {total}. You might want to specify the query term more specifically."
+                    )
                     continue
                 raw_data += batch.content
 
             logging.info(f"Retrieved {total} entires for query term: {qry}")
 
-            decompressed_data = decompress(raw_data).decode('utf-8')  # Decompress raw data
-            df = pd.read_csv(StringIO(decompressed_data), delimiter='\t')
+            decompressed_data = decompress(raw_data).decode(
+                "utf-8"
+            )  # Decompress raw data
+            df = pd.read_csv(StringIO(decompressed_data), delimiter="\t")
 
             df = self._process_dataframe(df, qry)
             dfs.append(df)
 
         return pd.concat(dfs, ignore_index=True)
-    
-    def _process_dataframe(self, df: pd.DataFrame, query_term: str) -> pd.DataFrame:
-            df.columns = self.df_coi
-            df['reviewed'] = ~df['reviewed'].str.contains('unreviewed')  # Set as boolean values
-            df['query_term'] = query_term
 
-            return df
+    def _process_dataframe(self, df: pd.DataFrame, query_term: str) -> pd.DataFrame:
+        df.columns = self.df_coi
+        df["reviewed"] = ~df["reviewed"].str.contains(
+            "unreviewed"
+        )  # Set as boolean values
+        df["query_term"] = query_term
+
+        return df
 
     def _get_next_link(self, headers):
         if "Link" in headers:
