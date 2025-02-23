@@ -12,6 +12,7 @@ from re import compile
 import pandas as pd
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
+from urllib.parse import quote_plus
 
 
 class UniProtFetcher:
@@ -56,11 +57,14 @@ class UniProtFetcher:
         dfs = []
         for qry in query_terms:
             raw_data = b""
+            # Encode query and fields parameters to avoid special character issues
+            encoded_query = quote_plus(f"{qry} AND length:[{length}]")
+            encoded_fields = quote_plus(coi)
             url = (
                 f"https://rest.uniprot.org/uniprotkb/search?"
                 f"&format=tsv"
-                f"&query={qry} AND length:[{length}]"
-                f"&fields={coi}"
+                f"&query={encoded_query}"
+                f"&fields={encoded_fields}"
                 f"&compressed=true"
                 f"&size=500"
             )  # UniProt pagination to fetch more than 500 entries

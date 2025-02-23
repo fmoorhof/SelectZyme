@@ -28,9 +28,7 @@ def gen_embedding(
     tokenizer, model = _select_plm_model(plm_model)
     logging.info(f"Generating {plm_model} embeddings using device: {device}")
 
-    if (
-        plm_model == "prott5" or plm_model == "prostt5"
-    ):  # models require sequenes to be spaced (whitespace)
+    if plm_model in ["prott5", "prostt5"]:  # models require sequenes to be spaced (whitespace)
         sequences = [" ".join(list(seq)) for seq in sequences]
 
     embeddings = []
@@ -46,7 +44,7 @@ def gen_embedding(
                 torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()
             )  # Move embedding back to CPU
         else:
-            if plm_model == "prott5" or plm_model == "prostt5":
+            if plm_model in ["prott5", "prostt5"]:
                 seq_len = int(len(seq) / 2 + 1)
             else:
                 seq_len = len(seq)

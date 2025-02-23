@@ -17,7 +17,8 @@ from pages.callbacks import register_callbacks
 from src.customizations import custom_plotting
 from src.ml import dimred_caller, perform_hdbscan_clustering
 from src.preprocessing import Preprocessing
-from src.utils import database_access, parse_data
+from src.utils import parse_data
+from src.vector_db import database_access
 from src.visualizer import plot_2d
 
 
