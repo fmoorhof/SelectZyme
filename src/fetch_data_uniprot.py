@@ -8,11 +8,11 @@ import logging
 from gzip import decompress
 from io import StringIO
 from re import compile
+from urllib.parse import quote_plus
 
 import pandas as pd
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
-from urllib.parse import quote_plus
 
 
 class UniProtFetcher:

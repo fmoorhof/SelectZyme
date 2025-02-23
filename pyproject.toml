@@ -84,7 +84,6 @@ precision = 2
 line-length = 120
 indent-width = 4
 target-version = "py310"
-unfixable = []
 
 [tool.ruff.lint]
 select = [
