@@ -39,8 +39,8 @@ class TestMinimumSpanningTree(unittest.TestCase):
         self.assertIsInstance(fig, go.Figure)
         self.assertEqual(len(fig.data), 2)  # edge_trace and node_trace
 
-    def test_plot_mst_in_DimRed_landscape(self):
-        fig = self.mst_plotter.plot_mst_in_DimRed_landscape()
+    def test_plot_mst_in_dimred_landscape(self):
+        fig = self.mst_plotter.plot_mst_in_dimred_landscape()
         self.assertIsInstance(fig, go.Figure)
         self.assertEqual(len(fig.data), 1)  # edge_trace
 

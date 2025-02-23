@@ -5,7 +5,14 @@ import unittest
 import numpy as np
 from cuml.cluster import HDBSCAN
 
-from ml import _weighted_cluster_centroid, clustering_HDBSCAN, opentsne, pca, tsne, umap
+from ml import (
+    _weighted_cluster_centroid,
+    opentsne,
+    pca,
+    perform_hdbscan_clustering,
+    tsne,
+    umap,
+)
 
 
 class TestML(unittest.TestCase):
@@ -36,9 +43,9 @@ class TestML(unittest.TestCase):
         ):
             _weighted_cluster_centroid(model, self.X, -1)
 
-    def test_clustering_HDBSCAN(self):
+    def test_perform_hdbscan_clustering(self):
         # Act
-        labels, G, Gsl, X_centroids = clustering_HDBSCAN(self.X)
+        labels, G, Gsl, X_centroids = perform_hdbscan_clustering(self.X)
 
         # Assert
         self.assertIsInstance(labels, np.ndarray)
@@ -50,7 +57,7 @@ class TestML(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError, "The number of samples in X is less than min_samples."
         ):
-            clustering_HDBSCAN(self.X, min_samples=self.X.shape[0] + 1)
+            perform_hdbscan_clustering(self.X, min_samples=self.X.shape[0] + 1)
 
     def test_pca(self):
         # Act

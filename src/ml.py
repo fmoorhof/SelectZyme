@@ -60,7 +60,7 @@ def _weighted_cluster_centroid(model, X, cluster_id: int) -> np.ndarray:
 
 
 @run_time
-def clustering_HDBSCAN(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def perform_hdbscan_clustering(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)

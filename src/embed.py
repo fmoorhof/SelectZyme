@@ -40,7 +40,7 @@ def gen_embedding(
             inputs = inputs.to(device)
             outputs = model(**inputs)
 
-        if no_pad == False:
+        if not no_pad:  #  == False:
             last_hidden_states = outputs.last_hidden_state
             embedding = (
                 torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()

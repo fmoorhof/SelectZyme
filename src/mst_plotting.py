@@ -62,7 +62,7 @@ class MinimumSpanningTree:
         return fig
 
     @run_time
-    def plot_mst_in_DimRed_landscape(self):
+    def plot_mst_in_dimred_landscape(self):
         """
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
         """
@@ -222,6 +222,6 @@ if __name__ == "__main__":
 
     # debug and develop here
     mst = MinimumSpanningTree(hdbscan.minimum_spanning_tree_._mst, X_red, df)
-    fig = mst.plot_mst_in_DimRed_landscape()
+    fig = mst.plot_mst_in_dimred_landscape()
     # fig = mst.plot_mst_force_directed(hdbscan.minimum_spanning_tree_)
     fig.show()

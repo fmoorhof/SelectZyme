@@ -34,7 +34,7 @@ def layout(G, df, X_red, fig) -> html.Div:
     mst = MinimumSpanningTree(G._mst, df, X_red, fig)
 
     if df.shape[0] > 1:
-        fig = mst.plot_mst_in_DimRed_landscape()
+        fig = mst.plot_mst_in_dimred_landscape()
     else:
         fig = mst.plot_mst_force_directed(G)
 

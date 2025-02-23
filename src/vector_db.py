@@ -21,7 +21,7 @@ def database_access(df: pd.DataFrame, project_name: str, plm_model: str = "esm1b
     qdrant = QdrantClient(
         url="http://localhost:6333", timeout=15
     )  # fire up container with  # docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
-    annotation, embeddings = load_or_createDB(
+    annotation, embeddings = load_or_create_db(
         qdrant, df, collection_name=project_name, plm_model=plm_model
     )
     if (
@@ -118,7 +118,7 @@ def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
     return annotation, embeddings
 
 
-def load_or_createDB(
+def load_or_create_db(
     qdrant: QdrantClient, df, collection_name: str, plm_model: str = "esm1b"
 ):
     """Checks if a collection with the given name already exists. If not, it will be created.

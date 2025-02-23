@@ -15,7 +15,7 @@ import pages.mst as mst
 import pages.single_linkage as sl
 from pages.callbacks import register_callbacks
 from src.customizations import custom_plotting
-from src.ml import clustering_HDBSCAN, dimred_caller
+from src.ml import dimred_caller, perform_hdbscan_clustering
 from src.preprocessing import Preprocessing
 from src.utils import database_access, parse_data
 from src.visualizer import plot_2d
@@ -41,7 +41,7 @@ def main(app):
     )
 
     # Clustering
-    labels, G, Gsl, X_centroids = clustering_HDBSCAN(
+    labels, G, Gsl, X_centroids = perform_hdbscan_clustering(
         X,
         config["project"]["clustering"]["min_samples"],
         config["project"]["clustering"]["min_cluster_size"],

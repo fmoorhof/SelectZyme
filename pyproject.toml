@@ -83,7 +83,8 @@ precision = 2
 [tool.ruff]
 line-length = 88
 indent-width = 4
-target-version = "py38"
+target-version = "py310"
+unfixable = []
 
 [tool.ruff.lint]
 select = [
@@ -93,13 +94,30 @@ select = [
     "N",   # pep8-naming
     "FA",  # flake8-future-annotations
 ]
+ignore = [
+    "E501",  # line too long
+    "N806", "N803",  # lower case variables, arguments
+    "E402",  # app.py imports because logger is defined before, required!
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 docstring-code-format = true
+line-ending = "auto"
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
 required-imports = ["from __future__ import annotations"]
+
+[tool.black]
+line-length = 88
+fast = true

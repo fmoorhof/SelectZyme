@@ -50,9 +50,9 @@ class TestPreprocessing:
         assert df is not None
         assert df.shape[0] != self.length
 
-    def test_remove_sequences_without_Metheonin(self, setup_method):
+    def test_remove_sequences_without_metheonin(self, setup_method):
         """Test the removal of sequences without Methionine."""
-        self.pp.remove_sequences_without_Metheonin()
+        self.pp.remove_sequences_without_metheonin()
         df = self.pp.df
 
         assert df is not None

@@ -16,7 +16,7 @@ class Preprocessing:
         This function applies all preprocessing steps to the dataframe.
         """
         self.remove_long_sequences()
-        self.remove_sequences_without_Metheonin()
+        self.remove_sequences_without_metheonin()
         self.remove_sequences_with_undertermined_amino_acids()
         self.remove_duplicate_entries()
         self.remove_duplicate_sequences()
@@ -35,7 +35,7 @@ class Preprocessing:
             f"{(~mask).sum()} sequences were excluded because of exaggerated size (>=1024 amino acids)"
         )
 
-    def remove_sequences_without_Metheonin(self) -> None:
+    def remove_sequences_without_metheonin(self) -> None:
         """
         This function removes sequences without a Methionine at the beginning.
         params: df: dataframe containing the sequences
