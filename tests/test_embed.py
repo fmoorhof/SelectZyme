@@ -25,7 +25,7 @@ class TestSelectPLMModel:
         assert model.config._name_or_path == "Rostlab/ProstT5"
 
     def test_select_invalid_model(self):
-        with pytest.raises(ValueError, match="Model invalid_model not supported. Please choose one of: 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'"):
+        with pytest.raises(ValueError, match="Model invalid_model not supported. Please choose one of: 'esm1b', 'esm2', 'prott5', 'prostt5'"):
             embed._select_plm_model('invalid_model')
 
 
@@ -58,7 +58,7 @@ class TestGenEmbedding:
 
     def test_gen_embedding_invalid_model(self):
         sequences = ["MKTIIALSYIFCLVFADYKDDDDK", "MKAILVVLLYTFATANAD"]
-        with pytest.raises(ValueError, match="Model invalid_model not supported. Please choose one of: 'esm1b' (default), 'esm2', 'esm3', 'prott5', 'prostt5', 'saprot'"):
+        with pytest.raises(ValueError, match="Model invalid_model not supported. Please choose one of: 'esm1b', 'esm2', 'prott5', 'prostt5'"):
             embed.gen_embedding(sequences, plm_model='invalid_model')
 
     def test_gen_embedding_empty_sequences(self):

@@ -59,3 +59,11 @@ class TestDBCreation:
 
         assert res is True
         assert collection_name not in str(collections_info)
+
+    def test_database_access(self, setup_and_teardown):
+        """Test the database access function."""
+        qdrant, collection_name = setup_and_teardown
+        embeddings = vector_db.database_access(self.df, collection_name)
+
+        assert embeddings is not None
+        assert len(embeddings) == self.df.shape[0]

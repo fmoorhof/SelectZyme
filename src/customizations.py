@@ -30,39 +30,49 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: The modified DataFrame.
     """
     # replace empty BRENDA entries because else they will not get plottet upon dropdown selection
-    df['xref_brenda'] = df['xref_brenda'].fillna('unknown')
-    values_to_replace = ['NA', '0']
-    df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, 'unknown')
-    df.loc[df['xref_brenda'] != 'unknown', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
+    if 'xref_brenda' in df.columns:
+        df['xref_brenda'] = df['xref_brenda'].fillna('unknown')
+        values_to_replace = ['NA', '0']
+        df['xref_brenda'] = df['xref_brenda'].replace(values_to_replace, 'unknown')
+        df.loc[df['xref_brenda'] != 'unknown', 'reviewed'] = True  # add BRENDA to reviewed (not only SWISSProt)
 
     # Same for UniProt EC numbers
-    df['ec'] = df['ec'].fillna('unknown')
-    logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
-    logging.info(f"{(df['xref_brenda'] != 'unknown').sum()} Brenda entries are found.")
+    if 'ec' in df.columns:
+        df['ec'] = df['ec'].fillna('unknown')
+        logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
+        logging.info(f"{(df['xref_brenda'] != 'unknown').sum()} Brenda entries are found.")
 
     # define markers for the plot
-    condition0 = (df['reviewed'] == True) | (df['reviewed'] == 'true')
-    if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-        condition = df['xref_brenda'].to_pandas() != 'unknown'
-        condition2 = (df['ec'].to_pandas() != 'unknown')
-    else:  # pandas DataFrame
-        condition = df['xref_brenda'] != 'unknown'
-        condition2 = (df['ec'] != 'unknown')
     df['marker_size'] = 6
     df['marker_symbol'] = 'circle'
-    df.loc[condition2, 'marker_size'] = 8
-    df.loc[condition2, 'marker_symbol'] = 'diamond'  # UniProt EC numbered entries
-    df.loc[condition0, 'marker_size'] = 8
-    df.loc[condition0, 'marker_symbol'] = 'cross'  # reviewed entries (includes if custom data is set)
-    df.loc[condition0 & condition, 'marker_size'] = 14  # if reviewed and BRENDA entry (usually not applies to custom data)
+    # overwrite defaults with custom values
+    if all(col in df.columns for col in {'xref_brenda', 'ec', 'reviewed'}):
+        condition0 = (df['reviewed'] == True) | (df['reviewed'] == 'true')
+        if isinstance(df, cudf.DataFrame):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
+            condition = df['xref_brenda'].to_pandas() != 'unknown'
+            condition2 = (df['ec'].to_pandas() != 'unknown')
+        else:  # pandas DataFrame
+            condition = df['xref_brenda'] != 'unknown'
+            condition2 = (df['ec'] != 'unknown')
+        df.loc[condition2, 'marker_size'] = 8
+        df.loc[condition2, 'marker_symbol'] = 'diamond'  # UniProt EC numbered entries
+        df.loc[condition0, 'marker_size'] = 8
+        df.loc[condition0, 'marker_symbol'] = 'cross'  # reviewed entries (includes if custom data is set)
+        df.loc[condition0 & condition, 'marker_size'] = 14  # if reviewed and BRENDA entry (usually not applies to custom data)
 
     # provide taxonomic names and lineages from taxid (organism_id)
-    taxa = [lineage_resolver(i) for i in df['organism_id'].values]
-    df['species'] = [tax[0] for tax in taxa]
-    df['domain'] = [tax[1] for tax in taxa]
-    df['kingdom'] = [tax[2] for tax in taxa]
-    # df['lineage'] = [tax[3] for tax in taxa]  # full lineage
+    if 'organism_id' in df.columns:
+        taxa = [lineage_resolver(i) for i in df['organism_id'].values]
+        df['species'] = [tax[0] for tax in taxa]
+        df['domain'] = [tax[1] for tax in taxa]
+        df['kingdom'] = [tax[2] for tax in taxa]
+        # df['lineage'] = [tax[3] for tax in taxa]  # full lineage
 
     df['selected'] = False
 
+    # # todo: remove later
+    # df['PET'] = df['PET'].fillna(False).astype(bool)
+    # df['PCL'] = df['PCL'].fillna(False).astype(bool)
+    # df['PET&PCL'] = df['PET&PCL'].fillna(False).astype(bool)
+    
     return df
