@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import logging
 
-from tqdm import tqdm
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModel
-
+from tqdm import tqdm
+from transformers import AutoModel, AutoTokenizer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -85,13 +86,13 @@ def _select_plm_model(plm_model: str = "esm1b") -> tuple:
         model = AutoModel.from_pretrained("facebook/esm2_t33_650M_UR50D").to(device)
 
     elif plm_model == "prott5":
-        from transformers import T5Tokenizer, T5EncoderModel
+        from transformers import T5EncoderModel, T5Tokenizer
 
         tokenizer = T5Tokenizer.from_pretrained("Rostlab/prot_t5_xl_uniref50")
         model = T5EncoderModel.from_pretrained("Rostlab/prot_t5_xl_uniref50").to(device)
 
     elif plm_model == "prostt5":
-        from transformers import T5Tokenizer, T5EncoderModel
+        from transformers import T5EncoderModel, T5Tokenizer
 
         tokenizer = T5Tokenizer.from_pretrained("Rostlab/ProstT5")
         model = T5EncoderModel.from_pretrained("Rostlab/ProstT5").to(device)

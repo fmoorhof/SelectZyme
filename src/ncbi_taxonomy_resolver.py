@@ -1,10 +1,11 @@
 """Perform a statistical analysis on the data. Explanatory data analysis (EDA)"""
 
+from __future__ import annotations
+
 import logging
 
-import taxoniq
 import pandas as pd
-
+import taxoniq
 
 logging.basicConfig(
     format="%(levelname)-8s| %(module)s.%(funcName)s: %(message)s", level=logging.DEBUG

@@ -2,12 +2,14 @@
 Classes and functionalities around data parsing from UniProt or tabular or fasta files.
 """
 
-from io import StringIO
-import logging
+from __future__ import annotations
 
+import logging
 from gzip import decompress
-import pandas as pd
+from io import StringIO
 from re import compile
+
+import pandas as pd
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import logging
 
-from dash import html, dcc, dash_table
 import pandas as pd
-# import plotly.figure_factory as ff
+from dash import dash_table, dcc, html
 
+# import plotly.figure_factory as ff
 from pages.dimred import html_export_figure
 
 # from src.customizations import set_columns_of_interest

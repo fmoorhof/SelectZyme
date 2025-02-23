@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import unittest
 
 import numpy as np
 from cuml.cluster import HDBSCAN
 
-from ml import _weighted_cluster_centroid, clustering_HDBSCAN, pca, tsne, opentsne, umap
+from ml import _weighted_cluster_centroid, clustering_HDBSCAN, opentsne, pca, tsne, umap
 
 
 class TestML(unittest.TestCase):

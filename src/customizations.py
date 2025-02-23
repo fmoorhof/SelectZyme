@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 
-import pandas as pd
 import cudf
+import pandas as pd
 
 from src.ncbi_taxonomy_resolver import lineage_resolver
 

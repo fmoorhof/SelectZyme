@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 import unittest
+from unittest.mock import patch
+
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
-from unittest.mock import MagicMock, patch
-from src.mst_plotting import MinimumSpanningTree
-
 import plotly.graph_objects as go
+
+from src.mst_plotting import MinimumSpanningTree
 
 
 class TestMinimumSpanningTree(unittest.TestCase):

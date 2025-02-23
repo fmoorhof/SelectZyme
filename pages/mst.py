@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import logging
 
-from dash import dcc, html, dash_table
+from dash import dash_table, dcc, html
 
-from src.mst_plotting import MinimumSpanningTree
 from pages.dimred import html_export_figure
-
+from src.mst_plotting import MinimumSpanningTree
 
 # Register page
 # dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout

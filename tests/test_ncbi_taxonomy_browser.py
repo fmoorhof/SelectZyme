@@ -1,4 +1,5 @@
-import pytest
+from __future__ import annotations
+
 from src.ncbi_taxonomy_resolver import lineage_resolver
 
 

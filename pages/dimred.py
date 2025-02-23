@@ -1,7 +1,9 @@
-from dash import dcc, html, dash_table
+from __future__ import annotations
 
-from src.customizations import set_columns_of_interest
+from dash import dash_table, dcc, html
+
 from pages.callbacks import html_export_figure
+from src.customizations import set_columns_of_interest
 
 
 def layout(df, fig):

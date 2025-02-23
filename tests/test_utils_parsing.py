@@ -1,8 +1,10 @@
+from __future__ import annotations
+
+from unittest.mock import mock_open, patch
+
 import pytest
-import argparse
 import yaml
-from io import StringIO
-from unittest.mock import patch, mock_open
+
 from src.utils import parse_args
 
 

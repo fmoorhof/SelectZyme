@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import logging
 import sys
 
-import pandas as pd
-from tqdm import tqdm
 import numpy as np
+import pandas as pd
 from qdrant_client import QdrantClient, models
+from tqdm import tqdm
 
 from src.embed import gen_embedding
 from src.utils import run_time

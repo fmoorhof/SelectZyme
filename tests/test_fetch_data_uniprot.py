@@ -1,10 +1,13 @@
 """todo: logic un-tested yet. So far i see no real call to uniprot is done. change this and assert delivered response."""
 
-import unittest
-from unittest.mock import patch, MagicMock
-from requests import Session
-import pandas as pd
+from __future__ import annotations
+
 import gzip
+import unittest
+from unittest.mock import MagicMock, patch
+
+import pandas as pd
+from requests import Session
 
 from src.fetch_data_uniprot import UniProtFetcher
 

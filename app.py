@@ -1,22 +1,24 @@
+from __future__ import annotations
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
 import dash
-from dash import html, dcc
 import dash_bootstrap_components as dbc
+from dash import dcc, html
 from plotly.graph_objects import Figure
 
-import pages.mst as mst
-import pages.single_linkage as sl
 import pages.dimred as dimred
 import pages.eda as eda
+import pages.mst as mst
+import pages.single_linkage as sl
 from pages.callbacks import register_callbacks
-from src.utils import parse_data, database_access
-from src.preprocessing import Preprocessing
-from src.ml import dimred_caller, clustering_HDBSCAN
-from src.visualizer import plot_2d
 from src.customizations import custom_plotting
+from src.ml import clustering_HDBSCAN, dimred_caller
+from src.preprocessing import Preprocessing
+from src.utils import database_access, parse_data
+from src.visualizer import plot_2d
 
 
 def main(app):
@@ -106,6 +108,7 @@ def main(app):
 
 if __name__ == "__main__":
     import argparse
+
     from src.utils import parse_args
 
     app = dash.Dash(

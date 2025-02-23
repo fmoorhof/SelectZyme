@@ -1,6 +1,8 @@
 """Test depends on parsing and the minimal data. This is maybe not very ideal but enables to define
 the test cases and occurences more stringend despite violating the isolation principle of unit tests."""
 
+from __future__ import annotations
+
 import pytest
 
 from parsing import Parsing

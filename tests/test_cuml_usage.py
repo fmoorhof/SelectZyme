@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from io import StringIO
 
+import cudf
 import pytest
+import requests
 import torch
-import cudf, requests
 
 
 @pytest.mark.tryfirst  # dont stop testing if this fails

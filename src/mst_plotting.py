@@ -8,10 +8,12 @@ possible outlook on networkx implementation:
 - Insights into Connectivity and Routes: Shortest Paths, Betweenness Centrality, critical nodes
 """
 
+from __future__ import annotations
+
 import logging
 
-import numpy as np
 import networkx as nx
+import numpy as np
 import plotly.graph_objects as go
 
 from src.customizations import set_columns_of_interest
@@ -190,8 +192,8 @@ class MinimumSpanningTree:
 if __name__ == "__main__":
     import hdbscan
     import numpy as np
-    from sklearn.datasets import make_blobs
     import pandas as pd
+    from sklearn.datasets import make_blobs
 
     np.random.seed(42)
     sample_size = (

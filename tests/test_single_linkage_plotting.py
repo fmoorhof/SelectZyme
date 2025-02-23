@@ -1,11 +1,12 @@
-import pytest
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
-from scipy.cluster.hierarchy import linkage
 import plotly.graph_objects as go
+import pytest
+from scipy.cluster.hierarchy import linkage
 
-from src.single_linkage_plotting import create_dendrogram, _value_to_color
-from src.customizations import set_columns_of_interest
+from src.single_linkage_plotting import _value_to_color, create_dendrogram
 
 
 @pytest.fixture

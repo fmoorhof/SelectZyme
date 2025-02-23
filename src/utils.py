@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+import argparse
 import logging
 import os
-import argparse
 from time import time
 
-import yaml
 import pandas as pd
+import yaml
 
 from src.fetch_data_uniprot import UniProtFetcher
 from src.parsing import Parsing

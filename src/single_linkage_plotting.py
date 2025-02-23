@@ -1,11 +1,13 @@
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from scipy.cluster.hierarchy import dendrogram
-from pandas import unique
+from __future__ import annotations
 
-from src.utils import run_time
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from pandas import unique
+from scipy.cluster.hierarchy import dendrogram
+
 from src.customizations import set_columns_of_interest
+from src.utils import run_time
 
 
 @run_time
@@ -111,8 +113,8 @@ def _insert_separator(arrays: np.ndarray) -> np.ndarray:
 if __name__ == "__main__":
     import hdbscan
     import numpy as np
-    from sklearn.datasets import make_blobs
     import pandas as pd
+    from sklearn.datasets import make_blobs
 
     np.random.seed(42)
     sample_size = 11  # too big samples cause RecursionError but strangely not for my real datasets

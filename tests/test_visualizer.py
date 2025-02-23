@@ -1,9 +1,12 @@
-import unittest
-import pandas as pd
-import numpy as np
-from src.visualizer import plot_2d
+from __future__ import annotations
 
+import unittest
+
+import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
+
+from src.visualizer import plot_2d
 
 
 class TestVisualizer(unittest.TestCase):
