@@ -12,109 +12,105 @@ from src.embed import gen_embedding
 from src.utils import run_time
 
 
-@run_time
-def database_access(df: pd.DataFrame, collection_name: str, plm_model: str = "esm1b") -> np.ndarray:
-    """Create a collection in Qdrant DB with embedded sequences
-    :param df: dataframe containing the sequences and the annotation
-    :param collection_name: name of the collection
-    return: embeddings: numpy array containing the embeddings
-    
-    Additional remarks:
-    Start the docker container for qdrant server e.g. with:
-    docker run -p 6333:6333 -p 6334:6334 -v "/data/tmp/EnzyNavi/qdrant_storage:/qdrant/storage:z" fmoorhof/qdrant:1.13.2
+class QdrantDB:
+    """A class to manage Qdrant vector database operations."""
 
-    -p expose ports, -v mount volume
-    """
-    logging.info("Instantiating Qdrant vector DB. This takes quite a while when its not continously running as container.")
-    qdrant = QdrantClient(
-        url="http://localhost:6333", timeout=15
-    )
-    
-    # Check if collection already exists
-    collections_info = qdrant.get_collections()
-    collection_names = [collection.name for collection in collections_info.collections]
-    if collection_name not in collection_names:  # create it
-        embeddings = gen_embedding(df["sequence"].tolist(), plm_model=plm_model)
-        create_collection(qdrant, embeddings, collection_name=collection_name)
-        upload_points(qdrant, embeddings, collection_name=collection_name)
+    def __init__(self, collection_name: str, host: str = "http://localhost:6333", timeout: int = 15):
+        """
+        Initialize the Qdrant client and collection settings.
+        
+        :param collection_name: Name of the collection in Qdrant
+        :param host: URL of the Qdrant server
+        :param timeout: Timeout for requests to Qdrant
+        """
+        self.collection_name = collection_name
+        self.qdrant = QdrantClient(url=host, timeout=timeout)
 
-        if (df.shape[0] != embeddings.shape[0]):
-            raise ValueError(
-                f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. \
-                Something went wrong, you might have duplicate entries (accession) in your dataset. \
-                Accession must be unique")
-            
-    else:  # load it
-        embeddings = load_collection_from_vector_db(qdrant, collection_name)
+    def collection_exists(self) -> bool:
+        """Check if the collection already exists in Qdrant."""
+        collections_info = self.qdrant.get_collections()
+        collection_names = {col.name for col in collections_info.collections}
+        return self.collection_name in collection_names
 
-        if (df.shape[0] != embeddings.shape[0]):
-            logging.info(
-                f"Length of dataframe ({df.shape[0]}) and embeddings ({embeddings.shape[0]}) do not match. \
-                As a consequence the collection is replaced by your new one. \
-                Use other 'project name' in the configuration to not overwrite collections."
-            )
-            qdrant.delete_collection(collection_name)
+    @run_time
+    def database_access(self, df: pd.DataFrame, plm_model: str = "esm1b") -> np.ndarray:
+        """
+        Create or retrieve a collection in Qdrant DB with embedded sequences.
+        
+        :param df: DataFrame containing sequences.
+        :param plm_model: Model used for generating embeddings.
+        :return: Numpy array of embeddings.
+        """
+        logging.info("Connecting to Qdrant vector database...")
+
+        if not self.collection_exists():  # If collection does not exist, create it
+            logging.info(f"Creating new collection: {self.collection_name}")
             embeddings = gen_embedding(df["sequence"].tolist(), plm_model=plm_model)
-            create_collection(qdrant, embeddings, collection_name=collection_name)
-            upload_points(qdrant, embeddings, collection_name=collection_name)
+            self.create_collection(embeddings)
+            self.upload_points(embeddings)
 
-    # todo: is this really needed?
-    # sys.setrecursionlimit(
-    #     max(df.shape[0], 10000)
-    # )  # fixed: RecursionError: maximum recursion depth exceeded
+        else:  # Load existing collection
+            logging.info(f"Collection {self.collection_name} found. Loading embeddings...")
+            embeddings = self.load_collection()
 
-    return embeddings
+            if df.shape[0] != embeddings.shape[0]:
+                logging.warning(
+                    f"Mismatch in DataFrame ({df.shape[0]}) and embeddings ({embeddings.shape[0]})."
+                    " Replacing collection with new data."
+                )
+                self.qdrant.delete_collection(self.collection_name)
+                embeddings = gen_embedding(df["sequence"].tolist(), plm_model=plm_model)
+                self.create_collection(embeddings)
+                self.upload_points(embeddings)
 
+        sys.setrecursionlimit(
+            max(df.shape[0], 10000)
+        )  # fixed: RecursionError: maximum recursion depth exceeded
+        
+        return embeddings
 
-def create_collection(qdrant, embeddings: np.ndarray, collection_name: str) -> None:
-    logging.info(
-        "Vector DB doesnt exist yet. A Qdrant vector DB will be created under path=Vector_db/"
-    )
-    # Create empty collection to store sequences
-    qdrant.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(
-            size=embeddings.shape[1],  # Vector size is defined by used model
-            distance=models.Distance.EUCLID,
-        ),
-    )
+    def create_collection(self, embeddings: np.ndarray) -> None:
+        """
+        Create a new collection in Qdrant with the given embeddings.
+        
+        :param embeddings: Numpy array of embeddings.
+        """
+        logging.info(f"Creating Qdrant collection: {self.collection_name}")
+        self.qdrant.recreate_collection(
+            collection_name=self.collection_name,
+            vectors_config=models.VectorParams(
+                size=embeddings.shape[1],  # Vector size is defined by used model
+                distance=models.Distance.EUCLID,
+            ),
+        )
 
+    def upload_points(self, embeddings: np.ndarray) -> None:
+        """
+        Upload embedding points to the Qdrant collection.
+        
+        :param embeddings: Numpy array of embeddings.
+        """
+        logging.info(f"Uploading {len(embeddings)} embeddings to {self.collection_name}...")
 
-def upload_points(qdrant, embeddings, collection_name: str) -> None:
-    """
-    Create a vector database with the embeddings of the sequences and the annotation from the dataframe (but not the sequences themselves).
+        records = [
+            models.Record(id=i, vector=embedding.tolist()) for i, embedding in enumerate(embeddings)
+        ]
+        self.qdrant.upload_records(collection_name=self.collection_name, records=records)
 
-    :param df: dataframe containing the sequences and the annotation
-    :param embeddings: numpy array containing the embeddings
-    :param collection_name: name of the vector database
-    """
-    records = []
-    for i, embedding in enumerate(embeddings):
-        record = models.Record(id=i, vector=embedding.tolist())
-        records.append(record)
-    qdrant.upload_records(collection_name=collection_name, records=records)
+    def load_collection(self) -> np.ndarray:
+        """
+        Load all embeddings from the Qdrant collection.
+        
+        :return: Numpy array of embeddings.
+        """
+        logging.info(f"Loading collection: {self.collection_name}")
+        collection = self.qdrant.get_collection(self.collection_name)
+        records, _ = self.qdrant.scroll(
+            collection_name=self.collection_name,
+            with_vectors=True,
+            limit=collection.points_count,
+            timeout=190,
+        )
 
-
-def load_collection_from_vector_db(qdrant, collection_name: str) -> list:
-    """
-    Load the collection from the vector database.
-    # Retrieve all points of a collection with defined return fields (payload e.g.)
-    # A point is a record consisting of a vector and an optional payload
-
-    :param qdrant: qdrant object
-    :param collection_name: name of the vector database
-    return: embeddings: numpy array containing the embeddings"""
-    collection = qdrant.get_collection(collection_name)
-    records = qdrant.scroll(
-        collection_name=collection_name,
-        with_vectors=True,
-        limit=collection.points_count,
-        timeout=190,
-    )
-
-    # extract the vectors from the Qdrant records
-    embeddings = []
-    for i in tqdm(records[0]):  # access only the Records: [0]
-        embeddings.append(i.vector)
-
-    return np.array(embeddings)
+        embeddings = np.array([record.vector for record in tqdm(records)])
+        return embeddings
