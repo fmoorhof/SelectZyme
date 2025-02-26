@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import pytest
-from qdrant_client import QdrantClient
 import numpy as np
 import pandas as pd
+import pytest
+from qdrant_client import QdrantClient
 
 import vector_db
 
