@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import numpy as np
+import pandas as pd
 import pytest
 from qdrant_client import QdrantClient
 
 import vector_db
-from parsing import Parsing
-from preprocessing import Preprocessing
 
 
 @pytest.fixture(scope="class")
@@ -13,51 +13,73 @@ def setup_and_teardown():
     """Fixture for setting up and tearing down resources."""
     # Setup: This code runs before the tests in the class.
     print("Setting up for the test...")
-    qdrant = QdrantClient(location=":memory:")
-    collection_name = "pytest"
+    qdrant = QdrantClient()
+    collection_name = "_pytest"
 
     yield qdrant, collection_name  # The test functions will run at this point.
 
     # Teardown: This code runs after the tests in the class.
     print("Tearing down after the test...")
-    # qdrant.delete_collection(collection_name='pytest')
+    qdrant.delete_collection(collection_name='_pytest')
     qdrant.close()
 
 
 @pytest.mark.usefixtures("setup_and_teardown")
-class TestDBCreation:
+class TestQdrantDB:
     @pytest.fixture(autouse=True)
     def setup_method(self):
-        # Replace this with the code to create your DataFrame
-        self.df = Parsing("tests/head_10.tsv").parse_tsv()
-        pp = Preprocessing(self.df)
-        pp.remove_long_sequences()
-        self.df = pp.df
-        self.embeddings = vector_db.gen_embedding(self.df["sequence"].tolist())
+        self.df = pd.DataFrame({
+                "accession": ["seq1", "seq2"],
+                "sequence": ["MAEAEMMAEA", "MAEAE"]
+            })
 
-    def test_create_vector_db_collection(self, setup_and_teardown):
-        """Test the creation of a vector database collection."""
+        self.embeddings = vector_db.gen_embedding(self.df["sequence"].tolist())
+        self.collection_name = "_pytest"
+        self.qdrant_db = vector_db.QdrantDB(collection_name=self.collection_name)
+
+    def test_init(self):
+        """Test the initialization of QdrantDB."""
+        assert self.qdrant_db.collection_name == self.collection_name
+        assert isinstance(self.qdrant_db.qdrant, QdrantClient)
+
+    def test_database_access(self, setup_and_teardown):
+        """Test the database access function."""
         qdrant, collection_name = setup_and_teardown
-        vector_db.create_vector_db_collection(
-            qdrant, self.df, self.embeddings, collection_name
-        )
+        embeddings = self.qdrant_db.database_access(self.df)
+
+        assert embeddings is not None
+        assert len(embeddings) == self.df.shape[0]
+
+    def test_create_collection(self, setup_and_teardown):
+        """Test the creation of a collection in Qdrant."""
+        qdrant, collection_name = setup_and_teardown
+        embeddings = np.random.rand(10, 128)  # Example embeddings
+        self.qdrant_db.create_collection(embeddings)
         collections_info = qdrant.get_collections()
 
-        assert collection_name in str(collections_info)
-        assert collection_name == collections_info.collections[0].name
+        assert collection_name in [collection.name for collection in collections_info.collections]
 
-    def test_load_collection_from_vector_db(
-        self, setup_and_teardown
-    ):  # fix later: TypeError: Client.__init__() got an unexpected keyword argument 'location'
-        """Test the loading of an existing vector database collection."""
+    def test_upload_points(self, setup_and_teardown):
+        """Test uploading points to a collection in Qdrant."""
         qdrant, collection_name = setup_and_teardown
-        entries, embeddings = vector_db.load_collection_from_vector_db(
-            qdrant, collection_name
-        )
+        embeddings = np.random.rand(10, 128)  # Example embeddings
+        self.qdrant_db.create_collection(embeddings)
+        self.qdrant_db.upload_points(embeddings)
+        collection = qdrant.get_collection(collection_name)
+        
+        assert collection.points_count == len(embeddings)
 
-        assert entries is not None
-        assert embeddings is not None
-        assert len(entries) == self.df.shape[0]
+    def test_load_collection(self, setup_and_teardown):
+        """Test loading a collection from Qdrant."""
+        qdrant, collection_name = setup_and_teardown
+        embeddings = np.random.rand(10, 128)  # Example embeddings
+        self.qdrant_db.create_collection(embeddings)
+        self.qdrant_db.upload_points(embeddings)
+        loaded_embeddings = self.qdrant_db.load_collection()
+        
+        # different precision lets assert equal fail, todo: fix that somehow
+        # assert np.array_equal(embeddings, loaded_embeddings)
+        assert np.allclose(embeddings, loaded_embeddings)
 
     def test_collection_deletion(self, setup_and_teardown):
         """Test the deletion of a collection."""
@@ -67,11 +89,3 @@ class TestDBCreation:
 
         assert res is True
         assert collection_name not in str(collections_info)
-
-    def test_database_access(self, setup_and_teardown):
-        """Test the database access function."""
-        qdrant, collection_name = setup_and_teardown
-        embeddings = vector_db.database_access(self.df, collection_name)
-
-        assert embeddings is not None
-        assert len(embeddings) == self.df.shape[0]

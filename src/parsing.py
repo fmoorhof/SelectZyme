@@ -24,13 +24,17 @@ class Parsing:
 
     def parse_tsv(self) -> pd.DataFrame:
         """Parse a tsv file and return a dataframe."""
-        return pd.read_csv(
-            self.filepath, sep="\t"
-        )  # on failures, try: , encoding='ISO-8859-1'
+        try:
+            return pd.read_csv(self.filepath, sep="\t")
+        except UnicodeDecodeError:
+            return pd.read_csv(self.filepath, sep="\t", encoding="ISO-8859-1")
 
     def parse_csv(self) -> pd.DataFrame:
-        """Parse a tsv file and return a dataframe"""
-        return pd.read_csv(self.filepath, sep=",")
+        """Parse a csv file and return a dataframe"""
+        try:
+            return pd.read_csv(self.filepath, sep=",")
+        except UnicodeDecodeError:
+            return pd.read_csv(self.filepath, sep=",", encoding="ISO-8859-1")
 
     def parse_fasta(self) -> pd.DataFrame:
         """
@@ -59,9 +63,7 @@ class Parsing:
                     current_header = line.lstrip(">")
                     headers.append(current_header)
                 elif current_header:
-                    sequences[current_header] += (
-                        line  # Append sequence to the corresponding header
-                    )
+                    sequences[current_header] += line  # Append sequence to the corresponding header
 
         if not headers:
             raise ValueError("FASTA file is empty or incorrectly formatted.")
@@ -71,14 +73,7 @@ class Parsing:
         max_annotations = max(len(h) for h in parsed_headers)
 
         # Create DataFrame with numbered annotation columns
-        columns = (
-            ["accession"]
-            + [f"annotation_{i + 1}" for i in range(max_annotations - 1)]
-            + ["sequence"]
-        )
-        data = [
-            h + [None] * (max_annotations - len(h)) + [sequences["|".join(h)]]
-            for h in parsed_headers
-        ]
+        columns = ["accession"] + [f"annotation_{i + 1}" for i in range(max_annotations - 1)] + ["sequence"]
+        data = [h + [None] * (max_annotations - len(h)) + [sequences["|".join(h)]] for h in parsed_headers]
 
         return pd.DataFrame(data, columns=columns)

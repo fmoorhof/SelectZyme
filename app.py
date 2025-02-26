@@ -18,7 +18,7 @@ from src.customizations import custom_plotting
 from src.ml import dimred_caller, perform_hdbscan_clustering
 from src.preprocessing import Preprocessing
 from src.utils import parse_data
-from src.vector_db import database_access
+from src.vector_db import QdrantDB
 from src.visualizer import plot_2d
 
 
@@ -37,8 +37,12 @@ def main(app):
     df = Preprocessing(df).preprocess()
 
     # Load embeddings from Vector DB
-    X = database_access(
-        df, config["project"]["name"], config["project"]["plm"]["plm_model"]
+    db = QdrantDB(
+        collection_name=config["project"]["name"],
+        host="http://localhost:6333"
+        )
+    X = db.database_access(
+        df=df, plm_model=config["project"]["plm"]["plm_model"]
     )
 
     # Clustering

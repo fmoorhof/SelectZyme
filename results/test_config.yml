@@ -4,16 +4,17 @@
 # - additional return fields (df_coi): https://www.uniprot.org/help/query-fields
 
 project: 
-  name: "minimal_test"
+  name: "_test_config"
   port: 8050
 
   data:
     query_terms:  # create in ascending manner: smallest return sets first
       - "xref:brenda-1.13.11.1"  # external reference (xref) to BRENDA database
       - "xref:brenda-1.13.11.1*"  # wildcard search
-      # - "ec:1.13.11.1"  # EC number
+      - "ec:1.13.11.1"  # EC number
+      - "protein_name: catchol 1,2-dioxygenases"  # free text search
       - "catchol 1,2-dioxygenases"  # free text search
-    length: "200 TO 601"
+    length: "10 TO *"  # *=open end
     custom_data_location: "tests/head_10.tsv"
     out_dir: "results/datasets/"
     df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
@@ -22,10 +23,10 @@ project:
     plm_model: "prott5"  # [esm1b, esm2, prott5, prostt5]
 
   clustering:
-    min_samples: 10
-    min_cluster_size: 15
+    min_samples: 2
+    min_cluster_size: 2
 
   dimred:
     random_state: 42
-    method: "UMAP"  # [PCA, TSNE, UMAP]
-    n_neighbors: 15  # >1 else RuntimeError: cuSparse error cuml.manifold.umap.UMAP.fit
+    method: "openTSNE"  # [UMAP, TSNE, openTSNE, PCA]
+    n_neighbors: 2  # recommended between 5-50
