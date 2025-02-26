@@ -18,10 +18,10 @@ def dimred_caller(
     if dim_method == "PCA":
         X_red, X_red_centroids = pca(X, X_centroids, **kwargs)
     elif dim_method == "TSNE":
-        X_red, X_red_centroids = tsne(X, random_state=random_state, **kwargs)
+        X_red, X_red_centroids = tsne(X, perplexity=n_neighbors, random_state=random_state, **kwargs)
     elif dim_method == "OPENTSNE":
         X_red, X_red_centroids = opentsne(
-            X, X_centroids, random_state=random_state, **kwargs
+            X, X_centroids, perplexity=n_neighbors, random_state=random_state, **kwargs
         )
     elif dim_method == "UMAP":
         X_red, X_red_centroids = umap(
@@ -125,7 +125,7 @@ def pca(X, X_centroids, dimension: int = 2, **kwargs):
     return X_pca, X_pca_centroid
 
 
-def tsne(X, dimension: int = 2, random_state: int = 42, **kwargs):
+def tsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
     """Dimensionality reduction with tSNE.
     Currently TSNE supports n_components = 2; so only 2D plots are possible in May 2024!
     Despite random seed, also tSNE looks not 100% reproducible. May be related to this bug report for UMAP:
@@ -133,7 +133,7 @@ def tsne(X, dimension: int = 2, random_state: int = 42, **kwargs):
 
     :param kwargs: Additional parameters for sklearn.manifold.TSNE
     """
-    tsne = TSNE(n_components=dimension, random_state=random_state, **kwargs)
+    tsne = TSNE(n_components=dimension, perplexity=perplexity, random_state=random_state, **kwargs)
     X_tsne = tsne.fit_transform(X)
     X_tsne_centroid = np.empty((0, 2))
     logging.info(
@@ -142,7 +142,7 @@ def tsne(X, dimension: int = 2, random_state: int = 42, **kwargs):
     return X_tsne, X_tsne_centroid
 
 
-def opentsne(X, X_centroids, dimension: int = 2, random_state: int = 42, **kwargs):
+def opentsne(X, X_centroids, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
     """Dimensionality reduction with open tSNE.
     Currently TSNE supports n_components = 2. Non GPU implementation but tsne.transform is possible to integrate cluster centroids.
     Despite, non GPU runtime is very good and scales less computationally complex in comparison to t-SNE.
@@ -151,7 +151,7 @@ def opentsne(X, X_centroids, dimension: int = 2, random_state: int = 42, **kwarg
     """
     from openTSNE import TSNE
 
-    tsne = TSNE(n_components=dimension, n_jobs=8, random_state=random_state, **kwargs)
+    tsne = TSNE(n_components=dimension, perplexity=perplexity, n_jobs=8, random_state=random_state, **kwargs)
     X_tsne = tsne.fit(X)
 
     if X_centroids.size != 0:
