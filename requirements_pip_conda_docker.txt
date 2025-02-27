@@ -1,7 +1,6 @@
 # generate me by (&manual cleaning): pip freeze > requirements_frozen.txt
 transformers==4.48.2
 hdbscan==0.8.40
-# i bet pandas is already dependency of CuML, if not pin pandas to `pandas==1.5.3`  # docker: CuML and CuDF require older version pandas==1.5.3, else AttributeError: module 'pandas.api.types' has no attribute 'is_extension_type' 
 qdrant-client==1.13.2
 taxoniq==1.0.3
 tqdm==4.67.1
@@ -10,3 +9,5 @@ dash-bootstrap-components==1.7.1
 sentencepiece==0.2.0
 tiktoken==0.8.0
 blobfile==3.0.0
+pytest>=8.3.4
+# pandas==1.5.3 i bet pandas is already dependency of CuML, if not pin pandas to `pandas==1.5.3`  # docker: CuML and CuDF require older version pandas==1.5.3, else AttributeError: module 'pandas.api.types' has no attribute 'is_extension_type' 

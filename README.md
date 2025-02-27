@@ -35,6 +35,14 @@ docker start CONTAINERID
 docker exec -it CONTAINERID /bin/bash
 ```
 
+## Test the install
+Run some unit tests to see if SelectZyme got setup properly on your system.
+```
+python -m pytest tests/test_* -v
+pytest tests/test_* -v
+```
+On failure please look at the (closed) issues for troubleshooting and solutions see also [#41](/../../issues/41).
+
 ## Usage
 ```
 python app.py --config=results/test_config.yml

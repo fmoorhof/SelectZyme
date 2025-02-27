@@ -2,7 +2,7 @@ name: Python application with conda
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "27-conda-deployment-fix" ]
   # pull_request:
   #   branches: [ "main" ]
   schedule:
@@ -32,3 +32,4 @@ jobs:
           conda install -y pytest pytest-cov
           pip list
           python -m pytest --cov=src/ -v tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude the embedding and GPU required tests in GHActions  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
+          python -m pytest --cov=src/ -v tests/test_*
