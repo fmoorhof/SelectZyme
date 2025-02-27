@@ -9,9 +9,9 @@ project:
 
   data:
     query_terms:  # create in ascending manner: smallest return sets first
-      - "xref:brenda-1.13.11.1"  # external reference (xref) to BRENDA database
-      - "xref:brenda-1.13.11.1*"  # wildcard search
-      - "ec:1.13.11.1"  # EC number
+      # - "xref:brenda-1.13.11.1"  # external reference (xref) to BRENDA database
+      # - "xref:brenda-1.13.11.1*"  # wildcard search
+      # - "ec:1.13.11.1"  # EC number
       - "protein_name: catchol 1,2-dioxygenases"  # free text search
       - "catchol 1,2-dioxygenases"  # free text search
     length: "10 TO *"  # *=open end
@@ -28,5 +28,5 @@ project:
 
   dimred:
     random_state: 42
-    method: "openTSNE"  # [UMAP, TSNE, openTSNE, PCA]
+    method: "UMAP"  # [UMAP, TSNE, openTSNE, PCA]
     n_neighbors: 2  # recommended between 5-50
