@@ -26,11 +26,11 @@ jobs:
           path: /tmp/conda_pkgs
           key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
 
-      - name: Set Conda package cache to /tmp  # fix for: [Errno 28] No space left on device
+      - name: Set Conda package cache to /tmp  # Fix for: [Errno 28] No space left on device
         run: |
           mkdir -p /tmp/conda_pkgs
-          conda config --set pkgs_dirs /tmp/conda_pkgs
-
+          echo "CONDA_PKGS_DIRS=/tmp/conda_pkgs" >> $GITHUB_ENV
+  
       - name: Install Mamba for faster Conda operations    # fix for: [Errno 28] No space left on device
         run: |
           conda install -n base -c conda-forge mamba -y
