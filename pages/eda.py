@@ -21,7 +21,12 @@ def layout(df) -> html.Div:
     profile = ProfileReport(
         df_profile, title="Profiling Report", config_file=""
     )  # empty string to fix docker TypeCheckError
-    profile.to_file("assets/eda.html")
+    try:
+        profile.to_file("assets/eda.html")
+    except Exception as e:
+        logging.error(f"Failed to generate EDA report: {e}")
+        with open("assets/eda.html", "w") as f:
+            f.write(f"<html><body><h1>EDA Report could not be generated because of: {e}</h1></body></html>")
 
     return html.Div(
         children=[
