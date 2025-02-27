@@ -112,8 +112,12 @@ def _process_selection(df, shared_table, point):
     accession = point["customdata"]
     selected_row = df[df["accession"] == accession].iloc[0]
     selected_row[df.columns.get_loc("selected")] = True
-    if "xref_brenda" in df.columns and selected_row["xref_brenda"] != "unknown":
+    if all(col in df.columns for col in {"xref_brenda", "accession", "organism_id"}) and selected_row["xref_brenda"] != "unknown":
         selected_row["BRENDA URL"] = (
             f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"
         )
-    shared_table.append(selected_row.to_dict())
+        
+    selected_row_dict = selected_row.to_dict()
+    selected_row_dict['x'] = float(point['x'])
+    selected_row_dict['y'] = float(point['y'])
+    shared_table.append(selected_row_dict)

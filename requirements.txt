@@ -16,5 +16,6 @@ tiktoken
 blobfile
 opentsne
 pygraphviz
+pytest
 # cudf-cu11==24.2.*  # do manually for fixing: OSError: [Errno 28] No space left on device
 # cuml-cu11==24.2.*

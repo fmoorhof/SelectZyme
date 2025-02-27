@@ -1,16 +1,17 @@
 name: selectzyme
 channels:
-  - rapidsai
+  - rapidsai  
+  - pytorch
+  - nvidia  
   - conda-forge
-  - nvidia
 dependencies:
   - python=3.10
+  - cudatoolkit=11.8  # insert your CUDA versions, you can get it from typing `nvidia-smi` in your terminal and upper right corner see the required version.
   - cudf=24.12
   - cuml=24.12
-  # - cuda-version=11.1  # insert your CUDA versions, you can get it from typing `nvidia-smi` in your terminal and upper right corner see the required version (might be 12.1)
-  - pytorch
+  - pytorch::pytorch
   - dash
-  - pygraphviz  # maybe soon deprecated if GPU MST layout is available and integrated
+  - pygraphviz  # remove if feat: force directed MST layout gets removed; also if GPU accelerated layout is integrated
   - ydata-profiling
   - opentsne
   - pip

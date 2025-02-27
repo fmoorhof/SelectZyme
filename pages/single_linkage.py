@@ -53,7 +53,7 @@ def layout(G, df: pd.DataFrame) -> html.Div:
             # data table
             dash_table.DataTable(
                 id="data-table",
-                columns=[{"id": c, "name": c} for c in df.columns],
+                columns=[{"id": c, "name": c} for c in df.columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
                 style_cell={
                     "textAlign": "left",
                     "maxWidth": "200px",  # Set a maximum width for all columns
