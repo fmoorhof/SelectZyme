@@ -37,11 +37,12 @@ jobs:
 
       - name: Set up Conda environment using Mamba
         run: |
-          mamba env update --file environment.yml --name selectzyme
-          conda activate selectzyme
+          mamba create -n selectzyme --file environment.yml -y  # Create the environment
+          echo "CONDA_PKGS_DIRS=/tmp/conda_pkgs" >> $GITHUB_ENV  # Ensure Conda uses /tmp for package storage
+          source activate selectzyme  # Correct activation method in CI
           python --version
           pip list
-
+  
       - name: Install additional test dependencies
         run: |
           conda activate selectzyme
