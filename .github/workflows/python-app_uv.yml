@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "27-conda-deployment-fix" ]
+    branches: [ "main", "27.2-conda-deployment-ci-fix" ]
   pull_request:
     branches: [ "main" ]
   schedule:
