@@ -8,7 +8,7 @@ name: Python application with uv
 
 on:
   push:
-    branches: [ "main", "27.2-conda-deployment-ci-fix"  ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   schedule:
@@ -70,4 +70,4 @@ jobs:
         python --version
         which python
         uv pip list
-        python -m pytest --cov=src/ -v tests/test_* -k 'not select and not gen_embedding and not cuml and not cuda and not TestQdrantDB'  # exclude tests for embedding
+        python -m pytest --cov=src/ -v tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude tests requiring GPU/cuda
