@@ -17,26 +17,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Free up disk space  # fix for: [Errno 28] No space left on device
-        run: |
-          echo "Freeing up space..."
-          conda clean --all --yes
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo apt-get clean
-          sudo rm -rf /var/lib/apt/lists/*
-          docker system prune -af || true
-          df -h  # Show disk space after cleanup
+      - name: Cache Conda packages
+        uses: actions/cache@v4
+        id: conda-cache
+        with:
+          path: /tmp/conda_pkgs
+          key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
 
       - name: Set Conda package cache to /tmp  # fix for: [Errno 28] No space left on device
         run: |
           mkdir -p /tmp/conda_pkgs
           conda config --set pkgs_dirs /tmp/conda_pkgs
 
-      - name: Install Mamba for faster Conda operations  # fix for: [Errno 28] No space left on device
+      - name: Install Mamba for faster Conda operations    # fix for: [Errno 28] No space left on device
         run: |
           conda install -n base -c conda-forge mamba -y
 
