@@ -33,6 +33,11 @@ def plot_2d(
     for attribute in df[legend_attribute].unique():
         subset = df[df[legend_attribute] == attribute]
 
+        # reduce opacity for large datasets
+        opacity = 0.8
+        if subset.size > 1000:
+            opacity = 0.3
+
         fig.add_trace(
             go.Scattergl(
                 x=X_red[subset.index, 0],
@@ -42,15 +47,16 @@ def plot_2d(
                 marker=dict(
                     size=subset["marker_size"],
                     symbol=subset["marker_symbol"],
-                    opacity=0.5,
+                    opacity=opacity,
                 ),
                 customdata=subset["accession"],
-                hovertext=subset.apply(
-                    lambda row: "<br>".join(
-                        [f"{col}: {row[col]}" for col in columns_of_interest]
-                    ),
-                    axis=1,
+            hovertext=subset.apply(
+                lambda row: "<br>".join(
+                [f"{col}: {row[col]}" for col in columns_of_interest] +
+                [f"x: {X_red[row.name, 0]}", f"y: {X_red[row.name, 1]}"]
                 ),
+                axis=1,
+            ),
                 hoverinfo="text",
             )
         )
@@ -72,5 +78,5 @@ def plot_2d(
         )
     )
 
-    # fig.write_html(f'datasets/dimred.html')
+    fig.write_html('datasets/mock/dimred.html')
     return fig
