@@ -2,9 +2,9 @@ name: Python application with conda
 
 on:
   push:
-    branches: [ "main", "27.2-conda-deployment-ci-fix" ]
-  # pull_request:
-  #   branches: [ "main" ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   schedule:
     # min hours day(month) month day(week)
     - cron: "0 0 1 */3 *"  # quarterly
