@@ -1,4 +1,4 @@
-name: selectzyme
+name: selectzyme_c7
 channels:
   - rapidsai  
   - pytorch
