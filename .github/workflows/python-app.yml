@@ -2,9 +2,9 @@ name: Python application with conda
 
 on:
   push:
-    branches: [ "main", "27-conda-deployment-fix" ]
-  # pull_request:
-  #   branches: [ "main" ]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   schedule:
     # min hours day(month) month day(week)
     - cron: "0 0 1 */3 *"  # quarterly
@@ -12,24 +12,41 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: continuumio/miniconda3  # Lightweight image with Miniconda
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v3
+      - name: Cache Conda packages
+        uses: actions/cache@v4
+        id: conda-cache
         with:
-          activate-environment: selectzyme
-          environment-file: environment.yml
-          auto-activate-base: false
+          path: /home/runner/conda_pkgs_dir
+          key: conda-${{ runner.os }}-${{ hashFiles('environment.yml') }}
 
-      - name: Test with pytest
-        shell: bash -l {0}  # Ensures the Conda environment is correctly sourced
+      - name: Install Mamba for faster Conda operations    # fix for: [Errno 28] No space left on device
         run: |
+          conda install -n base -c conda-forge mamba -y
+
+      - name: Set up Conda environment using Mamba
+        run: |
+          mkdir -p /home/runner/conda_pkgs_dir  # Create a persistent cache location
+          echo "CONDA_PKGS_DIRS=/home/runner/conda_pkgs_dir" >> $GITHUB_ENV
+          mamba create -n selectzyme --file environment.yml -y
+          source activate selectzyme
           python --version
           pip list
+  
+      - name: Install additional test dependencies
+        run: |
+          conda activate selectzyme
           conda install -y pytest pytest-cov
           pip list
-          python -m pytest --cov=src/ -v tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude the embedding and GPU required tests in GHActions  # todo: test fails so far because no GPU runner used (test_embed.py and test_cuml_usage.py), libcublas.so.11 is not found 
-          python -m pytest --cov=src/ -v tests/test_*
+
+      - name: Run tests with pytest
+        shell: bash -l {0}  # Ensures the Conda environment is correctly sourced
+        run: |
+          conda activate selectzyme
+          python -m pytest --cov=src/ -v tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude tests requiring GPU/cuda

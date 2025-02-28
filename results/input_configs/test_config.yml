@@ -10,17 +10,17 @@ project:
   data:
     query_terms:  # create in ascending manner: smallest return sets first
       - "xref:brenda-1.13.11.1"  # external reference (xref) to BRENDA database
-      - "xref:brenda-1.13.11.1*"  # wildcard search
-      - "ec:1.13.11.1"  # EC number
+      # - "xref:brenda-1.13.11.1*"  # wildcard search
+      # - "ec:1.13.11.1"  # EC number
       - "protein_name: catchol 1,2-dioxygenases"  # free text search
       - "catchol 1,2-dioxygenases"  # free text search
     length: "10 TO *"  # *=open end
-    custom_data_location: "tests/head_10.tsv"
-    out_dir: "results/datasets/"
+    custom_data_location: "tests/head_10.tsv"  # use "" if no custom data is desired
+    out_dir: "results/"
     df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 
   plm:
-    plm_model: "prott5"  # [esm1b, esm2, prott5, prostt5]
+    plm_model: "esm1b"  # [esm1b, esm2, prott5, prostt5]
 
   clustering:
     min_samples: 2
@@ -28,5 +28,5 @@ project:
 
   dimred:
     random_state: 42
-    method: "openTSNE"  # [UMAP, TSNE, openTSNE, PCA]
-    n_neighbors: 2  # recommended between 5-50
+    method: "UMAP"  # [UMAP, TSNE, openTSNE, PCA]
+    n_neighbors: 15  # recommended between 5-50

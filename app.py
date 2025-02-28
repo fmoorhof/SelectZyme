@@ -16,7 +16,6 @@ import pages.single_linkage as sl
 from pages.callbacks import register_callbacks
 from src.customizations import custom_plotting
 from src.ml import dimred_caller, perform_hdbscan_clustering
-from src.preprocessing import Preprocessing
 from src.utils import parse_data
 from src.vector_db import QdrantDB
 from src.visualizer import plot_2d
@@ -34,12 +33,13 @@ def main(app):
     )
     logging.info(f"df columns have the dtypes: {df.dtypes}")
 
-    df = Preprocessing(df).preprocess()
+    # optional: apply preprocessing to the data
+    # df = Preprocessing(df).preprocess()
 
     # Load embeddings from Vector DB
     db = QdrantDB(
         collection_name=config["project"]["name"],
-        host="http://localhost:6333"
+        host="http://ocean:6333"
         )
     X = db.database_access(
         df=df, plm_model=config["project"]["plm"]["plm_model"]
@@ -51,6 +51,8 @@ def main(app):
         config["project"]["clustering"]["min_samples"],
         config["project"]["clustering"]["min_cluster_size"],
     )
+    
+    # apply customizations
     df["cluster"] = labels
     df = custom_plotting(df)  # apply plotting customizations
 
@@ -64,7 +66,7 @@ def main(app):
     )
 
     # Perf: create DimRed and MST plot only once
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute="query_term")
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute="reviewed")
     fig_mst = Figure(fig)
 
     # Create page layouts
@@ -75,9 +77,9 @@ def main(app):
         layout=dimred.layout(df, fig),
     )
     dash.register_page(
-        "mst", name="Minimal Spanning Tree", layout=mst.layout(G, df, X_red, fig_mst)
+        "mst", name="Minimal Spanning Tree (MST)", layout=mst.layout(G, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogenetic Tree", layout=sl.layout(G=Gsl, df=df))
+    dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df))
 
     # Register callbacks
     register_callbacks(app, df, X_red, X_red_centroids)
@@ -112,7 +114,6 @@ def main(app):
 
 
 if __name__ == "__main__":
-    import argparse
 
     from src.utils import parse_args
 
@@ -124,14 +125,7 @@ if __name__ == "__main__":
     )
     # server = app.server  # this line is only needed when deployed on a (public) server
 
-    # CLI argument parsing
     config = parse_args()
-    # Debugging way, only runs always the test_config.yml
-    import yaml
-
-    args = argparse.Namespace(config="results/test_config.yml")
-    with open(args.config, "r") as f:
-        config = yaml.safe_load(f)
 
     main(app=app)
     app.run_server(host="127.0.0.1", port=config["project"]["port"], debug=False)

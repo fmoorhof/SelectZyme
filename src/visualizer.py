@@ -78,5 +78,5 @@ def plot_2d(
         )
     )
 
-    fig.write_html('datasets/mock/dimred.html')
+    fig.write_html('results/dimred.html')
     return fig

@@ -1,5 +1,5 @@
-# EnzyNavi
-Explore and navigate protein sequence space interactively.
+# SelectZyme
+Explore and navigate enzyme sequence space interactively.
 
 ## Install
 For optimal GPU support, the conda installation is reccommended.
@@ -47,6 +47,11 @@ On failure please look at the (closed) issues for troubleshooting and solutions 
 ```
 python app.py --config=results/test_config.yml
 ```
+For better overview about input parameters, you need to specify them in a `configuration.yml` file. An example is provided in the results folder. All outputs will also be written to the results folder, including a .tsv file with your project:name containing the sequences you retrieved from UniProt. 
+
+> [!IMPORTANT]  
+> If you re-run the job this file will be parsed and UniProt will NOT be queried again!. If you changed some `query_terms` in the config and you want to retrieve data you either need to delete the .tsv file or provide another project:name
+
 The terminal output will inform you about the execution status. Once done you can click on the URL to open the app via your web browser. Alternatively, you can access by typing either your *server_IP* or *localhost* and the exposed `port` (8050), you defined in the `config.yml`:
 `http://localhost:8050` or `http://server_IP:8050`
 
@@ -57,6 +62,15 @@ For extensive usage you might want to setup the Qdrant vector database in a sepa
 A nice and very simple manual how to do so is provided [here](https://qdrant.tech/documentation/quickstart/#)
 keep in mind to also adapt the codebase accordingly and set the
 `QdrantClient(url="http://localhost:6333")`
+
+
+## Custom data upload
+Data can be uploaded in the form of `.fasta, .tsv, .csv`
+If `.tsv, .csv` there MUST be a column called 'accession' (a unique ID for your entry) an d a column 'sequence', containing the protein sequence. All additional columns will be available for visualization but as minimal information an accession and sequence is needed. For the .fasta files also additional information can be provided by field separator '|'
+```{.fasta}
+>ID|Info1|Info n...
+PRTN
+```
 
 ## Core functionality
 ```mermaid
