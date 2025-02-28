@@ -15,7 +15,7 @@ from src.utils import run_time
 class QdrantDB:
     """A class to manage Qdrant vector database operations."""
 
-    def __init__(self, collection_name: str, host: str = "http://localhost:6333", timeout: int = 15):
+    def __init__(self, collection_name: str, host: str = "http://localhost:6333", timeout: int = 190):
         """
         Initialize the Qdrant client and collection settings.
         
