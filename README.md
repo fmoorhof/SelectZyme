@@ -2,11 +2,11 @@
 Explore and navigate enzyme sequence space interactively.
 
 ## Install
-For optimal GPU support, the conda installation is reccommended.
+For optimal GPU support, the conda installation is recommended.
 Please clone the repository:
 ```
-git clone https://github.com/fmoorhof/ec.git
-cd ec
+git clone https://github.com/ipb-halle/SelectZyme.git
+cd SelectZyme
 ```
 
 ### Conda
@@ -25,8 +25,8 @@ Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire 
 
 ### Docker
 ```
-docker build -t fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
-docker run --gpus all -it -p 8050:8050 --entrypoint /bin/bash fmoorhof/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10
+docker build -t ipb-halle/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10 .
+docker run --gpus all -it -p 8050:8050 --entrypoint /bin/bash ipb-halle/selectzyme:rapids23.06-cuda11.8-base-ubuntu22.04-py3.10
 ```
 
 ```
@@ -39,15 +39,14 @@ docker exec -it CONTAINERID /bin/bash
 Run some unit tests to see if SelectZyme got setup properly on your system.
 ```
 python -m pytest tests/test_* -v
-pytest tests/test_* -v
 ```
 On failure please look at the (closed) issues for troubleshooting and solutions see also [#41](/../../issues/41).
 
 ## Usage
 ```
-python app.py --config=results/test_config.yml
+python app.py --config=results/input_configs/test_config.yml
 ```
-For better overview about input parameters, you need to specify them in a `configuration.yml` file. An example is provided in the results folder. All outputs will also be written to the results folder, including a .tsv file with your project:name containing the sequences you retrieved from UniProt. 
+For better overview about input parameters, you need to specify them in a `config.yml` file. An example is provided in the results folder. All outputs will also be written to the results folder, including a .tsv file with your project:name containing the sequences you retrieved from UniProt. 
 
 > [!IMPORTANT]  
 > If you re-run the job this file will be parsed and UniProt will NOT be queried again!. If you changed some `query_terms` in the config and you want to retrieve data you either need to delete the .tsv file or provide another project:name

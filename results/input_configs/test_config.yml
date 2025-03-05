@@ -6,6 +6,8 @@
 project: 
   name: "_test_config"
   port: 8050
+  use_DB: False  # dont use qdrant vector DB to save embeddings for project:name
+  preprocessing: False
 
   data:
     query_terms:  # create in ascending manner: smallest return sets first
@@ -20,7 +22,7 @@ project:
     df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 
   plm:
-    plm_model: "esm1b"  # [esm1b, esm2, prott5, prostt5]
+    plm_model: "prott5" # [esm1b, esm2, prott5, prostt5]
 
   clustering:
     min_samples: 2

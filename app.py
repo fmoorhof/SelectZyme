@@ -15,7 +15,9 @@ import pages.mst as mst
 import pages.single_linkage as sl
 from pages.callbacks import register_callbacks
 from src.customizations import custom_plotting
+from src.embed import gen_embedding
 from src.ml import dimred_caller, perform_hdbscan_clustering
+from src.preprocessing import Preprocessing
 from src.utils import parse_data
 from src.vector_db import QdrantDB
 from src.visualizer import plot_2d
@@ -33,17 +35,23 @@ def main(app):
     )
     logging.info(f"df columns have the dtypes: {df.dtypes}")
 
-    # optional: apply preprocessing to the data
-    # df = Preprocessing(df).preprocess()
+    if config["project"]["preprocessing"]:
+        df = Preprocessing(df).preprocess()
 
-    # Load embeddings from Vector DB
-    db = QdrantDB(
-        collection_name=config["project"]["name"],
-        host="http://ocean:6333"
+    if config["project"]["use_DB"]:
+        # Load embeddings from Vector DB
+        db = QdrantDB(
+            collection_name=config["project"]["name"],
+            host="http://ocean:6333"
+            )
+        X = db.database_access(
+            df=df, plm_model=config["project"]["plm"]["plm_model"]
         )
-    X = db.database_access(
-        df=df, plm_model=config["project"]["plm"]["plm_model"]
-    )
+    else:
+        X = gen_embedding(
+            sequences=df["sequence"].tolist(),
+            plm_model=config["project"]["plm"]["plm_model"],
+        )
 
     # Clustering
     labels, G, Gsl, X_centroids = perform_hdbscan_clustering(
