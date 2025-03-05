@@ -2,7 +2,7 @@
 Explore and navigate enzyme sequence space interactively.
 
 ## Install
-For optimal GPU support, the conda installation is reccommended.
+For optimal GPU support, the conda installation is recommended.
 Please clone the repository:
 ```
 git clone https://github.com/ipb-halle/SelectZyme.git
