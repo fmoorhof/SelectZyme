@@ -25,6 +25,11 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
     )
     fig = go.Figure(layout=layout)
 
+    if df.shape[0] > 10000:
+        line_visibility = "legendonly"
+    else:
+        line_visibility = None
+
     # Pre-calculate traces
     x_lines = _insert_separator(icoord)
     y_lines = _insert_separator(dcoord)
@@ -36,6 +41,7 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
             mode="lines",
             # line=dict(color=line_colors),  # not possible to pass list
             hoverinfo="none",
+            visible=line_visibility,  # dont load line traces by default for large datasets
         )
     )
 
