@@ -16,6 +16,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+import copy
+
 from ydata_profiling import ProfileReport
 
 from src.customizations import custom_plotting, set_columns_of_interest
@@ -69,8 +71,8 @@ def perform_clustering(config, X):
 
 def create_visualizations(df, X_red, X_red_centroids, G, Gsl):
     fig_dim = plot_2d(df, X_red, X_red_centroids, legend_attribute="cluster")
-    mst = MinimumSpanningTree(G._mst, df, X_red, fig_dim)
-    fig_mst = mst.plot_mst_in_dimred_landscape()
+    fig_mst = copy.deepcopy(fig_dim)  # deep copy needed else fig_dim will be modified by next line
+    fig_mst = MinimumSpanningTree(G._mst, df, X_red, fig_mst).plot_mst_in_dimred_landscape()
     fig_slc = create_dendrogram(Z=Gsl._linkage, df=df)
     return fig_dim, fig_mst, fig_slc
 
@@ -109,7 +111,7 @@ def main(config, db_host: str = "http://ocean:6333") -> None:
         logging.error(f"Failed to generate EDA report: {e}")
         with open("assets/eda.html", "w") as f:
             f.write(f"<html><body><h1>EDA Report could not be generated because: {e}</h1></body></html>")
-    return fig_dim, fig_mst, fig_slc  #, fig_eda  # todo: pass variables or simply write files, whats needed for communication to front-end part?
+    return fig_dim, fig_mst, fig_slc, profile
 
 
 
