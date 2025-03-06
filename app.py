@@ -62,7 +62,9 @@ def main(app):
     
     # apply customizations
     df["cluster"] = labels
-    df = custom_plotting(df)  # apply plotting customizations
+    df = custom_plotting(df, 
+                         config["project"]["plot_customizations"]["size"], 
+                         config["project"]["plot_customizations"]["shape"])
 
     # Dimensionality reduction
     X_red, X_red_centroids = dimred_caller(
@@ -74,7 +76,7 @@ def main(app):
     )
 
     # Perf: create DimRed and MST plot only once
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute="reviewed")
+    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute="cluster")
     fig_mst = Figure(fig)
 
     # Create page layouts
@@ -122,6 +124,7 @@ def main(app):
 
 
 if __name__ == "__main__":
+    import argparse
 
     from src.utils import parse_args
 
@@ -133,7 +136,13 @@ if __name__ == "__main__":
     )
     # server = app.server  # this line is only needed when deployed on a (public) server
 
+    # CLI argument parsing
     config = parse_args()
+    # Debugging way, only runs always the test_config.yml
+    import yaml
+    args = argparse.Namespace(config="results/input_configs/test_config.yml")
+    with open(args.config, "r") as f:
+        config = yaml.safe_load(f)
 
     main(app=app)
     app.run_server(host="127.0.0.1", port=config["project"]["port"], debug=False)

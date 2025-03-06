@@ -6,9 +6,10 @@
 project: 
   name: "_test_config"
   port: 8050
-  use_DB: False  # dont use qdrant vector DB to save embeddings for project:name
+  use_DB: False  # use qdrant vector DB to save embeddings for project:name
   preprocessing: False
 
+  # Specify data you want to analyze
   data:
     query_terms:  # create in ascending manner: smallest return sets first
       - "xref:brenda-1.13.11.1"  # external reference (xref) to BRENDA database
@@ -32,3 +33,7 @@ project:
     random_state: 42
     method: "UMAP"  # [UMAP, TSNE, openTSNE, PCA]
     n_neighbors: 15  # recommended between 5-50
+
+  plot_customizations:  # set marker size and shape for plots
+    size: [6, 8, 14]  # [unknown data type, UniProt annotation, BRENDA annotation]
+    shape: ["circle", "diamond", "cross"]  # [unknown data type, UniProt annotation, BRENDA annotation]

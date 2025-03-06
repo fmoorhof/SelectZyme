@@ -18,8 +18,8 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        default="results/test_config.yml",
-        help="Path to a config.yml file with all parameters (default location: results/test_config.yml)",
+        default="results/input_configs/test_config.yml",
+        help="Path to a config.yml file with all parameters (default location: results/input_configs/test_config.yml)",
     )
     args = parser.parse_args()
 

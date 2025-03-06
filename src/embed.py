@@ -40,9 +40,18 @@ def gen_embedding(
 
         if not no_pad:  #  == False:
             last_hidden_states = outputs.last_hidden_state
-            embedding = (
-                torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()
-            )  # Move embedding back to CPU
+            try:
+                embedding = (
+                    torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()
+                )  # Move embedding back to CPU
+            except RuntimeError as e:
+                if plm_model == "esm1b":
+                    raise RuntimeError(
+                        f"In order to use esm1b on your sequences please apply preprocessing (to remove sequences longer than 1024 amino acids)"
+                        f"or use the plm_model='prott5'. This sequence is too long and causing errors: {seq}"
+                    ) from e
+                else:
+                    raise e
         else:
             if plm_model in ["prott5", "prostt5"]:
                 seq_len = int(len(seq) / 2 + 1)

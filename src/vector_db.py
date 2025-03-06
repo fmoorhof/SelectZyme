@@ -14,17 +14,15 @@ from src.utils import run_time
 
 class QdrantDB:
     """A class to manage Qdrant vector database operations."""
-
-    def __init__(self, collection_name: str, host: str = "http://localhost:6333", timeout: int = 190):
+    def __init__(self, collection_name: str, host: str = "http://localhost:6333"):
         """
         Initialize the Qdrant client and collection settings.
         
         :param collection_name: Name of the collection in Qdrant
         :param host: URL of the Qdrant server
-        :param timeout: Timeout for requests to Qdrant
         """
         self.collection_name = collection_name
-        self.qdrant = QdrantClient(url=host, timeout=timeout)
+        self.qdrant = QdrantClient(url=host, prefer_grpc=True)
 
     def collection_exists(self) -> bool:
         """Check if the collection already exists in Qdrant."""
