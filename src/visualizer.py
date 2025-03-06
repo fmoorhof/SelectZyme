@@ -43,7 +43,7 @@ def plot_2d(
                 x=X_red[subset.index, 0],
                 y=X_red[subset.index, 1],
                 mode="markers",
-                name=str(attribute),
+                name=str(attribute)[:40],  # only show max. 40 characters in legend
                 marker=dict(
                     size=subset["marker_size"],
                     symbol=subset["marker_symbol"],
@@ -61,8 +61,6 @@ def plot_2d(
             )
         )
 
-    fig.update_layout(showlegend=True, legend_title_text=legend_attribute)
-
     # add cluster centroids trace
     fig.add_trace(
         go.Scattergl(
@@ -76,6 +74,11 @@ def plot_2d(
             ],
             hoverinfo="text",
         )
+    )
+
+    fig.update_layout(
+        showlegend=True,
+        legend_title_text=legend_attribute,
     )
 
     fig.write_html('results/dimred.html')
