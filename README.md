@@ -43,6 +43,7 @@ python -m pytest tests/test_* -v
 On failure please look at the (closed) issues for troubleshooting and solutions see also [#41](/../../issues/41).
 
 ## Usage
+### Intended usage
 ```
 python app.py --config=results/input_configs/test_config.yml
 ```
@@ -61,6 +62,10 @@ For extensive usage you might want to setup the Qdrant vector database in a sepa
 A nice and very simple manual how to do so is provided [here](https://qdrant.tech/documentation/quickstart/#)
 keep in mind to also adapt the codebase accordingly and set the
 `QdrantClient(url="http://localhost:6333")`
+
+### Jupyter notebook
+We also prepared a juypter notebook for initial explorations of individual plots. However, enzyme selection is not possible within the notebook and the above 'intended usage' is recommended.
+The minimal jupyter notebook can be found [here](https://github.com/fmoorhof/SelectZyme/blob/main/minimal_example.ipynb) 
 
 
 ## Custom data upload

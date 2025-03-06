@@ -14,6 +14,7 @@ dependencies:
   - pygraphviz  # remove if feat: force directed MST layout gets removed; also if GPU accelerated layout is integrated
   - ydata-profiling
   - opentsne
+  - ipykernel
   - pip
   - pip:
     - -r requirements_pip_conda_docker.txt
