@@ -10,7 +10,9 @@ sentencepiece==0.2.0
 tiktoken==0.8.0
 blobfile==3.0.0
 pytest>=8.3.4
+nbformat==5.10.4  # for jupyter notebook
+ipywidgets==8.1.5
 # Pinned sub-dependencies
 matplotlib==3.9.4
 seaborn==0.13.2
-# pandas==1.5.3 i bet pandas is already dependency of CuML, if not pin pandas to `pandas==1.5.3`  # docker: CuML and CuDF require older version pandas==1.5.3, else AttributeError: module 'pandas.api.types' has no attribute 'is_extension_type' 
+# pandas==1.5.3 if not desired from CuML: pin pandas to `pandas==1.5.3`  # docker: CuML and CuDF require older version pandas==1.5.3, else AttributeError: module 'pandas.api.types' has no attribute 'is_extension_type' 
