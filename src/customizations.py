@@ -29,7 +29,7 @@ def set_columns_of_interest(df_cols: list) -> list:
     return [col for col in df_cols if col not in columns_to_avoid_hover]
 
 
-def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
+def custom_plotting(df: pd.DataFrame, size: list = [6, 8, 14], shape: list = ["circle", "diamond", "cross"]) -> pd.DataFrame:
     """
     Modify the given DataFrame before plotting to make values look nicer/custom.
 
@@ -57,8 +57,8 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
         )
 
     # define markers for the plot
-    df["marker_size"] = 6
-    df["marker_symbol"] = "circle"
+    df["marker_size"] = size[0]
+    df["marker_symbol"] = shape[0]
     # overwrite defaults with custom values
     if all(col in df.columns for col in {"xref_brenda", "ec", "reviewed"}):
         condition0 = (df["reviewed"] == True) | (df["reviewed"] == "true")
@@ -70,14 +70,14 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
         else:  # pandas DataFrame
             condition = df["xref_brenda"] != "unknown"
             condition2 = df["ec"] != "unknown"
-        df.loc[condition2, "marker_size"] = 8
-        df.loc[condition2, "marker_symbol"] = "diamond"  # UniProt EC numbered entries
-        df.loc[condition0, "marker_size"] = 8
+        df.loc[condition2, "marker_size"] = size[1]
+        df.loc[condition2, "marker_symbol"] = shape[1]  # UniProt EC numbered entries
+        df.loc[condition0, "marker_size"] = size[1]
         df.loc[condition0, "marker_symbol"] = (
-            "cross"  # reviewed entries (includes if custom data is set)
+            shape[2]  # reviewed entries (includes if custom data is set)
         )
         df.loc[condition0 & condition, "marker_size"] = (
-            14  # if reviewed and BRENDA entry (usually not applies to custom data)
+            size[2]  # if reviewed and BRENDA entry (usually not applies to custom data)
         )
 
     # provide taxonomic names and lineages from taxid (organism_id)
@@ -88,11 +88,7 @@ def custom_plotting(df: pd.DataFrame) -> pd.DataFrame:
         df["kingdom"] = [tax[2] for tax in taxa]
         # df['lineage'] = [tax[3] for tax in taxa]  # full lineage
 
+    df = df.fillna("unknown")
     df["selected"] = False
-
-    # # todo: remove later
-    # df['PET'] = df['PET'].fillna(False).astype(bool)
-    # df['PCL'] = df['PCL'].fillna(False).astype(bool)
-    # df['PET&PCL'] = df['PET&PCL'].fillna(False).astype(bool)
 
     return df
