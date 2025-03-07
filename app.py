@@ -98,23 +98,27 @@ def main(app):
     register_callbacks(app, df, X_red, X_red_centroids)
 
     # Centroid layouts: repeat clustering on only the centroids
-    labels_centroids, G_centroids, Gsl_centroids, _ = perform_hdbscan_clustering(
-        X_centroids,
-        config["project"]["clustering"]["min_samples"],
-        config["project"]["clustering"]["min_cluster_size"],
-    )
+    if set(labels) == {-1} and config["project"]["dimred"]["method"].upper() == "TSNE":  # skip centroid calculations if only outliers found or TSNE is used (no centroid projection possible)
+        logging.error("No clusters found or t-SNE used, skipping centroid calculations.")
+    else:
+        # Cluster centroids
+        labels_centroids, G_centroids, Gsl_centroids, _ = perform_hdbscan_clustering(
+            X_centroids,
+            config["project"]["clustering"]["min_samples"],
+            config["project"]["clustering"]["min_cluster_size"],
+        )
 
-    # Centroid Minimal Spanning Tree
-    dash.register_page(
-        "cmst", name="Centroid MST", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
-    )
+        # Centroid Minimal Spanning Tree
+        dash.register_page(
+            "cmst", name="Centroid MST", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
+        )
 
-    # Centroid dendrogram
-    df_centroid = pd.DataFrame(index=range(len(labels_centroids)))
-    df_centroid["marker_size"] = 6
-    df_centroid["marker_symbol"] = "x"
-    df_centroid["accession"] = [i for i in range(len(X_centroids))]  # accession = cluster centroid number
-    dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df_centroid)) 
+        # Centroid dendrogram
+        df_centroid = pd.DataFrame(index=range(len(labels_centroids)))
+        df_centroid["marker_size"] = 6
+        df_centroid["marker_symbol"] = "x"
+        df_centroid["accession"] = [i for i in range(len(X_centroids))]  # accession congruent with cluster centroid number
+        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df_centroid)) 
 
     # App layout with navigation links and page container
     app.layout = dbc.Container(
