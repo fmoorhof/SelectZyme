@@ -6,6 +6,7 @@ logging.basicConfig(level=logging.INFO)
 
 import dash
 import dash_bootstrap_components as dbc
+import pandas as pd
 from dash import dcc, html
 from plotly.graph_objects import Figure
 
@@ -13,6 +14,7 @@ import pages.dimred as dimred
 import pages.eda as eda
 import pages.mst as mst
 import pages.single_linkage as sl
+import pages.slc_centroid as sl_centroid
 from pages.callbacks import register_callbacks
 from src.customizations import custom_plotting
 from src.embed import gen_embedding
@@ -93,6 +95,22 @@ def main(app):
 
     # Register callbacks
     register_callbacks(app, df, X_red, X_red_centroids)
+
+
+    # Add centroid functionality
+    # repeat clustering on only the centroids
+    labels_centroids, G_centroids, Gsl_centroids, _ = perform_hdbscan_clustering(
+        X_centroids,
+        config["project"]["clustering"]["min_samples"],
+        config["project"]["clustering"]["min_cluster_size"],
+    )
+
+    df_centroid = pd.DataFrame(index=range(len(labels_centroids)))
+    df_centroid["marker_size"] = 6
+    df_centroid["marker_symbol"] = "x"
+    df_centroid["accession"] = [i for i in range(len(X_centroids))]  # accession = cluster centroid number
+    dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df_centroid)) 
+
 
     # Layout with navigation links and page container
     app.layout = dbc.Container(
