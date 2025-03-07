@@ -12,76 +12,54 @@ from src.utils import run_time
 
 @run_time
 def dimred_caller(
-    X, X_centroids, dim_method, n_neighbors: int = 15, random_state: int = 42, **kwargs
+    X: np.ndarray, dim_method: str, n_neighbors: int = 15, random_state: int = 42, **kwargs
 ):
     dim_method = dim_method.upper()
     if dim_method == "PCA":
-        X_red, X_red_centroids = pca(X, X_centroids, **kwargs)
+        X_red = pca(X, **kwargs)
     elif dim_method == "TSNE":
-        X_red, X_red_centroids = tsne(X, perplexity=n_neighbors, random_state=random_state, **kwargs)
+        X_red = tsne(X, perplexity=n_neighbors, random_state=random_state, **kwargs)
     elif dim_method == "OPENTSNE":
-        X_red, X_red_centroids = opentsne(
-            X, X_centroids, perplexity=n_neighbors, random_state=random_state, **kwargs
+        X_red = opentsne(
+            X, perplexity=n_neighbors, random_state=random_state, **kwargs
         )
     elif dim_method == "UMAP":
-        X_red, X_red_centroids = umap(
-            X, X_centroids, n_neighbors=n_neighbors, random_state=random_state, **kwargs
+        X_red = umap(
+            X, n_neighbors=n_neighbors, random_state=random_state, **kwargs
         )
     else:
         raise ValueError(
             f"Dimensionality reduction method {dim_method} not implemented. Choose from 'PCA', 'TSNE', 'openTSNE', 'UMAP'."
         )
 
-    return X_red, X_red_centroids
+    return X_red
 
 
-def _weighted_cluster_centroid(model, X: np.ndarray, cluster_id: int) -> tuple[np.ndarray, np.ndarray]:
+def _indentify_centroid(model, X, cluster_id: int) -> int:
     """
-    Calculate the weighted centroid for a given cluster.
-    This function computes the weighted centroid of a cluster identified by `cluster_id`
-    using the provided clustering `model` and data `X`. The implementation is inspired
-    by HDBSCAN but adapted for use with CuML HDBSCAN, which does not expose the
-    `_raw_data` attribute.
-    Parameters:
-    model (HDBSCAN): The clustering model that has been fitted to the data.
-    X (np.ndarray): The dataset used for clustering.
-    cluster_id (int): The identifier of the cluster for which the centroid is to be calculated.
-                      Note that `cluster_id` should not be -1, as this represents noise.
-    Returns:
-    tuple[np.ndarray, np.ndarray]: A tuple containing the cluster data and the weighted centroid of the specified cluster.
+    Identify the index of the real data point closest to the weighted centroid for a given cluster.
+    
+    :param model: The trained HDBSCAN model.
+    :param X: The original dataset used for clustering.
+    :param cluster_id: The cluster ID for which to find the closest point to the centroid.
+    :return: Index of the closest data point in the original dataset.
     """
-    mask = model.labels_ == cluster_id  # Create a boolean mask for the points belonging to the specified cluster
-    cluster_data = X[mask]  # model._raw_data[mask]  CuML HDBSCAN doesnt have _raw_data explosed but defined as GPUArray of X, called X_m and defined in from cuml.internals.input_utils import input_to_cuml_array
+    mask = model.labels_ == cluster_id
+    cluster_data = X[mask]
+    cluster_indices = np.where(mask)[0]  # Get the original indices of the cluster members
     cluster_membership_strengths = model.probabilities_[mask]
 
-    return cluster_data, np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
+    # Compute weighted centroid
+    weighted_centroid = np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
 
-
-def _cluster_point_centroid(model, X, cluster_id: int) -> np.ndarray:
-    """
-    Calculate the real data point closest to the weighted centroid for a given cluster.
-    This function computes the weighted centroid of a cluster identified by `cluster_id`
-    using the provided clustering `model` and data `X`, and then finds the real data point
-    that is closest to this centroid.
-    Parameters:
-    model (HDBSCAN): The clustering model that has been fitted to the data.
-    X (np.ndarray): The dataset used for clustering.
-    cluster_id (int): The identifier of the cluster for which the centroid is to be calculated.
-                      Note that `cluster_id` should not be -1, as this represents noise.
-    Returns:
-    np.ndarray: vector of the real data point closest to the weighted centroid of the specified cluster.
-    """
-    cluster_data, weighted_centroid = _weighted_cluster_centroid(model, X, cluster_id)
-
-    # Find the real data point closest to the weighted centroid
     distances = np.linalg.norm(cluster_data - weighted_centroid, axis=1)
     closest_point_index = np.argmin(distances)
 
-    return cluster_data[closest_point_index]
+    return cluster_indices[closest_point_index]
 
 
 @run_time
-def perform_hdbscan_clustering(X, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def perform_hdbscan_clustering(X, df, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -111,18 +89,20 @@ def perform_hdbscan_clustering(X, min_samples: int = 30, min_cluster_size: int =
     Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
 
     # Calculate centroids for each cluster
-    centroids = []
+    centroid_indices = []
     for cluster_id in np.unique(labels):
         if cluster_id != -1:  # Skip noise cluster
-            centroid = _cluster_point_centroid(hdbscan, X, cluster_id)
-            centroids.append(centroid)
-    X_centroids = np.array(centroids)
+            centroid_index = _indentify_centroid(hdbscan, X, cluster_id)
+            centroid_indices.append(centroid_index)
+    centroid_indices = np.array(centroid_indices)
 
-    logging.info("HDBSCAN done")
-    return labels, G, Gsl, X_centroids
+    df["cluster"] = labels
+    df.loc[centroid_indices, "marker_symbol"] = "x"
+
+    return G, Gsl, df
 
 
-def pca(X, X_centroids, dimension: int = 2, **kwargs):
+def pca(X, dimension: int = 2, **kwargs):
     """Dimensionality reduction with PCA.
     :param kwargs: Additional parameters"""
     pca = PCA(n_components=dimension, output_type="numpy", **kwargs)
@@ -131,16 +111,8 @@ def pca(X, X_centroids, dimension: int = 2, **kwargs):
     variance = ["%.1f" % i for i in variance]  # 1 decimal only
     print(f"% Variance of the PCA components: {variance}")
 
-    if X_centroids.size != 0:
-        X_pca_centroid = pca.transform(X_centroids)
-    else:
-        X_pca_centroid = np.empty((0, 2))
-        logging.info(
-            "HDBSCAN cluster parameter yielded no clusters. Concludingly, no cluster centroids are returned."
-        )
-
     logging.info("PCA done")
-    return X_pca, X_pca_centroid
+    return X_pca
 
 
 def tsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
@@ -153,14 +125,11 @@ def tsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **
     """
     tsne = TSNE(n_components=dimension, perplexity=perplexity, random_state=random_state, **kwargs)
     X_tsne = tsne.fit_transform(X)
-    X_tsne_centroid = np.empty((0, 2))
-    logging.info(
-        "tSNE done. Cluster centroids can not meaningfully be transformed to 2D using tSNE. You might want to try openTSNE."
-    )
-    return X_tsne, X_tsne_centroid
+
+    return X_tsne
 
 
-def opentsne(X, X_centroids, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
+def opentsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
     """Dimensionality reduction with open tSNE.
     Currently TSNE supports n_components = 2. Non GPU implementation but tsne.transform is possible to integrate cluster centroids.
     Despite, non GPU runtime is very good and scales less computationally complex in comparison to t-SNE.
@@ -172,21 +141,12 @@ def opentsne(X, X_centroids, dimension: int = 2, perplexity: int = 30, random_st
     tsne = TSNE(n_components=dimension, perplexity=perplexity, n_jobs=8, random_state=random_state, **kwargs)
     X_tsne = tsne.fit(X)
 
-    if X_centroids.size != 0:
-        X_tsne_centroid = X_tsne.transform(X_centroids)
-    else:
-        X_tsne_centroid = np.empty((0, 2))
-        logging.info(
-            "HDBSCAN cluster parameter yielded no clusters. Concludingly, no cluster centroids are returned."
-        )
-
     logging.info("Open tSNE done.")
-    return X_tsne, X_tsne_centroid
+    return X_tsne
 
 
 def umap(
     X,
-    X_centroids,
     dimension: int = 2,
     n_neighbors: int = 15,
     random_state: int = 42,
@@ -207,13 +167,5 @@ def umap(
     )  # , init="random" is walkaround until random_seed is fixed @ CuML; default metric='euclidean'
     X_umap = umap.fit_transform(X)
 
-    if X_centroids.size != 0:
-        X_umap_centroid = umap.transform(X_centroids)
-    else:
-        X_umap_centroid = np.empty((0, 2))
-        logging.info(
-            "HDBSCAN cluster parameter yielded no clusters. Concludingly, no cluster centroids are returned."
-        )
-
     logging.info("UMAP done")
-    return X_umap, X_umap_centroid
+    return X_umap

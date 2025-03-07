@@ -6,7 +6,6 @@ logging.basicConfig(level=logging.INFO)
 
 import dash
 import dash_bootstrap_components as dbc
-import pandas as pd
 from dash import dcc, html
 from plotly.graph_objects import Figure
 
@@ -14,7 +13,6 @@ import pages.dimred as dimred
 import pages.eda as eda
 import pages.mst as mst
 import pages.single_linkage as sl
-import pages.slc_centroid as sl_centroid
 from pages.callbacks import register_callbacks
 from src.customizations import custom_plotting
 from src.embed import gen_embedding
@@ -55,32 +53,30 @@ def main(app):
             plm_model=config["project"]["plm"]["plm_model"],
         )
 
-    # Clustering
-    labels, G, Gsl, X_centroids = perform_hdbscan_clustering(
-        X,
-        config["project"]["clustering"]["min_samples"],
-        config["project"]["clustering"]["min_cluster_size"],
-    )
-    
     # apply customizations
-    df["cluster"] = labels
     df = custom_plotting(df, 
                          config["project"]["plot_customizations"]["size"], 
                          config["project"]["plot_customizations"]["shape"])
 
-    # Dimensionality reduction
-    X_red, X_red_centroids = dimred_caller(
+    # Clustering
+    G, Gsl, df = perform_hdbscan_clustering(
         X,
-        X_centroids,
+        df,
+        config["project"]["clustering"]["min_samples"],
+        config["project"]["clustering"]["min_cluster_size"],
+    )
+
+    # Dimensionality reduction
+    X_red = dimred_caller(
+        X,
         config["project"]["dimred"]["method"],
         config["project"]["dimred"]["n_neighbors"],
         config["project"]["dimred"]["random_state"],
     )
 
     # Perf: create DimRed and MST plot only once
-    fig = plot_2d(df, X_red, X_red_centroids, legend_attribute="cluster")
+    fig = plot_2d(df, X_red, legend_attribute="cluster")
     fig_mst = Figure(fig)  # copy required else fig will be modified by mst creation
-    fig_cmst = Figure(fig)
 
     # Create page layouts
     dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df))
@@ -95,30 +91,7 @@ def main(app):
     dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df))
 
     # Register callbacks
-    register_callbacks(app, df, X_red, X_red_centroids)
-
-    # Centroid layouts: repeat clustering on only the centroids
-    if set(labels) == {-1} and config["project"]["dimred"]["method"].upper() == "TSNE":  # skip centroid calculations if only outliers found or TSNE is used (no centroid projection possible)
-        logging.error("No clusters found or t-SNE used, skipping centroid calculations.")
-    else:
-        # Cluster centroids
-        labels_centroids, G_centroids, Gsl_centroids, _ = perform_hdbscan_clustering(
-            X_centroids,
-            config["project"]["clustering"]["min_samples"],
-            config["project"]["clustering"]["min_cluster_size"],
-        )
-
-        # Centroid Minimal Spanning Tree
-        dash.register_page(
-            "cmst", name="Centroid MST", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
-        )
-
-        # Centroid dendrogram
-        df_centroid = pd.DataFrame(index=range(len(labels_centroids)))
-        df_centroid["marker_size"] = 6
-        df_centroid["marker_symbol"] = "x"
-        df_centroid["accession"] = [i for i in range(len(X_centroids))]  # accession congruent with cluster centroid number
-        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df_centroid)) 
+    register_callbacks(app, df, X_red)
 
     # App layout with navigation links and page container
     app.layout = dbc.Container(

@@ -12,7 +12,6 @@ from src.utils import run_time
 def plot_2d(
     df: pd.DataFrame,
     X_red: np.ndarray,
-    X_red_centroids: np.ndarray,
     legend_attribute: str,
 ):
     """
@@ -60,21 +59,6 @@ def plot_2d(
                 hoverinfo="text",
             )
         )
-
-    # add cluster centroids trace
-    fig.add_trace(
-        go.Scattergl(
-            x=X_red_centroids[:, 0],
-            y=X_red_centroids[:, 1],
-            mode="markers",
-            name="Cluster Centroids",  # Set the legend name
-            marker=dict(size=10, symbol="x", color="red", opacity=0.3),
-            hovertext=[
-                f"Cluster {i} centroid" for i in range(X_red_centroids.shape[0])
-            ],
-            hoverinfo="text",
-        )
-    )
 
     fig.update_layout(
         showlegend=True,
