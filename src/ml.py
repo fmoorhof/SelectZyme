@@ -35,7 +35,7 @@ def dimred_caller(
     return X_red, X_red_centroids
 
 
-def _weighted_cluster_centroid(model, X, cluster_id: int) -> np.ndarray:
+def _weighted_cluster_centroid(model, X: np.ndarray, cluster_id: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate the weighted centroid for a given cluster.
     This function computes the weighted centroid of a cluster identified by `cluster_id`
@@ -48,15 +48,36 @@ def _weighted_cluster_centroid(model, X, cluster_id: int) -> np.ndarray:
     cluster_id (int): The identifier of the cluster for which the centroid is to be calculated.
                       Note that `cluster_id` should not be -1, as this represents noise.
     Returns:
-    np.ndarray: The weighted centroid of the specified cluster..
+    tuple[np.ndarray, np.ndarray]: A tuple containing the cluster data and the weighted centroid of the specified cluster.
     """
-    mask = model.labels_ == cluster_id
-    cluster_data = X[
-        mask
-    ]  # model._raw_data[mask]  CuML HDBSCAN doesnt have _raw_data explosed but defined as GPUArray of X, called X_m and defined in from cuml.internals.input_utils import input_to_cuml_array
+    mask = model.labels_ == cluster_id  # Create a boolean mask for the points belonging to the specified cluster
+    cluster_data = X[mask]  # model._raw_data[mask]  CuML HDBSCAN doesnt have _raw_data explosed but defined as GPUArray of X, called X_m and defined in from cuml.internals.input_utils import input_to_cuml_array
     cluster_membership_strengths = model.probabilities_[mask]
 
-    return np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
+    return cluster_data, np.average(cluster_data, weights=cluster_membership_strengths, axis=0)
+
+
+def _cluster_point_centroid(model, X, cluster_id: int) -> np.ndarray:
+    """
+    Calculate the real data point closest to the weighted centroid for a given cluster.
+    This function computes the weighted centroid of a cluster identified by `cluster_id`
+    using the provided clustering `model` and data `X`, and then finds the real data point
+    that is closest to this centroid.
+    Parameters:
+    model (HDBSCAN): The clustering model that has been fitted to the data.
+    X (np.ndarray): The dataset used for clustering.
+    cluster_id (int): The identifier of the cluster for which the centroid is to be calculated.
+                      Note that `cluster_id` should not be -1, as this represents noise.
+    Returns:
+    np.ndarray: vector of the real data point closest to the weighted centroid of the specified cluster.
+    """
+    cluster_data, weighted_centroid = _weighted_cluster_centroid(model, X, cluster_id)
+
+    # Find the real data point closest to the weighted centroid
+    distances = np.linalg.norm(cluster_data - weighted_centroid, axis=1)
+    closest_point_index = np.argmin(distances)
+
+    return cluster_data[closest_point_index]
 
 
 @run_time
@@ -72,9 +93,6 @@ def perform_hdbscan_clustering(X, min_samples: int = 30, min_cluster_size: int =
     # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
     logging.info("Running HDBSCAN. This may take a while.")
     if X.shape[0] < min_samples:
-        logging.error(
-            "The number of samples in X is less than min_samples. Please try a smaller value for min_samples."
-        )
         raise ValueError(
             "The number of samples in X is less than min_samples. Please try a smaller value for min_samples."
         )
@@ -96,7 +114,7 @@ def perform_hdbscan_clustering(X, min_samples: int = 30, min_cluster_size: int =
     centroids = []
     for cluster_id in np.unique(labels):
         if cluster_id != -1:  # Skip noise cluster
-            centroid = _weighted_cluster_centroid(hdbscan, X, cluster_id)
+            centroid = _cluster_point_centroid(hdbscan, X, cluster_id)
             centroids.append(centroid)
     X_centroids = np.array(centroids)
 
