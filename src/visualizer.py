@@ -57,12 +57,44 @@ def plot_2d(
                 axis=1,
             ),
                 hoverinfo="text",
+                legend="legend",
+            )
+        )
+
+    marker_legend_mapping = {
+        "cross": "Brenda entries",
+        "diamond": "UniProt entries",
+        "circle": "Unannotated",
+        "x": "Cluster centroid",
+    }
+
+    for symbol, label in marker_legend_mapping.items():
+        fig.add_trace(
+            go.Scattergl(
+                x=[None],  # Empty traces for symbols. No toggle possible: todo: change this that toggle is possible
+                y=[None],
+                mode="markers",
+                name=label,
+                marker=dict(symbol=symbol, size=10, opacity=1),
+                legend="legend2",  # Assign to second legend
             )
         )
 
     fig.update_layout(
         showlegend=True,
-        legend_title_text=legend_attribute,
+        legend=dict(
+            title=dict(text=legend_attribute),
+            traceorder='normal'  # first occourence
+        ),
+        legend2=dict(
+            title=dict(text="Marker Symbols"),
+            orientation="h",
+            entrywidth=70,
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
     )
 
     fig.write_html('results/dimred.html')

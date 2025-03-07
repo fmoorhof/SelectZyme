@@ -26,8 +26,8 @@ class TestVisualizer(unittest.TestCase):
         fig = plot_2d(self.df, self.X_red, "legend_attribute")
         self.assertIsInstance(fig, go.Figure)
         self.assertEqual(
-            len(fig.data), 2
-        )  # Two traces for data points
+            len(fig.data), 6
+        )  # Two traces for data point categories, four for marker symbols defined in visualizer.py
 
         # Check the first trace
         trace = fig.data[0]
