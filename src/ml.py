@@ -59,7 +59,7 @@ def _indentify_centroid(model, X, cluster_id: int) -> int:
 
 
 @run_time
-def perform_hdbscan_clustering(X, df, min_samples: int = 30, min_cluster_size: int = 250, **kwargs):
+def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: int = 2, re_cluster: bool = False, **kwargs):
     """
     Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
     # finished in 12 mins on 200k:)
@@ -96,8 +96,9 @@ def perform_hdbscan_clustering(X, df, min_samples: int = 30, min_cluster_size: i
             centroid_indices.append(centroid_index)
     centroid_indices = np.array(centroid_indices)
 
-    df["cluster"] = labels
-    df.loc[centroid_indices, "marker_symbol"] = "x"
+    if not re_cluster:
+        df["cluster"] = labels
+        df.loc[centroid_indices, "marker_symbol"] = "x"
 
     return G, Gsl, df
 
