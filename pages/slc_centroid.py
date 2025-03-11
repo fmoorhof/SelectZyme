@@ -10,10 +10,10 @@ from src.single_linkage_plotting import create_dendrogram
 
 
 def layout(G, df: pd.DataFrame) -> html.Div:
-    logging.info("Start building the dendrogram...")
+    logging.info("Start building the centroid dendrogram...")
 
     fig = create_dendrogram(
-        Z=G._linkage, df=df, legend_attribute="accession"
+        Z=G._linkage, df=df, legend_attribute="cluster"
     )  
     return html.Div(
         [

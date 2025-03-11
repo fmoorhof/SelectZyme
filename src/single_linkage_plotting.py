@@ -12,8 +12,8 @@ from src.utils import run_time
 
 @run_time
 def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
-    P = dendrogram(Z, no_plot=True)
-    icoord = np.array(P["icoord"])
+    P = dendrogram(Z, no_plot=True, distance_sort="ascending")
+    icoord = np.array(P["icoord"])  # ordered after 'leaves' and not Z!
     dcoord = np.array(P["dcoord"])
     leaves = P["leaves"]  # Indices of df rows corresponding to leaves
 
@@ -48,14 +48,15 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
         dcoord[:, 1] - 0.001
     )  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
 
-    # Create a copy of the dataframe and sort it based on the indices 'leaves' deep copy needed, else not working!
+    # Order df to represent 'leaves' deep copy needed, else not working!
     df_copy = df.iloc[leaves].copy(deep=True)
     df_copy = df_copy.sort_index()
+    sorted_indices = df_copy.index
 
     columns_of_interest = set_columns_of_interest(df_copy.columns)
     hover_text = [
-        "<br>".join(f"{col}: {df_copy[col][i]}" for col in columns_of_interest)
-        for i in range(len(df_copy))
+        "<br>".join(f"{col}: {df_copy[col][idx]}" for col in columns_of_interest)
+        for idx in sorted_indices
     ]
 
     # set color mapping for marker´s legend_attribute (mostly 'cluster')

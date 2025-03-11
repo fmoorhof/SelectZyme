@@ -3,16 +3,9 @@ from __future__ import annotations
 import unittest
 
 import numpy as np
-from cuml.cluster import HDBSCAN
+import pandas as pd
 
-from ml import (
-    _weighted_cluster_centroid,
-    opentsne,
-    pca,
-    perform_hdbscan_clustering,
-    tsne,
-    umap,
-)
+from ml import dimred_caller, perform_hdbscan_clustering
 
 
 class TestML(unittest.TestCase):
@@ -20,82 +13,51 @@ class TestML(unittest.TestCase):
         # Setup dummy data for tests
         self.X = np.random.rand(100, 10)  # Example data
         self.X_centroids = np.random.rand(5, 10)  # Example centroids
-
-    @unittest.skip(
-        "not fixed yet: FAILED tests/test_ml.py::TestML::test_weighted_cluster_centroid - ZeroDivisionError: Weights sum to zero, can't be normalized"
-    )
-    def test_weighted_cluster_centroid(self):
-        # Arrange
-        model = HDBSCAN(min_samples=2, min_cluster_size=4)
-        model.fit(self.X)
-        cluster_id = model.labels_[0]  # Example cluster ID
-
-        # Act
-        centroid = _weighted_cluster_centroid(model, self.X, cluster_id)
-
-        # Assert
-        self.assertIsInstance(centroid, np.ndarray)
-        self.assertEqual(centroid.shape[0], self.X.shape[1])
-
-        # Test noise cluster handling
-        with self.assertRaisesRegex(
-            ValueError, "Cannot calculate centroid for noise cluster"
-        ):
-            _weighted_cluster_centroid(model, self.X, -1)
+        self.df = pd.DataFrame(self.X, columns=[f"feature_{i}" for i in range(self.X.shape[1])])
 
     def test_perform_hdbscan_clustering(self):
         # Act
-        labels, G, Gsl, X_centroids = perform_hdbscan_clustering(self.X)
+        G, Gsl, df = perform_hdbscan_clustering(self.X, self.df)
 
         # Assert
-        self.assertIsInstance(labels, np.ndarray)
         self.assertIsInstance(G, object)  # Check if it's a valid type
         self.assertIsInstance(Gsl, object)  # Check if it's a valid type
-        self.assertIsInstance(X_centroids, np.ndarray)
+        self.assertIsInstance(df, pd.DataFrame)
+        self.assertIn("cluster", df.columns)
+        self.assertIn("marker_symbol", df.columns)
 
         # Test error handling
-        with self.assertRaisesRegex(
-            ValueError, "The number of samples in X is less than min_samples."
-        ):
-            perform_hdbscan_clustering(self.X, min_samples=self.X.shape[0] + 1)
+        with self.assertRaises(ValueError):
+            perform_hdbscan_clustering(self.X[:10], self.df[:10], min_samples=20)
 
-    def test_pca(self):
+    def test_dimred_caller_pca(self):
         # Act
-        X_pca, X_pca_centroid = pca(self.X, self.X_centroids)
+        X_red = dimred_caller(self.X, dim_method="PCA")
 
         # Assert
-        self.assertIsInstance(X_pca, np.ndarray)
-        self.assertIsInstance(X_pca_centroid, np.ndarray)
-        self.assertEqual(X_pca.shape[1], 2)
-        self.assertEqual(X_pca_centroid.shape[1], 2)
+        self.assertIsInstance(X_red, np.ndarray)
+        self.assertEqual(X_red.shape[1], 2)
 
-    def test_tsne(self):
+    def test_dimred_caller_tsne(self):
         # Act
-        X_tsne, X_tsne_centroid = tsne(self.X)
+        X_red = dimred_caller(self.X, dim_method="TSNE")
 
         # Assert
-        self.assertIsInstance(X_tsne, np.ndarray)
-        self.assertIsInstance(X_tsne_centroid, np.ndarray)
-        self.assertEqual(X_tsne.shape[1], 2)
-        self.assertEqual(X_tsne_centroid.shape[1], 2)
-        self.assertEqual(X_tsne_centroid.shape[0], 0)  # Centroid array should be empty
+        self.assertIsInstance(X_red, np.ndarray)
+        self.assertEqual(X_red.shape[1], 2)
 
-    def test_opentsne(self):  # test is quite slow
+    def test_dimred_caller_opentsne(self):
         # Act
-        X_tsne, X_tsne_centroid = opentsne(self.X, self.X_centroids)
+        X_red = dimred_caller(self.X, dim_method="OPENTSNE")
 
         # Assert
-        self.assertIsInstance(X_tsne, np.ndarray)
-        self.assertIsInstance(X_tsne_centroid, np.ndarray)
-        self.assertEqual(X_tsne.shape[1], 2)
-        self.assertEqual(X_tsne_centroid.shape[1], 2)
+        self.assertIsInstance(X_red, np.ndarray)
+        self.assertEqual(X_red.shape[1], 2)
 
-    def test_umap(self):
+    def test_dimred_caller_umap(self):
         # Act
-        X_umap, X_umap_centroid = umap(self.X, self.X_centroids)
+        X_red = dimred_caller(self.X, dim_method="UMAP")
 
         # Assert
-        self.assertIsInstance(X_umap, np.ndarray)
-        self.assertIsInstance(X_umap_centroid, np.ndarray)
-        self.assertEqual(X_umap.shape[1], 2)
-        self.assertEqual(X_umap_centroid.shape[1], 2)
+        self.assertIsInstance(X_red, np.ndarray)
+        self.assertEqual(X_red.shape[1], 2)

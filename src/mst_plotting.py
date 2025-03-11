@@ -65,10 +65,18 @@ class MinimumSpanningTree:
     def plot_mst_in_dimred_landscape(self):
         """
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
+        For very large MSTs, only draw lines for cluster centroids where df['marker_symbol'] = 'x'.
         """
+        if len(self._mst) > 10000:
+            logging.info("Large MST detected, plotting only cluster centroids.")
+            centroid_indices = self.df[self.df['marker_symbol'] == 'x'].index
+            mst_filtered = self._mst[centroid_indices]
+        else:
+            mst_filtered = self._mst
+
         # Edge coordinates
         line_coords = self.X_red[
-            self._mst[:, :2].astype(int)
+            np.array(mst_filtered)[:, :2].astype(int)
         ]  # X_red[node connections] = coordinates of the nodes in X_red
         edge_x, edge_y = [], []
         for (x1, y1), (x2, y2) in zip(line_coords[:, 0], line_coords[:, 1]):

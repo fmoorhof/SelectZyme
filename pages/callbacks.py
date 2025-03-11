@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 from src.visualizer import plot_2d
 
 
-def register_callbacks(app, df, X_red, X_red_centroids):
+def register_callbacks(app, df, X_red):
     # Define callbacks
     @app.callback(
         [
@@ -75,8 +75,9 @@ def register_callbacks(app, df, X_red, X_red_centroids):
                 - updated_href: The HTML href link for downloading the updated figure.
         """
         updated_fig = plot_2d(
-            df, X_red, X_red_centroids, legend_attribute
+            df, X_red, legend_attribute
         )  # Update the figure
+        updated_fig.update_layout(uirevision="fixed")
         updated_href = html_export_figure(
             updated_fig
         )  # Generate the updated download link
