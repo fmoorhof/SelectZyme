@@ -21,7 +21,7 @@ requires-python = ">= 3.10"
 dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
-dependencies = { file = ["requirements_pip_conda_docker.txt"] }  # extra-index-url are defined in [build]
+dependencies = { file = ["requirements.txt"] }  # extra-index-url are defined in [build]
 
 
 [project.urls]
@@ -31,7 +31,7 @@ dependencies = { file = ["requirements_pip_conda_docker.txt"] }  # extra-index-u
 "Bug Tracker" = "https://github.com/ipb-halle/SelectZyme/-/issues"
 
 [tool.setuptools]
-package-dir = {"" = "src.selectzyme"}
+package-dir = {"" = "src"}
 
 [build-system]
 requires = ["setuptools>=0.61.0"]

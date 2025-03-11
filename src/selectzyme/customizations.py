@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-import cudf
 import pandas as pd
 
 from selectzyme.ncbi_taxonomy_resolver import lineage_resolver
@@ -63,13 +62,14 @@ def custom_plotting(df: pd.DataFrame, size: list = [6, 8, 14], shape: list = ["c
     if all(col in df.columns for col in {"xref_brenda", "ec", "reviewed"}):
         condition0 = (df["reviewed"] == True) | (df["reviewed"] == "true")
         if isinstance(
-            df, cudf.DataFrame
-        ):  # fix for AttributeError: 'Series' object has no attribute 'to_pandas' (cudf vs. pandas)
-            condition = df["xref_brenda"].to_pandas() != "unknown"
-            condition2 = df["ec"].to_pandas() != "unknown"
-        else:  # pandas DataFrame
+            df, pd.DataFrame
+        ):
             condition = df["xref_brenda"] != "unknown"
             condition2 = df["ec"] != "unknown"
+        else:  # assume cudf data frame
+            condition = df["xref_brenda"].to_pandas() != "unknown"
+            condition2 = df["ec"].to_pandas() != "unknown"
+            
         df.loc[condition2, "marker_size"] = size[1]
         df.loc[condition2, "marker_symbol"] = shape[1]  # UniProt EC numbered entries
         df.loc[condition0, "marker_size"] = size[1]
