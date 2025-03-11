@@ -19,7 +19,7 @@ conda activate selectzyme
 ### Pip
 ```
 pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
-pip install . --extra-index-url=https://pypi.nvidia.com --extra-index-url https://download.pytorch.org/whl/cu118
+pip install -e . --extra-index-url https://download.pytorch.org/whl/cu118
 ```
 Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed and that causes the docker containers or CI runner to exit on: `OSError: [Errno 28] No space left on device`  
 
