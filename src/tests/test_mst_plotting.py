@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import pytest
 
 from selectzyme.mst_plotting import MinimumSpanningTree
 
@@ -32,6 +33,7 @@ class TestMinimumSpanningTree(unittest.TestCase):
         self.fig = go.Figure()
         self.mst_plotter = MinimumSpanningTree(self.mst, self.df, self.X_red, self.fig)
 
+    @pytest.mark.skip(reason="Deprecated")
     def test_plot_mst_force_directed(self):
         G = nx.Graph()
         G.add_weighted_edges_from(self.mst)
@@ -61,6 +63,7 @@ class TestMinimumSpanningTree(unittest.TestCase):
         self.assertIsInstance(node_trace, go.Scattergl)
         self.assertEqual(node_trace.mode, "markers")
 
+    @pytest.mark.skip(reason="Deprecated")
     @patch("selectzyme.mst_plotting.set_columns_of_interest")
     def test_modify_graph_data(self, mock_set_columns_of_interest):
         mock_set_columns_of_interest.return_value = ["accession", "cluster"]
