@@ -5,24 +5,18 @@ import logging
 import pandas as pd
 from dash import dash_table, dcc, html
 
-# import plotly.figure_factory as ff
 from pages.dimred import html_export_figure
-
-# from selectzyme.customizations import set_columns_of_interest
 from selectzyme.single_linkage_plotting import create_dendrogram
 
 
-def layout(G, df: pd.DataFrame) -> html.Div:
+def layout(G, df: pd.DataFrame, out_file: str) -> html.Div:
     logging.info("Start building the dendrogram...")
 
     fig = create_dendrogram(
         Z=G._linkage, df=df
-    )  # leanest SL implementation and current go-to. Callback also working
+    )
+    fig.write_html(out_file)
 
-    # attempt with the plotly figure factory: dendrogram front-end rendering ultra slow. also dendrogram creation and figure creation
-    # columns_of_interest = set_columns_of_interest(df.columns)
-    # hover_text = ["<br>".join(f"{col}: {df[col][i]}" for col in columns_of_interest) for i in range(len(df))]
-    # fig = ff.create_dendrogram(G._linkage, hovertext=hover_text)  # labels=df['accession'].to_list()  # root node causes probably different dimensions of G._linkage and df
     return html.Div(
         [
             # plot download button
@@ -32,7 +26,7 @@ def layout(G, df: pd.DataFrame) -> html.Div:
                     id="download-button",
                     href=html_export_figure(
                         fig
-                    ),  # if other column got selected see callback (update_plot_and_download) for export definition
+                    ),
                     download="plotly_graph.html",
                 ),
                 style={"float": "right", "display": "inline-block"},

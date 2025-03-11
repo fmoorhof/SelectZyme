@@ -13,7 +13,7 @@ def plot_2d(
     df: pd.DataFrame,
     X_red: np.ndarray,
     legend_attribute: str,
-):
+) -> go.Figure:
     """
     Plots a 2D scatter plot using Plotly based on the provided DataFrame and reduced dimensionality data.
     Parameters:
@@ -97,5 +97,4 @@ def plot_2d(
         ),
     )
 
-    fig.write_html('results/dimred.html')
     return fig

@@ -91,7 +91,6 @@ class MinimumSpanningTree:
         )
 
         self.fig.add_trace(edge_trace)  # if nodes are not first, hover data randomly get only displayed for some nodes!
-        self.fig.write_html('results/mst.html')
         return self.fig
     
     @run_time

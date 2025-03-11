@@ -25,6 +25,8 @@ from selectzyme.visualizer import plot_2d
 
 
 def main(app):
+    export_path = config["project"]["data"]["out_dir"] + config["project"]["name"]
+
     # backend calculations
     df = parse_data(
         config["project"]["name"],
@@ -58,10 +60,6 @@ def main(app):
     df = custom_plotting(df, 
                          config["project"]["plot_customizations"]["size"], 
                          config["project"]["plot_customizations"]["shape"])
-    
-    # export data
-    df.to_csv(config["project"]["data"]["out_dir"] + config["project"]["name"] + ".csv", index=False)
-    export_annotated_fasta(df, config["project"]["data"]["out_dir"] + config["project"]["name"] + ".fasta")
 
     # Clustering
     G, Gsl, df = perform_hdbscan_clustering(
@@ -85,7 +83,7 @@ def main(app):
     fig_cmst = Figure(fig)
 
     # Create page layouts
-    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df))
+    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(dfout_file=export_path + "_eda.html"))
     dash.register_page(
         "dim",
         name="Dimensionality Reduction and Clustering",
@@ -94,7 +92,7 @@ def main(app):
     dash.register_page(
         "mst", name="Minimal Spanning Tree (MST)", layout=mst.layout(G, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df))
+    dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df, out_file=export_path + "_slc.html"))
 
     # Register callbacks
     register_callbacks(app, df, X_red)
@@ -114,8 +112,14 @@ def main(app):
         dash.register_page(
             "cmst", name="Centroid MST", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
         )
-        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'])) 
+        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'], out_file=export_path + "_cslc.html"))
+        fig_cmst.write_html(export_path + "_cmst.html")
 
+    # export data and plots
+    df.to_csv(export_path + ".csv", index=False)
+    export_annotated_fasta(df=df, out_file=export_path + ".fasta")
+    fig.write_html(export_path + "_dimred.html")
+    fig_mst.write_html(export_path + "_mst.html")
 
     # App layout with navigation links and page container
     app.layout = dbc.Container(
@@ -163,7 +167,7 @@ if __name__ == "__main__":
     config = parse_args()
     # Debugging way, only runs always the test_config.yml
     import yaml
-    args = argparse.Namespace(config="results/input_configs/blast.yml")
+    args = argparse.Namespace(config="results/input_configs/test_config.yml")
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
