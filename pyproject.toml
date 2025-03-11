@@ -31,7 +31,7 @@ dependencies = { file = ["requirements_pip_conda_docker.txt"] }  # extra-index-u
 "Bug Tracker" = "https://github.com/ipb-halle/SelectZyme/-/issues"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "src.selectzyme"}
 
 [build-system]
 requires = ["setuptools>=0.61.0"]

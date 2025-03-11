@@ -9,6 +9,7 @@ datasets/
 reports/
 .ruff_cache/
 results/
+scripts/
 
 # C extensions
 *.so
