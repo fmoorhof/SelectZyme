@@ -35,7 +35,7 @@ def dimred_caller(
     return X_red
 
 
-def _indentify_centroid(model, X, cluster_id: int) -> int:
+def _identify_centroid(model, X, cluster_id: int) -> int:
     """
     Identify the index of the real data point closest to the weighted centroid for a given cluster.
     
@@ -92,7 +92,7 @@ def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: in
     centroid_indices = []
     for cluster_id in np.unique(labels):
         if cluster_id != -1:  # Skip noise cluster
-            centroid_index = _indentify_centroid(hdbscan, X, cluster_id)
+            centroid_index = _identify_centroid(hdbscan, X, cluster_id)
             centroid_indices.append(centroid_index)
     centroid_indices = np.array(centroid_indices)
 
