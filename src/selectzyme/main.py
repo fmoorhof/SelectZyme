@@ -44,6 +44,12 @@ def load_and_preprocess(config):
     if config["project"]["preprocessing"]:
         df = Preprocessing(df).preprocess()
     logging.info(f"DataFrame dtypes: {df.dtypes}")
+
+    df = custom_plotting(
+        df, 
+        config["project"]["plot_customizations"]["size"],
+        config["project"]["plot_customizations"]["shape"]
+    )
     return df
 
 
@@ -79,12 +85,9 @@ def create_visualizations(df, X_red, G, Gsl):
 
 
 def main(config, db_host: str = "http://ocean:6333") -> None:
+    export_path = config["project"]["data"]["out_dir"] + config["project"]["name"]
+
     df = load_and_preprocess(config)
-    df = custom_plotting(
-        df, 
-        config["project"]["plot_customizations"]["size"],
-        config["project"]["plot_customizations"]["shape"]
-    )
 
     X = generate_embeddings(config, df, db_host)
     G, Gsl, df = perform_clustering(config, X, df)
@@ -98,6 +101,9 @@ def main(config, db_host: str = "http://ocean:6333") -> None:
     )
 
     fig_dim, fig_mst, fig_slc = create_visualizations(df, X_red, G, Gsl)
+    fig_dim.write_html(export_path + "_dimred.html")
+    fig_mst.write_html(export_path + "_mst.html")
+    fig_slc.write_html(export_path + "_slc.html")
 
     # Generate EDA Report
     columns_of_interest = set_columns_of_interest(df.columns)
@@ -105,6 +111,7 @@ def main(config, db_host: str = "http://ocean:6333") -> None:
     profile = ProfileReport(df_profile, title="Profiling Report", config_file="")
     try:
         profile.to_file("assets/eda.html")
+        profile.to_file(export_path + "_eda.html")
     except Exception as e:
         logging.error(f"Failed to generate EDA report: {e}")
         with open("assets/eda.html", "w") as f:

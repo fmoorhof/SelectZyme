@@ -4,6 +4,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+import os
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -63,7 +65,7 @@ def load_embeddings(config, df):
 
 
 def main(app, config):
-    export_path = config["project"]["data"]["out_dir"] + config["project"]["name"]
+    export_path = os.path.join(config["project"]["data"]["out_dir"] + config["project"]["name"])
 
     df = load_and_preprocess(config)
     X = load_embeddings(config, df)
