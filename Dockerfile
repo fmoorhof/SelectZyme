@@ -9,10 +9,10 @@ COPY . /app
 COPY environment_docker.yml /app/environment_docker.yml
 
 # rapids env needs to be used unfortunately, else some packages are missing (cudf etc.)
-RUN conda env update --name rapids --file environment_docker.yml  && conda clean --all -y  ## reduce the image size and remove unnecessary package cache files
+RUN conda env update --name rapids --file environment_docker.yml  && conda clean --all -y
 
 # Expose the port Dash will run on
 EXPOSE 8050
 
 # Run the Dash app
-CMD ["python", "src/main.py"]
+CMD ["python", "src/selectzyme/main.py"]

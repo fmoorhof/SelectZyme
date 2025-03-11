@@ -19,7 +19,7 @@ from selectzyme.customizations import custom_plotting
 from selectzyme.embed import gen_embedding
 from selectzyme.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.preprocessing import Preprocessing
-from selectzyme.utils import parse_data
+from selectzyme.utils import export_annotated_fasta, parse_data
 from selectzyme.vector_db import QdrantDB
 from selectzyme.visualizer import plot_2d
 
@@ -58,6 +58,10 @@ def main(app):
     df = custom_plotting(df, 
                          config["project"]["plot_customizations"]["size"], 
                          config["project"]["plot_customizations"]["shape"])
+    
+    # export data
+    df.to_csv(config["project"]["data"]["out_dir"] + config["project"]["name"] + ".csv", index=False)
+    export_annotated_fasta(df, config["project"]["data"]["out_dir"] + config["project"]["name"] + ".fasta")
 
     # Clustering
     G, Gsl, df = perform_hdbscan_clustering(
@@ -159,7 +163,7 @@ if __name__ == "__main__":
     config = parse_args()
     # Debugging way, only runs always the test_config.yml
     import yaml
-    args = argparse.Namespace(config="results/input_configs/test_config.yml")
+    args = argparse.Namespace(config="results/input_configs/blast.yml")
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 

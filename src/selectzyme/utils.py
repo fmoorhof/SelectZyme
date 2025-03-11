@@ -37,10 +37,8 @@ def parse_args():
 
 def parse_data(project_name, query_terms, length, custom_file, out_dir, df_coi):
     exisiting_file = out_dir + project_name + ".tsv"
-    output_file_corpus = out_dir + project_name
     df = _parse_data(exisiting_file, custom_file, query_terms, length, df_coi)
     df = _clean_data(df)
-    _save_data(df, output_file_corpus)
     return df
 
 
@@ -70,14 +68,6 @@ def _parse_data(
             "No query terms or custom data location provided. Please provide either one."
         )
 
-
-def _save_data(df: pd.DataFrame, out_file: str):
-    df.to_csv(f"{out_file}.tsv", sep="\t", index=False)
-    # _export_annotated_fasta(df, f"{out_file}.fasta")
-    # df = df[(df['reviewed'] == True) | (df['xref_brenda'].notnull())]  # | = OR
-    # df.to_csv(f"{out_file}.tsv", sep='\t', index=False)
-
-
 def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df[
         df["accession"] != "Entry"
@@ -93,7 +83,7 @@ def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _export_annotated_fasta(df: pd.DataFrame, out_file: str):
+def export_annotated_fasta(df: pd.DataFrame, out_file: str):
     with open(out_file, "w") as f_out:
         for index, row in df.iterrows():
             fasta = (
@@ -107,7 +97,7 @@ def _export_annotated_fasta(df: pd.DataFrame, out_file: str):
     logging.info(f"FASTA file written to {out_file}")
 
 
-# todo: integrate this function into export excel function to also generate a .fasta output
+@DeprecationWarning
 def convert_tabular_to_fasta(in_file: str, out_file: str):
     df = Parsing(in_file).parse()
     with open(out_file, "w") as f_out:
