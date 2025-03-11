@@ -4,6 +4,8 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+import os
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -19,13 +21,12 @@ from selectzyme.customizations import custom_plotting
 from selectzyme.embed import gen_embedding
 from selectzyme.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.preprocessing import Preprocessing
-from selectzyme.utils import parse_data
+from selectzyme.utils import export_annotated_fasta, parse_data
 from selectzyme.vector_db import QdrantDB
 from selectzyme.visualizer import plot_2d
 
 
-def main(app):
-    # backend calculations
+def load_and_preprocess(config):
     df = parse_data(
         config["project"]["name"],
         config["project"]["data"]["query_terms"],
@@ -34,11 +35,18 @@ def main(app):
         config["project"]["data"]["out_dir"],
         config["project"]["data"]["df_coi"],
     )
-    logging.info(f"df columns have the dtypes: {df.dtypes}")
 
     if config["project"]["preprocessing"]:
         df = Preprocessing(df).preprocess()
 
+    # apply customizations
+    df = custom_plotting(df, 
+                         config["project"]["plot_customizations"]["size"], 
+                         config["project"]["plot_customizations"]["shape"])
+    return df
+
+
+def load_embeddings(config, df):
     if config["project"]["use_DB"]:
         # Load embeddings from Vector DB
         db = QdrantDB(
@@ -53,11 +61,14 @@ def main(app):
             sequences=df["sequence"].tolist(),
             plm_model=config["project"]["plm"]["plm_model"],
         )
+    return X
 
-    # apply customizations
-    df = custom_plotting(df, 
-                         config["project"]["plot_customizations"]["size"], 
-                         config["project"]["plot_customizations"]["shape"])
+
+def main(app, config):
+    export_path = os.path.join(config["project"]["data"]["out_dir"] + config["project"]["name"])
+
+    df = load_and_preprocess(config)
+    X = load_embeddings(config, df)
 
     # Clustering
     G, Gsl, df = perform_hdbscan_clustering(
@@ -81,7 +92,7 @@ def main(app):
     fig_cmst = Figure(fig)
 
     # Create page layouts
-    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df))
+    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df, out_file=export_path + "_eda.html"))
     dash.register_page(
         "dim",
         name="Dimensionality Reduction and Clustering",
@@ -90,7 +101,7 @@ def main(app):
     dash.register_page(
         "mst", name="Minimal Spanning Tree (MST)", layout=mst.layout(G, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df))
+    dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df, out_file=export_path + "_slc.html"))
 
     # Register callbacks
     register_callbacks(app, df, X_red)
@@ -110,7 +121,14 @@ def main(app):
         dash.register_page(
             "cmst", name="Centroid MST", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
         )
-        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'])) 
+        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'], out_file=export_path + "_cslc.html"))
+        fig_cmst.write_html(export_path + "_cmst.html")
+
+    # export data and plots
+    df.to_csv(export_path + ".csv", index=False)
+    export_annotated_fasta(df=df, out_file=export_path + ".fasta")
+    fig.write_html(export_path + "_dimred.html")
+    fig_mst.write_html(export_path + "_mst.html")
 
 
     # App layout with navigation links and page container
@@ -149,7 +167,7 @@ if __name__ == "__main__":
 
     app = dash.Dash(
         __name__,
-        use_pages=True,  # Enables the multi-page functionality
+        use_pages=True,
         suppress_callback_exceptions=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP],  # Optional for styling
     )
@@ -163,5 +181,5 @@ if __name__ == "__main__":
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
-    main(app=app)
+    main(app, config)
     app.run_server(host="127.0.0.1", port=config["project"]["port"], debug=False)
