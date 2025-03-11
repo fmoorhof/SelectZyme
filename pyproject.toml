@@ -1,6 +1,6 @@
 [project]
-name = "ec"
-version = "v0.0.1"
+name = "selectzyme"
+version = "0.0.1"
 description = "Selectzyme: Interactive Protein Space Visualization for Enzyme Discovery, Selection, and Mining"
 readme = "README.md"
 authors = [
@@ -21,17 +21,17 @@ requires-python = ">= 3.10"
 dynamic = ["dependencies"]
 
 [tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }  # extra-index-url are defined in [build]
+dependencies = { file = ["requirements_pip_conda_docker.txt"] }  # extra-index-url are defined in [build]
 
 
 [project.urls]
-"Homepage" = "https://github.com/fmoorhof/ec"
-"Repository" = "https://github.com/fmoorhof/ec"
+"Homepage" = "https://www.ipb-halle.de/en/research/bioorganic-chemistry/research-groups/computational-chemistry/projects/"
+"Repository" = "https://github.com/ipb-halle/SelectZyme"
 "Documentation" = "https://fmoorhof.github.io/fmoorhof/ec"
-"Bug Tracker" = "https://github.com/fmoorhof/ec/-/issues"
+"Bug Tracker" = "https://github.com/ipb-halle/SelectZyme/-/issues"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "src.selectzyme"}
 
 [build-system]
 requires = ["setuptools>=0.61.0"]

@@ -3,8 +3,8 @@ from __future__ import annotations
 from setuptools import find_packages, setup
 
 setup(
-    name="ec",
-    version="v0.0.1",
+    name="selectzyme",
+    version="0.0.1",
     author="Felix Moorhoff",
     author_email="fmoorhof@ipb-halle.de",
     url="https://www.ipb-halle.de/en/research/bioorganic-chemistry/research-groups/computational-chemistry/projects/",
@@ -17,6 +17,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     entry_points={
-        "console_scripts": ["ec = src.main:main"]
+        "console_scripts": ["selectzyme = src.selectzyme.main:main"]
     },  # very important to make local imports work!
 )
