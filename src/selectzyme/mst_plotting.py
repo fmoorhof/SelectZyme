@@ -67,7 +67,7 @@ class MinimumSpanningTree:
         Plot the minimum spanning tree in the dimensionality-reduced landscape.
         For very large MSTs, only draw lines for cluster centroids where df['marker_symbol'] = 'x'.
         """
-        if len(self._mst) > 10000:
+        if len(self._mst) > 1000000:
             logging.info("Large MST detected, plotting only cluster centroids.")
             centroid_indices = self.df[self.df['marker_symbol'] == 'x'].index
             mst_filtered = self._mst[centroid_indices]

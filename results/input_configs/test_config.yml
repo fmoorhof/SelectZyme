@@ -6,7 +6,7 @@
 project: 
   name: "_test_config"
   port: 8050
-  use_DB: False  # use qdrant vector DB to save embeddings for project:name
+  use_DB: True  # use qdrant vector DB to save embeddings for project:name
   preprocessing: False
 
   # Specify data you want to analyze
@@ -25,9 +25,9 @@ project:
   plm:
     plm_model: "prott5" # [esm1b, esm2, prott5, prostt5]
 
-  clustering:
-    min_samples: 2
-    min_cluster_size: 2
+  clustering:  # more details here: https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
+    min_cluster_size: 2  # cluster size: How many sequeces minimally you want to have in a cluster?
+    min_samples: 2  # cluster density/outlier control: Larger numbers form more core part clusters at the expense of producing more outliers (has influence on the dendrogram)
 
   dimred:
     random_state: 42

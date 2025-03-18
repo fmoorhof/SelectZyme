@@ -36,7 +36,7 @@ def parse_args():
 
 
 def parse_data(project_name, query_terms, length, custom_file, out_dir, df_coi):
-    exisiting_file = out_dir + project_name + ".tsv"
+    exisiting_file = out_dir + project_name + ".csv"
     df = _parse_data(exisiting_file, custom_file, query_terms, length, df_coi)
     df = _clean_data(df)
     return df

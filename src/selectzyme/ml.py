@@ -78,6 +78,7 @@ def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: in
     hdbscan = HDBSCAN(
         min_samples=min_samples,
         min_cluster_size=min_cluster_size,
+        cluster_selection_method="leaf",  # produce a more fine grained clustering than Excess of Mass (eom)
         gen_min_span_tree=True,
         **kwargs,
     )
