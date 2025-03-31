@@ -49,19 +49,19 @@ def _parse_data(
         return Parsing(exisiting_file).parse()
 
     if (
-        query_terms != [""]
+        query_terms != ""
     ):  # todo: handle if query_terms NoneType -> breaks execution when query_terms not defined in config.yml
         fetcher = UniProtFetcher(df_coi)
     if custom_file != "":
         df_custom = Parsing(custom_file).parse()
-        if query_terms == [""]:
+        if query_terms == "":
             return df_custom
         df = fetcher.query_uniprot(query_terms, length)
         df = pd.concat(
             [df_custom, df], ignore_index=True
         )  # custom data first that they are displayed first in plot legends
         return df
-    elif query_terms != [""]:
+    elif query_terms != "":
         return fetcher.query_uniprot(query_terms, length)
     else:
         raise ValueError(
