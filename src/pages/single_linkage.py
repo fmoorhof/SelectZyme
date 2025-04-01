@@ -9,11 +9,11 @@ from pages.dimred import html_export_figure
 from selectzyme.single_linkage_plotting import create_dendrogram
 
 
-def layout(G, df: pd.DataFrame, out_file: str) -> html.Div:
+def layout(G, df: pd.DataFrame, legend_attribute: str, out_file: str) -> html.Div:
     logging.info("Start building the dendrogram...")
 
     fig = create_dendrogram(
-        Z=G._linkage, df=df
+        Z=G._linkage, df=df, legend_attribute=legend_attribute
     )
     fig.write_html(out_file)
 

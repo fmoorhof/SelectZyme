@@ -35,7 +35,7 @@ def plot_2d(
         # reduce opacity for large datasets
         opacity = 0.8
         if subset.size > 1000:
-            opacity = 0.3
+            opacity = 0.5
 
         fig.add_trace(
             go.Scattergl(

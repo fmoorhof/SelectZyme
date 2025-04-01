@@ -87,7 +87,7 @@ def main(app, config):
     )
 
     # Perf: create DimRed and MST plot only once
-    fig = plot_2d(df, X_red, legend_attribute="cluster")
+    fig = plot_2d(df, X_red, legend_attribute=config["project"]["plot_customizations"]["objective"])
     fig_mst = Figure(fig)  # copy required else fig will be modified by mst creation
     fig_cmst = Figure(fig)
 
@@ -95,13 +95,13 @@ def main(app, config):
     dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df, out_file=export_path + "_eda.html"))
     dash.register_page(
         "dim",
-        name="Dimensionality Reduction and Clustering",
+        name="Protein Landscape",
         layout=dimred.layout(df, fig),
     )
     dash.register_page(
-        "mst", name="Minimal Spanning Tree (MST)", layout=mst.layout(G, df, X_red, fig_mst)
+        "mst", name="Connectivity", layout=mst.layout(G, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogram", layout=sl.layout(G=Gsl, df=df, out_file=export_path + "_slc.html"))
+    dash.register_page("slc", name="Phylogeny", layout=sl.layout(G=Gsl, df=df, legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_slc.html"))
 
     # Register callbacks
     register_callbacks(app, df, X_red)
@@ -119,13 +119,14 @@ def main(app, config):
         G_centroids, Gsl_centroids, df = perform_hdbscan_clustering(X_centroids, df, re_cluster=True)
 
         dash.register_page(
-            "cmst", name="Centroid MST", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
+            "cmst", name="Centroid connectivity", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
         )
-        dash.register_page("cslc", name="Centroid Phylogram", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'], out_file=export_path + "_cslc.html"))
+        dash.register_page("cslc", name="Centroid Phylogeny", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'], legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_cslc.html"))
         fig_cmst.write_html(export_path + "_cmst.html")
 
     # export data and plots
     df.to_csv(export_path + ".csv", index=False)
+    df.to_csv(export_path + ".tsv", sep="\t", index=False)
     export_annotated_fasta(df=df, out_file=export_path + ".fasta")
     fig.write_html(export_path + "_dimred.html")
     fig_mst.write_html(export_path + "_mst.html")

@@ -6,7 +6,7 @@
 project: 
   name: "_test_config"
   port: 8050
-  use_DB: True  # use qdrant vector DB to save embeddings for project:name
+  use_DB: False  # use qdrant vector DB to save embeddings for project:name
   preprocessing: False
 
   # Specify data you want to analyze
@@ -35,5 +35,6 @@ project:
     n_neighbors: 15  # recommended between 5-50
 
   plot_customizations:  # set marker size and shape for plots
+    objective: "cluster"  # define the marker color objective for MST and SLC
     size: [6, 8, 14]  # [unknown data type, UniProt annotation, BRENDA annotation]
     shape: ["circle", "diamond", "cross"]  # [unknown data type, UniProt annotation, BRENDA annotation]
