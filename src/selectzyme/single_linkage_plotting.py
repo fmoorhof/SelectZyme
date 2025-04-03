@@ -58,9 +58,10 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
             x=x_lines,
             y=y_lines,
             mode="lines",
-            # line=dict(color=line_colors),  # not possible to pass list
+            # line=dict(color=line_colors),  # not possible to pass list so branch color not specifically changable
             hoverinfo="none",
             visible=line_visibility,  # dont load line traces by default for large datasets
+            name="Dendrogram lines"
         )
     )
 
@@ -73,36 +74,42 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
     # Order df to represent 'leaves' correctly
     df_copy = df.iloc[leaves].copy()
 
-    columns_of_interest = set_columns_of_interest(df_copy.columns)
-    hover_text = [
-        "<br>".join(f"{col}: {df_copy[col][idx]}" for col in columns_of_interest)
-        for idx in df_copy.index
-    ]
-
     # set color mapping for marker´s legend_attribute
     color_mapping = _value_to_color(
-        df_copy[legend_attribute]
-    )
+        df[legend_attribute]
+    )  # use df for same order of legend entries and same color mapping
     marker_colors = df_copy[legend_attribute].map(color_mapping).to_numpy()
 
-    # Add markers trace using the sorted dataframe
-    fig.add_trace(
-        go.Scattergl(
-            x=marker_x,
-            y=marker_y,
-            mode="markers",
+    # set markers
+    columns_of_interest = set_columns_of_interest(df_copy.columns)
+    for attribute in df_copy[legend_attribute].unique():
+        mask = df_copy[legend_attribute] == attribute
+        subset = df_copy[mask]
+
+        fig.add_trace(go.Scattergl(
+            x=marker_x[mask[:marker_x.shape[0]]],
+            y=marker_y[mask[:marker_y.shape[0]]],
+            mode='markers',
             marker=dict(
-                color=marker_colors,
-                symbol=df_copy["marker_symbol"].to_numpy(),
-                size=df_copy["marker_size"].to_numpy(),
-                opacity=0.8,
+                color=marker_colors[mask[:marker_colors.shape[0]]],
+                symbol=subset['marker_symbol'],
+                size=subset['marker_size'],
+                opacity=0.8
             ),
-            customdata=df_copy["accession"].to_numpy(),
-            text=np.array(hover_text),
+            customdata=subset['accession'],
+            text=subset.apply(lambda row: '<br>'.join([f'{col}: {row[col]}' for col in columns_of_interest]), axis=1),
             hoverinfo="text",
             showlegend=True,
-        )
-    )
+            name=str(attribute),
+            legendgroup=str(attribute)  # group attributes in legend
+        ))
+
+    fig.update_layout(
+        showlegend=True,
+        legend=dict(
+            title=dict(text=legend_attribute),
+            traceorder='reversed'
+        ))
 
     fig.write_html('results/slc.html')
     return fig

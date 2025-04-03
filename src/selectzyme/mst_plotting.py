@@ -89,7 +89,8 @@ class MinimumSpanningTree:
         edge_trace = self.create_edge_trace(
             edge_x, edge_y, edge_opacity=0.5, edge_width=0.3
         )
-
+        edge_trace.name = "MST lines"
+        
         self.fig.add_trace(edge_trace)  # if nodes are not first, hover data randomly get only displayed for some nodes!
         return self.fig
     
