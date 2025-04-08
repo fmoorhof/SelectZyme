@@ -9,13 +9,13 @@ from pages.dimred import html_export_figure
 from selectzyme.single_linkage_plotting import create_dendrogram
 
 
-def layout(_linkage, df: pd.DataFrame, legend_attribute: str, out_file: str) -> html.Div:
+def layout(_linkage, df: pd.DataFrame, legend_attribute: str) -> html.Div:
     logging.info("Start building the centroid dendrogram...")
 
     fig = create_dendrogram(
         Z=_linkage, df=df, legend_attribute=legend_attribute
     )
-    fig.write_html(out_file)
+
     return html.Div(
         [
             # plot download button

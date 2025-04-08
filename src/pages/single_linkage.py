@@ -10,14 +10,13 @@ from pages.dimred import html_export_figure
 from selectzyme.single_linkage_plotting import create_dendrogram
 
 
-def layout(_linkage: np.ndarray, df: pd.DataFrame, legend_attribute: str, out_file: str) -> html.Div:
+def layout(_linkage: np.ndarray, df: pd.DataFrame, legend_attribute: str) -> html.Div:
     """
     Generates a Dash layout containing a dendrogram plot, a data table, and a download button.
     Args:
         _linkage (np.ndarray): The linkage matrix used to create the dendrogram.
         df (pd.DataFrame): The input DataFrame containing data to be displayed in the table.
         legend_attribute (str): The attribute used to create the legend for the dendrogram.
-        out_file (str): The file path where the dendrogram plot will be saved as an HTML file.
     Returns:
         html.Div: A Dash HTML Div containing the dendrogram plot, a data table, and a download button.
     """
@@ -26,7 +25,6 @@ def layout(_linkage: np.ndarray, df: pd.DataFrame, legend_attribute: str, out_fi
     fig = create_dendrogram(
         Z=_linkage, df=df, legend_attribute=legend_attribute
     )
-    fig.write_html(out_file)
 
     return html.Div(
         [

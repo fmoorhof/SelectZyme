@@ -106,7 +106,10 @@ def load_embeddings(config, df):
     return X
 
 
-def export_calculation(df, X_red, mst_array, linkage_array, output_dir="calculation") -> None:
+def export_data(df, X_red, mst_array, linkage_array, output_dir="results") -> None:
+    """
+    Exports various data structures to files in specified formats for further use.
+    """
     def sanitize_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
         """
         Prepares a Pandas DataFrame for saving as a Parquet file by sanitizing its columns.
@@ -120,6 +123,7 @@ def export_calculation(df, X_red, mst_array, linkage_array, output_dir="calculat
         obj_cols = df.select_dtypes(include=["object"]).columns
         return df.copy().astype({col: "string" for col in obj_cols})
 
+    # export data for minimal front end
     os.makedirs(output_dir, exist_ok=True)
     df_export = sanitize_for_parquet(df)
     df_export.to_parquet(os.path.join(output_dir, "df.parquet"), index=False)
@@ -127,11 +131,14 @@ def export_calculation(df, X_red, mst_array, linkage_array, output_dir="calculat
     np.savez_compressed(os.path.join(output_dir, "hdbscan_structures.npz"),
                         mst=mst_array,
                         linkage=linkage_array)
+    
+    # export data for user
+    df.to_csv(os.path.join(output_dir + "data.csv"), index=False)
+    df.to_csv(output_dir + "data.tsv", sep="\t", index=False)
+    export_annotated_fasta(df=df, out_file=os.path.join(output_dir + "data.fasta"))
 
 
 def main(app, config):
-    export_path = os.path.join(config["project"]["data"]["out_dir"] + config["project"]["name"])
-
     df = load_and_preprocess(config)
     X = load_embeddings(config, df)
 
@@ -152,15 +159,16 @@ def main(app, config):
     )
 
     # save intermediates for external minimal dash version
-    export_calculation(df, X_red, _mst, _linkage)
+    export_data(df, X_red, _mst, _linkage, output_dir=config["project"]["data"]["out_dir"])
 
-    # Perf: create DimRed and MST plot only once
+
+    # Visualization
     fig = plot_2d(df, X_red, legend_attribute=config["project"]["plot_customizations"]["objective"])
     fig_mst = Figure(fig)  # copy required else fig will be modified by mst creation
     fig_cmst = Figure(fig)
 
     # Create page layouts
-    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df, out_file=export_path + "_eda.html"))
+    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df))
     dash.register_page(
         "dim",
         name="Protein Landscape",
@@ -169,7 +177,9 @@ def main(app, config):
     dash.register_page(
         "mst", name="Connectivity", layout=mst.layout(_mst, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogeny", layout=sl.layout(_linkage=_linkage, df=df, legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_slc.html"))
+    dash.register_page("slc", name="Phylogeny", layout=sl.layout(_linkage=_linkage, 
+                                                                 df=df, 
+                                                                 legend_attribute=config["project"]["plot_customizations"]["objective"]))
 
     # Register callbacks
     register_callbacks(app, df, X_red)
@@ -189,16 +199,9 @@ def main(app, config):
         dash.register_page(
             "cmst", name="Centroid connectivity", layout=mst.layout(mst_centroids, df, X_red_centroids, fig_cmst)
         )
-        dash.register_page("cslc", name="Centroid Phylogeny", layout=sl_centroid.layout(_linkage=linkage_centroids, df=df[df['marker_symbol'] == 'x'], legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_cslc.html"))
-        fig_cmst.write_html(export_path + "_cmst.html")
-
-    # export data and plots
-    df.to_csv(export_path + ".csv", index=False)
-    df.to_csv(export_path + ".tsv", sep="\t", index=False)
-    export_annotated_fasta(df=df, out_file=export_path + ".fasta")
-    fig.write_html(export_path + "_dimred.html")
-    fig_mst.write_html(export_path + "_mst.html")
-
+        dash.register_page("cslc", name="Centroid Phylogeny", layout=sl_centroid.layout(_linkage=linkage_centroids, 
+                                                                                        df=df[df['marker_symbol'] == 'x'], 
+                                                                                        legend_attribute=config["project"]["plot_customizations"]["objective"]))
 
     # App layout with navigation links and page container
     app.layout = dbc.Container(

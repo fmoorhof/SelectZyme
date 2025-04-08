@@ -111,7 +111,6 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
             traceorder='reversed'
         ))
 
-    fig.write_html('results/slc.html')
     return fig
 
 
