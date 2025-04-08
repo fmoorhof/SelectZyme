@@ -31,7 +31,7 @@ class TestVisualizer(unittest.TestCase):
 
         # Check the first trace
         trace = fig.data[0]
-        self.assertEqual(trace.name, "A")
+        self.assertEqual(trace.name, "A - 1")
         self.assertEqual(trace.x.tolist(), [1])
         self.assertEqual(trace.y.tolist(), [2])
         self.assertEqual(trace.marker.size.tolist(), [10])
