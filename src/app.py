@@ -8,6 +8,8 @@ import os
 
 import dash
 import dash_bootstrap_components as dbc
+import numpy as np
+import pandas as pd
 from dash import dcc, html
 from plotly.graph_objects import Figure
 
@@ -27,6 +29,28 @@ from selectzyme.visualizer import plot_2d
 
 
 def load_and_preprocess(config):
+    """
+    Load and preprocess data based on the provided configuration.
+    This function parses data using the configuration parameters, applies 
+    preprocessing if specified, and customizes the data for plotting.
+    Args:
+        config (dict): A dictionary containing configuration parameters. 
+            Expected keys include:
+                - "project": A dictionary with the following keys:
+                    - "name" (str): The name of the project.
+                    - "data": A dictionary with keys:
+                        - "query_terms" (list): Terms to query the data.
+                        - "length" (int): Length of the data to process.
+                        - "custom_data_location" (str): Path to custom data.
+                        - "out_dir" (str): Directory to save output data.
+                        - "df_coi" (str): DataFrame column of interest.
+                    - "preprocessing" (bool): Whether to apply preprocessing.
+                    - "plot_customizations": A dictionary with keys:
+                        - "size" (int): Size parameter for plotting.
+                        - "shape" (str): Shape parameter for plotting.
+    Returns:
+        pandas.DataFrame: The processed and customized DataFrame.
+    """
     df = parse_data(
         config["project"]["name"],
         config["project"]["data"]["query_terms"],
@@ -47,6 +71,24 @@ def load_and_preprocess(config):
 
 
 def load_embeddings(config, df):
+    """
+    Load embeddings for a given dataset based on the provided configuration.
+    This function either retrieves embeddings from a Vector Database (QdrantDB) 
+    or generates embeddings using a pre-trained language model (PLM), depending 
+    on the configuration.
+    Args:
+        config (dict): A dictionary containing configuration settings. 
+            Expected keys:
+                - "project": A dictionary with the following keys:
+                    - "use_DB" (bool): If True, embeddings are loaded from the database.
+                    - "name" (str): The name of the project/collection in the database.
+                    - "plm" (dict): A dictionary with the key:
+                        - "plm_model" (str): The name of the pre-trained language model.
+        df (pandas.DataFrame): A DataFrame containing the data. It must include 
+            a column named "sequence" if embeddings are to be generated.
+    Returns:
+        numpy.ndarray: An array of embeddings corresponding to the input data.
+    """
     if config["project"]["use_DB"]:
         # Load embeddings from Vector DB
         db = QdrantDB(
@@ -62,6 +104,29 @@ def load_embeddings(config, df):
             plm_model=config["project"]["plm"]["plm_model"],
         )
     return X
+
+
+def export_calculation(df, X_red, mst_array, linkage_array, output_dir="calculation") -> None:
+    def sanitize_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Prepares a Pandas DataFrame for saving as a Parquet file by sanitizing its columns.
+        This function converts all columns with the data type 'object' to 'string' to avoid 
+        potential type inference issues when using pyarrow for Parquet serialization.
+        Args:
+            df (pd.DataFrame): The input DataFrame to be sanitized.
+        Returns:
+            pd.DataFrame: A copy of the input DataFrame with 'object' columns converted to 'string'.
+        """
+        obj_cols = df.select_dtypes(include=["object"]).columns
+        return df.copy().astype({col: "string" for col in obj_cols})
+
+    os.makedirs(output_dir, exist_ok=True)
+    df_export = sanitize_for_parquet(df)
+    df_export.to_parquet(os.path.join(output_dir, "df.parquet"), index=False)
+    np.savez_compressed(os.path.join(output_dir, "X_red.npz"), X_red=X_red)
+    np.savez_compressed(os.path.join(output_dir, "hdbscan_structures.npz"),
+                        mst=mst_array,
+                        linkage=linkage_array)
 
 
 def main(app, config):
@@ -85,6 +150,9 @@ def main(app, config):
         config["project"]["dimred"]["n_neighbors"],
         config["project"]["dimred"]["random_state"],
     )
+
+    # save intermediates for external minimal dash version
+    export_calculation(df, X_red, G._mst, Gsl._linkage)
 
     # Perf: create DimRed and MST plot only once
     fig = plot_2d(df, X_red, legend_attribute=config["project"]["plot_customizations"]["objective"])
