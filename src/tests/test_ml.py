@@ -17,11 +17,11 @@ class TestML(unittest.TestCase):
 
     def test_perform_hdbscan_clustering(self):
         # Act
-        G, Gsl, df = perform_hdbscan_clustering(self.X, self.df)
+        mst, linkage, df = perform_hdbscan_clustering(self.X, self.df)
 
         # Assert
-        self.assertIsInstance(G, object)  # Check if it's a valid type
-        self.assertIsInstance(Gsl, object)  # Check if it's a valid type
+        self.assertIsInstance(mst, np.ndarray)
+        self.assertIsInstance(linkage, np.ndarray)
         self.assertIsInstance(df, pd.DataFrame)
         self.assertIn("cluster", df.columns)
         self.assertIn("marker_symbol", df.columns)

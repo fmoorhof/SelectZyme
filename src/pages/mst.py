@@ -11,32 +11,19 @@ from selectzyme.mst_plotting import MinimumSpanningTree
 # dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
 
 
-def layout(G, df, X_red, fig) -> html.Div:
+def layout(_mst, df, X_red, fig) -> html.Div:
     """
     Generates a Dash layout for visualizing a minimal spanning tree of a given graph.
     Parameters:
-    G (nx.Graph): The input graph for which the minimal spanning tree layout is to be generated.
+    _mst (np.ndarray): Minimal spanning tree in np array format
     df (pd.DataFrame): A DataFrame containing node information such as node ID, x and y positions, and number of connections.
-    Returns:
-    html.Div: A Dash HTML Div containing the graph visualization and a data table.
-    The function performs the following steps:
-    1. Computes the spring layout positions for the nodes in the graph.
-    2. Sets the node positions as attributes in the graph.
-    3. Modifies the graph data to create edge and node traces for visualization.
-    4. Creates a figure dictionary for the graph visualization.
-    5. Creates a DataFrame containing node information such as node ID, x and y positions, and number of connections.
-    6. Constructs a Dash layout with a graph component and a data table.
-    7. Defines a callback to update the data table based on node clicks in the graph.
-    Note:
-    - The `modify_graph_data` function is assumed to be defined elsewhere and is responsible for creating the edge and node traces.
+    X_red (np.ndarray): Reduced dimensionality data for plotting.
+    fig (go.Figure): A Plotly figure object for the minimal spanning tree.
     """
     logging.info("Start building the MST...")
-    mst = MinimumSpanningTree(G._mst, df, X_red, fig)
-
-    if df.shape[0] > 1:
-        fig = mst.plot_mst_in_dimred_landscape()
-    else:
-        fig = mst.plot_mst_force_directed(G)
+    mst = MinimumSpanningTree(_mst, df, X_red, fig)
+    fig = mst.plot_mst_in_dimred_landscape()
+    # fig = mst.plot_mst_force_directed(G)  # deprecated. usage of graph G not supported any more, remove functionality in near future
 
     return html.Div(
         [

@@ -136,7 +136,7 @@ def main(app, config):
     X = load_embeddings(config, df)
 
     # Clustering
-    G, Gsl, df = perform_hdbscan_clustering(
+    _mst, _linkage, df = perform_hdbscan_clustering(
         X,
         df,
         config["project"]["clustering"]["min_samples"],
@@ -152,7 +152,7 @@ def main(app, config):
     )
 
     # save intermediates for external minimal dash version
-    export_calculation(df, X_red, G._mst, Gsl._linkage)
+    export_calculation(df, X_red, _mst, _linkage)
 
     # Perf: create DimRed and MST plot only once
     fig = plot_2d(df, X_red, legend_attribute=config["project"]["plot_customizations"]["objective"])
@@ -167,9 +167,9 @@ def main(app, config):
         layout=dimred.layout(df, fig),
     )
     dash.register_page(
-        "mst", name="Connectivity", layout=mst.layout(G, df, X_red, fig_mst)
+        "mst", name="Connectivity", layout=mst.layout(_mst, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogeny", layout=sl.layout(G=Gsl, df=df, legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_slc.html"))
+    dash.register_page("slc", name="Phylogeny", layout=sl.layout(_linkage=_linkage, df=df, legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_slc.html"))
 
     # Register callbacks
     register_callbacks(app, df, X_red)
@@ -184,12 +184,12 @@ def main(app, config):
         X_red_centroids = X_red[centroid_indices]
 
         # Cluster centroids
-        G_centroids, Gsl_centroids, df = perform_hdbscan_clustering(X_centroids, df, re_cluster=True)
+        mst_centroids, linkage_centroids, df = perform_hdbscan_clustering(X_centroids, df, re_cluster=True)
 
         dash.register_page(
-            "cmst", name="Centroid connectivity", layout=mst.layout(G_centroids, df, X_red_centroids, fig_cmst)
+            "cmst", name="Centroid connectivity", layout=mst.layout(mst_centroids, df, X_red_centroids, fig_cmst)
         )
-        dash.register_page("cslc", name="Centroid Phylogeny", layout=sl_centroid.layout(G=Gsl_centroids, df=df[df['marker_symbol'] == 'x'], legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_cslc.html"))
+        dash.register_page("cslc", name="Centroid Phylogeny", layout=sl_centroid.layout(_linkage=linkage_centroids, df=df[df['marker_symbol'] == 'x'], legend_attribute=config["project"]["plot_customizations"]["objective"], out_file=export_path + "_cslc.html"))
         fig_cmst.write_html(export_path + "_cmst.html")
 
     # export data and plots
