@@ -39,7 +39,7 @@ class TestVisualizer(unittest.TestCase):
 
         # Check the second trace
         trace = fig.data[1]
-        self.assertEqual(trace.name, "B")
+        self.assertEqual(trace.name, "B - 1 entries")
         self.assertEqual(trace.x.tolist(), [3])
         self.assertEqual(trace.y.tolist(), [4])
         self.assertEqual(trace.marker.size.tolist(), [20])
