@@ -31,7 +31,7 @@ class TestVisualizer(unittest.TestCase):
 
         # Check the first trace
         trace = fig.data[0]
-        self.assertEqual(trace.name, "A")
+        self.assertEqual(trace.name, "A - 1 entries")
         self.assertEqual(trace.x.tolist(), [1])
         self.assertEqual(trace.y.tolist(), [2])
         self.assertEqual(trace.marker.size.tolist(), [10])
@@ -39,7 +39,7 @@ class TestVisualizer(unittest.TestCase):
 
         # Check the second trace
         trace = fig.data[1]
-        self.assertEqual(trace.name, "B")
+        self.assertEqual(trace.name, "B - 1 entries")
         self.assertEqual(trace.x.tolist(), [3])
         self.assertEqual(trace.y.tolist(), [4])
         self.assertEqual(trace.marker.size.tolist(), [20])

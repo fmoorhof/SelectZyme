@@ -25,9 +25,9 @@ project:
   plm:
     plm_model: "prott5" # [esm1b, esm2, prott5, prostt5]
 
-  clustering:
-    min_samples: 2
-    min_cluster_size: 2
+  clustering:  # more details here: https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
+    min_cluster_size: 2  # cluster size: How many sequeces minimally you want to have in a cluster?
+    min_samples: 2  # cluster density/outlier control: Larger numbers form more core part clusters at the expense of producing more outliers (has influence on the dendrogram)
 
   dimred:
     random_state: 42
@@ -35,5 +35,6 @@ project:
     n_neighbors: 15  # recommended between 5-50
 
   plot_customizations:  # set marker size and shape for plots
+    objective: "cluster"  # define the marker color objective for MST and SLC
     size: [6, 8, 14]  # [unknown data type, UniProt annotation, BRENDA annotation]
     shape: ["circle", "diamond", "cross"]  # [unknown data type, UniProt annotation, BRENDA annotation]

@@ -35,14 +35,14 @@ def plot_2d(
         # reduce opacity for large datasets
         opacity = 0.8
         if subset.size > 1000:
-            opacity = 0.3
+            opacity = 0.5
 
         fig.add_trace(
             go.Scattergl(
                 x=X_red[subset.index, 0],
                 y=X_red[subset.index, 1],
                 mode="markers",
-                name=str(attribute)[:40],  # only show max. 40 characters in legend
+                name=f"{str(attribute)[:40]} - {subset.shape[0]} entries",  # only show max. 40 characters in legend
                 marker=dict(
                     size=subset["marker_size"],
                     symbol=subset["marker_symbol"],
