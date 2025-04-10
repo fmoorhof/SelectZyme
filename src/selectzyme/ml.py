@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 import numpy as np
+import pandas as pd
 from cuml.cluster import HDBSCAN
 from cuml.decomposition import PCA
 from cuml.manifold import TSNE, UMAP
@@ -13,7 +14,7 @@ from selectzyme.utils import run_time
 @run_time
 def dimred_caller(
     X: np.ndarray, dim_method: str, n_neighbors: int = 15, random_state: int = 42, **kwargs
-):
+) -> np.ndarray:
     dim_method = dim_method.upper()
     if dim_method == "PCA":
         X_red = pca(X, **kwargs)
@@ -59,16 +60,16 @@ def _identify_centroid(model, X, cluster_id: int) -> int:
 
 
 @run_time
-def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: int = 2, re_cluster: bool = False, **kwargs):
+def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: int = 2, re_cluster: bool = False, **kwargs) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
     """
-    Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBScan).
-    # finished in 12 mins on 200k:)
+    Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBSCAN).
 
     :param X: embeddings
     :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
     return: labels: cluster labels for each point
-    """
+
     # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
+    """
     logging.info("Running HDBSCAN. This may take a while.")
     if X.shape[0] < min_samples:
         raise ValueError(
@@ -86,8 +87,8 @@ def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: in
     hdbscan.fit(X)
     labels = hdbscan.labels_
 
-    G = hdbscan.minimum_spanning_tree_  # .to_networkx()  # # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
-    Gsl = hdbscan.single_linkage_tree_  # .to_networkx()
+    _mst = hdbscan.minimum_spanning_tree_._mst  # .to_networkx()  # # study:cuml/python/cuml/cuml/cluster/hdbscan/hdbscan.pyx: build_minimum_spanning_tree hdbscan.mst_dst, hdbscan.mst_weights
+    _linkage = hdbscan.single_linkage_tree_._linkage  # .to_networkx()
 
     # Calculate centroids for each cluster
     centroid_indices = []
@@ -101,10 +102,10 @@ def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: in
         df["cluster"] = labels
         df.loc[centroid_indices, "marker_symbol"] = "x"
 
-    return G, Gsl, df
+    return _mst, _linkage, df
 
 
-def pca(X, dimension: int = 2, **kwargs):
+def pca(X, dimension: int = 2, **kwargs) -> np.ndarray:
     """Dimensionality reduction with PCA.
     :param kwargs: Additional parameters"""
     pca = PCA(n_components=dimension, output_type="numpy", **kwargs)
@@ -117,7 +118,7 @@ def pca(X, dimension: int = 2, **kwargs):
     return X_pca
 
 
-def tsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
+def tsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs) -> np.ndarray:
     """Dimensionality reduction with tSNE.
     Currently TSNE supports n_components = 2; so only 2D plots are possible in May 2024!
     Despite random seed, also tSNE looks not 100% reproducible. May be related to this bug report for UMAP:
@@ -131,7 +132,7 @@ def tsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **
     return X_tsne
 
 
-def opentsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs):
+def opentsne(X, dimension: int = 2, perplexity: int = 30, random_state: int = 42, **kwargs) -> np.ndarray:
     """Dimensionality reduction with open tSNE.
     Currently TSNE supports n_components = 2. Non GPU implementation but tsne.transform is possible to integrate cluster centroids.
     Despite, non GPU runtime is very good and scales less computationally complex in comparison to t-SNE.
@@ -153,7 +154,7 @@ def umap(
     n_neighbors: int = 15,
     random_state: int = 42,
     **kwargs,
-):
+) -> np.ndarray:
     """Dimensionality reduction with UMAP.
     Reproducibity warning: Despite random_state, UMAP multi-threaded has race conditions between the threads. Unfortunately this means that the randomness in UMAP outputs for the multi-threaded case depends not only on the random seed input, but also on race conditions between threads during optimization, over which no control can be had
     https://umap-learn.readthedocs.io/en/latest/reproducibility.html

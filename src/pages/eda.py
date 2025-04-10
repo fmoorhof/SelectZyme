@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import logging
+import os
 
+import pandas as pd
 from dash import html
 from ydata_profiling import ProfileReport
 
 from selectzyme.customizations import set_columns_of_interest
 
 
-def layout(df, out_file: str) -> html.Div:
+def layout(df: pd.DataFrame) -> html.Div:
     """Generates a Dash layout for the EDA using ydata"""
     logging.info("Generating EDA report. This may take a while...")
     columns_of_interest = set_columns_of_interest(df.columns)
@@ -21,9 +23,9 @@ def layout(df, out_file: str) -> html.Div:
     profile = ProfileReport(
         df_profile, title="Profiling Report", config_file=""
     )  # empty string to fix docker TypeCheckError
+    os.makedirs("assets", exist_ok=True)
     try:
         profile.to_file("assets/eda.html")
-        profile.to_file(out_file)
     except Exception as e:
         logging.error(f"Failed to generate EDA report: {e}")
         with open("assets/eda.html", "w") as f:
