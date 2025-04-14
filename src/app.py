@@ -168,19 +168,20 @@ def main(app, config):
     fig_cmst = Figure(fig)
 
     # Create page layouts
-    dash.register_page("eda", name="Explanatory Data Analysis", layout=eda.layout(df))
+    dash.register_page(module="eda", name="Explanatory Data Analysis", layout=eda.layout(df))
     dash.register_page(
-        "dim",
+        module="dim",
+        path="/",
         name="Protein Landscape",
         layout=dimred.layout(df, fig),
     )
     dash.register_page(
-        "mst", name="Connectivity", layout=mst.layout(_mst, df, X_red, fig_mst)
+        module="mst", name="Connectivity", layout=mst.layout(_mst, df, X_red, fig_mst)
     )
-    dash.register_page("slc", name="Phylogeny", layout=sl.layout(_linkage=_linkage, 
+    dash.register_page(module="slc", name="Phylogeny", layout=sl.layout(_linkage=_linkage, 
                                                                  df=df, 
                                                                  legend_attribute=config["project"]["plot_customizations"]["objective"]))
-
+    
     # Register callbacks
     register_callbacks(app, df, X_red)
 
@@ -197,11 +198,15 @@ def main(app, config):
         mst_centroids, linkage_centroids, df = perform_hdbscan_clustering(X_centroids, df, re_cluster=True)
 
         dash.register_page(
-            "cmst", name="Centroid connectivity", layout=mst.layout(mst_centroids, df, X_red_centroids, fig_cmst)
+            module="cmst", 
+            name="Centroid connectivity", 
+            layout=mst.layout(mst_centroids, df, X_red_centroids, fig_cmst)
         )
-        dash.register_page("cslc", name="Centroid Phylogeny", layout=sl_centroid.layout(_linkage=linkage_centroids, 
-                                                                                        df=df[df['marker_symbol'] == 'x'], 
-                                                                                        legend_attribute=config["project"]["plot_customizations"]["objective"]))
+        dash.register_page(module="cslc", 
+                           name="Centroid Phylogeny", 
+                           layout=sl_centroid.layout(_linkage=linkage_centroids, 
+                                df=df[df['marker_symbol'] == 'x'], 
+                                legend_attribute=config["project"]["plot_customizations"]["objective"]))
 
     # App layout with navigation links and page container
     app.layout = dbc.Container(
