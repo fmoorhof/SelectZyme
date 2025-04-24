@@ -46,14 +46,14 @@ def custom_plotting(df: pd.DataFrame, size: list = [6, 8, 14], shape: list = ["c
         df.loc[df["xref_brenda"] != "unknown", "reviewed"] = (
             True  # add BRENDA to reviewed (not only SWISSProt)
         )
+        logging.info(
+            f"{(df['xref_brenda'] != 'unknown').sum()} Brenda entries are found."
+        )
 
     # Same for UniProt EC numbers
     if "ec" in df.columns:
         df["ec"] = df["ec"].fillna("unknown")
         logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers are found.")
-        logging.info(
-            f"{(df['xref_brenda'] != 'unknown').sum()} Brenda entries are found."
-        )
 
     # define markers for the plot
     df["marker_size"] = size[0]
