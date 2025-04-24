@@ -40,18 +40,31 @@ def layout(_linkage: np.ndarray, df: pd.DataFrame, legend_attribute: str) -> htm
                 ),
                 style={"float": "right", "display": "inline-block"},
             ),
-            # Scatter plot
-            dcc.Graph(
-                id="plot",
-                figure=fig,
-                config={
-                    "scrollZoom": True,
-                },
-                style={
-                    "width": "100%",
-                    "height": "100%",
-                    "display": "inline-block",
-                },
+            # Scatter plot with loading message
+            dcc.Loading(
+                id="loading-plot",
+                type="default",  # or "circle", "dot", "cube"
+                children=[
+                    html.Div(
+                        dcc.Graph(
+                            id="plot",
+                            figure=fig,
+                            config={
+                                "scrollZoom": True,
+                            },
+                            style={
+                                "width": "100%",
+                                "height": "100%",
+                                "display": "inline-block",
+                            },
+                        )
+                    )
+                ],
+                fullscreen=False,
+            ),
+            html.Div(
+                id="loading-text",
+                style={"textAlign": "center", "marginTop": "10px", "fontStyle": "italic"},
             ),
             # data table
             dash_table.DataTable(
