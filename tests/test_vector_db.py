@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-from backend import vector_db
+from selectzyme.backend import vector_db
 from qdrant_client import QdrantClient
 
 

@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from frontend.visualizer import plot_2d
+from selectzyme.frontend.visualizer import plot_2d
 
 
 class TestVisualizer(unittest.TestCase):

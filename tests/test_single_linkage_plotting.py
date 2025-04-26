@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
-from frontend.single_linkage_plotting import _value_to_color, create_dendrogram
+from selectzyme.frontend.single_linkage_plotting import _value_to_color, create_dendrogram
 from scipy.cluster.hierarchy import linkage
 
 

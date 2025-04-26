@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-from backend.parsing import ParseLocalFiles, UniProtFetcher
+from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher
 from requests import Session
 
 
@@ -99,7 +99,7 @@ class TestParseFasta(unittest.TestCase):
 
 # todo: logic un-tested yet. So far i see no real call to uniprot is done. change this and assert delivered response.
 class TestUniProtFetcher(unittest.TestCase):
-    @patch("backend.parsing.Session")
+    @patch("selectzyme.backend.parsing.Session")
     def setUp(self, MockSession):
         self.df_coi = [
             "accession",
@@ -117,7 +117,7 @@ class TestUniProtFetcher(unittest.TestCase):
         self.assertIsInstance(session, Session)
         self.assertEqual(session.adapters["https://"].max_retries.total, 5)
 
-    @patch("backend.parsing.UniProtFetcher._get_batch")
+    @patch("selectzyme.backend.parsing.UniProtFetcher._get_batch")
     def test_query_uniprot(self, mock_get_batch):
         mock_response = MagicMock()
         mock_response.content = gzip.compress(
@@ -176,7 +176,7 @@ class TestUniProtFetcher(unittest.TestCase):
         expected_link = "https://rest.uniprot.org/uniprotkb/search?query=kinase&size=500&format=tsv&fields=accession,id,reviewed,protein_name,gene_names,organism_name&offset=500"
         self.assertEqual(next_link, expected_link)
 
-    @patch("backend.parsing.UniProtFetcher._get_next_link")
+    @patch("selectzyme.backend.parsing.UniProtFetcher._get_next_link")
     def test_get_batch(self, mock_get_next_link):
         mock_response = MagicMock()
         mock_response.headers = {"x-total-results": "1"}

@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 import yaml
-from backend.utils import parse_args
+from selectzyme.backend.utils import parse_args
 
 
 def test_parse_args_valid_config():
