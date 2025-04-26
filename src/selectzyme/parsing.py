@@ -30,12 +30,34 @@ class Parsing:
             return pd.read_csv(self.filepath, sep="\t", encoding="ISO-8859-1")
 
     def parse_csv(self) -> pd.DataFrame:
-        """Parse a csv file and return a dataframe"""
+        """Parse a csv file and return a dataframe
+        Automatically detects separator (comma or semicolon) and handles common encoding issues.
+        """
+        # First try UTF-8 encoding with both separators
+        for sep in [",", ";"]:
+            try:
+                df = pd.read_csv(self.filepath, sep=sep, encoding='utf-8')
+                # Verify we got more than one column (simple separator detection)
+                if len(df.columns) > 1:
+                    return df
+            except (UnicodeDecodeError, pd.errors.ParserError):
+                pass
+        
+        # If UTF-8 failed, try ISO-8859-1 encoding with both separators
+        for sep in [",", ";"]:
+            try:
+                df = pd.read_csv(self.filepath, sep=sep, encoding='ISO-8859-1')
+                if len(df.columns) > 1:
+                    return df
+            except pd.errors.ParserError:
+                pass
+        
+        # If all attempts failed, try with no separator specified (pandas auto-detection)
         try:
-            return pd.read_csv(self.filepath, sep=",")
+            return pd.read_csv(self.filepath, encoding='utf-8')
         except UnicodeDecodeError:
-            return pd.read_csv(self.filepath, sep=",", encoding="ISO-8859-1")
-
+            return pd.read_csv(self.filepath, encoding='ISO-8859-1')
+        
     def parse_fasta(self) -> pd.DataFrame:
         """
         Parse a FASTA file and return a DataFrame with headers, annotations, and sequences.
