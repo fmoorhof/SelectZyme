@@ -26,8 +26,8 @@ project:
     plm_model: "prott5" # [esm1b, esm2, prott5, prostt5]
 
   clustering:  # more details here: https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
-    min_cluster_size: 2  # cluster size: How many sequeces minimally you want to have in a cluster?
-    min_samples: 2  # cluster density/outlier control: Larger numbers form more core part clusters at the expense of producing more outliers (has influence on the dendrogram)
+    min_cluster_size: 2  # How many sequeces you want to have in a cluster at least? -> Used for MST calculation
+    min_samples: 2  # cluster density: Larger numbers form more core part clusters at the expense of producing more outliers
 
   dimred:
     random_state: 42
