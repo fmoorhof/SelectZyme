@@ -246,6 +246,7 @@ if __name__ == "__main__":
         __name__,
         use_pages=True,
         pages_folder="selectzyme/pages",
+        assets_folder="selectzyme/assets",
         suppress_callback_exceptions=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP],  # Optional for styling
     )

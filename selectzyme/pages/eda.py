@@ -23,18 +23,18 @@ def layout(df: pd.DataFrame) -> html.Div:
     profile = ProfileReport(
         df_profile, title="Profiling Report", config_file=""
     )  # empty string to fix docker TypeCheckError
-    os.makedirs("assets", exist_ok=True)
+    # os.makedirs("assets", exist_ok=True)
     try:
-        profile.to_file("assets/eda.html")
+        profile.to_file("selectzyme/assets/eda.html")
     except Exception as e:
         logging.error(f"Failed to generate EDA report: {e}")
-        with open("assets/eda.html", "w") as f:
+        with open("selectzyme/assets/eda.html", "w") as f:
             f.write(f"<html><body><h1>EDA Report could not be generated because of: {e}</h1></body></html>")
 
     return html.Div(
         children=[
             html.Iframe(
-                src="assets/eda.html",  # must be under assets/ to be properly served
+                src="assets/eda.html",  # must be under same path as defined in app.py: dash.Dash()
                 style={"height": "1080px", "width": "100%"},
             )
         ]
