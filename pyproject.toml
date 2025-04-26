@@ -60,7 +60,7 @@ full = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = "selectzyme/"
+pythonpath = "."
 filterwarnings = [
     "ignore:.*pkg_resources.*:DeprecationWarning",
 ]

@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
-from frontend.mst_plotting import MinimumSpanningTree
+
+from selectzyme.frontend.mst_plotting import MinimumSpanningTree
 
 
 class TestMinimumSpanningTree(unittest.TestCase):

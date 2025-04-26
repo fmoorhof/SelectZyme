@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import torch
 from tqdm import tqdm
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -15,75 +15,28 @@ def gen_embedding(
 ) -> np.ndarray:
     """
     Generate embeddings for a list of sequences using a specified pre-trained language model (PLM).
+
     Args:
-        sequences (list[str]): A list of sequences to generate embeddings for.
-        plm_model (str, optional): The pre-trained language model to use. Default is 'esm1b'.
-                                   Supported models include 'esm1b', 'prott5', and 'prostt5'.
-        no_pad (bool, optional): If True, removes paddings from the sequences before generating mean embeddings.
-                                 Default is False.
+        sequences (list[str]): List of amino acid sequences.
+        plm_model (str, optional): Pre-trained model name. Options: 'esm1b', 'esm2', 'prott5', 'prostt5'.
+        no_pad (bool, optional): If True, removes padding tokens when calculating mean embedding.
+
     Returns:
-        np.ndarray: An array of embeddings for the input sequences.
+        np.ndarray: Array of embeddings.
     """
+    tokenizer, model = _load_model_and_tokenizer(plm_model)
+    logging.info(f"Generating embeddings with {plm_model} on device: {device}")
 
-    tokenizer, model = _select_plm_model(plm_model)
-    logging.info(f"Generating {plm_model} embeddings using device: {device}")
+    formatted_sequences = _format_sequences(sequences, plm_model)
 
-    if plm_model in ["prott5", "prostt5"]:  # models require sequenes to be spaced (whitespace)
-        sequences = [" ".join(list(seq)) for seq in sequences]
+    embeddings = [_generate_sequence_embedding(seq, tokenizer, model, plm_model, no_pad) for seq in tqdm(formatted_sequences)]
 
-    embeddings = []
-    for seq in tqdm(sequences):
-        inputs = tokenizer(seq, return_tensors="pt", padding=True, truncation=True)
-        with torch.no_grad():
-            inputs = inputs.to(device)
-            outputs = model(**inputs)  # , output_attentions=True
-
-        if not no_pad:  #  == False:
-            last_hidden_states = outputs.last_hidden_state
-            try:
-                embedding = (
-                    torch.mean(last_hidden_states, dim=1).squeeze().cpu().numpy()
-                )  # Move embedding back to CPU
-            except RuntimeError as e:
-                if plm_model == "esm1b":
-                    raise RuntimeError(
-                        f"In order to use esm1b on your sequences please apply preprocessing (to remove sequences longer than 1024 amino acids)"
-                        f"or use the plm_model='prott5'. This sequence is too long and causing errors: {seq}"
-                    ) from e
-                else:
-                    raise e
-        else:
-            if plm_model in ["prott5", "prostt5"]:
-                seq_len = int(len(seq) / 2 + 1)
-            else:
-                seq_len = len(seq)
-            last_hidden_states = outputs.last_hidden_state[
-                0, :seq_len, :
-            ]  # Remove padding
-            embedding = (
-                last_hidden_states.mean(dim=0).cpu().numpy()
-            )  # Move embedding back to CPU
-        embeddings.append(embedding)
-
-    # Free up GPU memory (somehow not done by default)
     torch.cuda.empty_cache()
-
     return np.array(embeddings)
 
 
-def _select_plm_model(plm_model: str = "esm1b") -> tuple:
-    """
-    Selects and loads a pre-trained language model (PLM) and its corresponding tokenizer based on the specified model name.
-    Args:
-        plm_model (str): The name of the pre-trained language model to load.
-                         Options are 'esm1b' (default), 'esm2', 'prott5', 'prostt5'.
-    Returns:
-        tuple: A tuple containing the tokenizer and the model.
-    Raises:
-        ValueError: If the specified model name is not supported.
-        NotImplementedError: If 'esm3' is specified, as it is not yet implemented.
-    """
-
+def _load_model_and_tokenizer(plm_model: str) -> tuple[PreTrainedTokenizer, PreTrainedModel]:
+    """Load the tokenizer and model for a given PLM."""
     if plm_model == "esm1b":
         tokenizer = AutoTokenizer.from_pretrained("facebook/esm1b_t33_650M_UR50S")
         model = AutoModel.from_pretrained("facebook/esm1b_t33_650M_UR50S").to(device)
@@ -94,34 +47,88 @@ def _select_plm_model(plm_model: str = "esm1b") -> tuple:
 
     elif plm_model == "prott5":
         from transformers import T5EncoderModel, T5Tokenizer
-
         tokenizer = T5Tokenizer.from_pretrained("Rostlab/prot_t5_xl_uniref50")
         model = T5EncoderModel.from_pretrained("Rostlab/prot_t5_xl_uniref50").to(device)
 
     elif plm_model == "prostt5":
         from transformers import T5EncoderModel, T5Tokenizer
-
         tokenizer = T5Tokenizer.from_pretrained("Rostlab/ProstT5")
         model = T5EncoderModel.from_pretrained("Rostlab/ProstT5").to(device)
 
     else:
         raise ValueError(
-            f"Model {plm_model} not supported. Please choose one of: 'esm1b', 'esm2', 'prott5', 'prostt5'"
+            f"Unsupported model '{plm_model}'. Choose from 'esm1b', 'esm2', 'prott5', 'prostt5'."
         )
 
     return tokenizer, model
 
 
+def _format_sequences(sequences: list[str], plm_model: str) -> list[str]:
+    """Format sequences if necessary (e.g., insert spaces for T5 models)."""
+    if plm_model in {"prott5", "prostt5"}:
+        return [" ".join(list(seq)) for seq in sequences]
+    return sequences
+
+
+def _generate_sequence_embedding(
+    sequence: str,
+    tokenizer: PreTrainedTokenizer,
+    model: PreTrainedModel,
+    plm_model: str,
+    no_pad: bool,
+) -> np.ndarray:
+    """Generate embedding for a single sequence."""
+    inputs = tokenizer(sequence, return_tensors="pt", padding=True, truncation=True).to(device)
+
+    with torch.no_grad():
+        outputs = model(**inputs)
+
+    if no_pad:
+        return _extract_no_pad_embedding(outputs, sequence, plm_model)
+    else:
+        return _extract_mean_embedding(outputs, sequence, plm_model)
+
+
+def _extract_mean_embedding(
+    outputs: torch.nn.Module,
+    sequence: str,
+    plm_model: str,
+) -> np.ndarray:
+    """Extract mean embedding including padding."""
+    try:
+        embedding = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+    except RuntimeError as e:
+        if plm_model == "esm1b":
+            raise RuntimeError(
+                f"ESM-1b model cannot handle sequences longer than 1024 amino acids.\n"
+                f"Problematic sequence: {sequence}\n"
+                "Please filter or truncate long sequences or use 'prott5' instead."
+            ) from e
+        raise
+    return embedding
+
+
+def _extract_no_pad_embedding(
+    outputs: torch.nn.Module,
+    sequence: str,
+    plm_model: str,
+) -> np.ndarray:
+    """Extract mean embedding after removing padding."""
+    seq_len = len(sequence) if plm_model not in {"prott5", "prostt5"} else int(len(sequence) / 2 + 1)
+    return outputs.last_hidden_state[0, :seq_len, :].mean(dim=0).cpu().numpy()
+
+
+
 if __name__ == "__main__":
     # load example data
-    from selectzyme.backend.parsing import Parsing
-    from selectzyme.backend.preprocessing import Preprocessing
+    from parsing import ParseLocalFiles
+    from preprocessing import Preprocessing
 
-    df = Parsing("src/tests/head_10.tsv").parse_tsv()
+    df = ParseLocalFiles("tests/head_10.tsv").parse_tsv()
     # df = Parsing('datasets/output/ired.tsv').parse_tsv()
     # df = Preprocessing(df).preprocess()
     pp = Preprocessing(df)
-    # pp.remove_long_sequences()
+    pp.remove_long_sequences()
     # pp.remove_sequences_without_Metheonin()
     # pp.remove_sequences_with_undertermined_amino_acids()
     pp.remove_duplicate_entries()
@@ -130,7 +137,7 @@ if __name__ == "__main__":
 
     # test embedding
     embeddings = gen_embedding(
-        df["sequence"].tolist(), plm_model="esm1b"
+        df["sequence"].tolist(), plm_model="prostt5"
     )  # , no_pad=True)
     print(embeddings.shape)
     print(embeddings)

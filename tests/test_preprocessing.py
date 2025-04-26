@@ -4,21 +4,22 @@ the test cases and occurences more stringend despite violating the isolation pri
 from __future__ import annotations
 
 import pytest
-from backend.parsing import Parsing
-from backend.preprocessing import Preprocessing
+
+from selectzyme.backend.parsing import ParseLocalFiles
+from selectzyme.backend.preprocessing import Preprocessing
 
 
 class TestPreprocessing:
     """Test the preprocessing functions."""
 
     @pytest.fixture(
-        params=[Parsing.parse_tsv, Parsing.parse_fasta]
+        params=[ParseLocalFiles.parse_tsv, ParseLocalFiles.parse_fasta]
     )  # parse tsv and fasta files
     def setup_method(self, request):
         parser = (
-            Parsing("tests/head_10.tsv")
+            ParseLocalFiles("tests/head_10.tsv")
             if request.param.__name__ == "parse_tsv"
-            else Parsing("tests/head_10.fasta")
+            else ParseLocalFiles("tests/head_10.fasta")
         )
         self.df = (
             parser.parse_tsv()
