@@ -245,6 +245,7 @@ if __name__ == "__main__":
     app = dash.Dash(
         __name__,
         use_pages=True,
+        pages_folder="selectzyme/pages",
         suppress_callback_exceptions=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP],  # Optional for styling
     )
