@@ -21,10 +21,10 @@ def parse_data(project_name, query_terms, length, custom_file, out_dir, df_coi):
 
 
 def _parse_data(
-    exisiting_file: str, custom_file: str, query_terms: list, length: str, df_coi: list
+    existing_file: str, custom_file: str, query_terms: list, length: str, df_coi: list
 ):
-    if os.path.isfile(exisiting_file):
-        return ParseLocalFiles(exisiting_file).parse()
+    if os.path.isfile(existing_file):
+        return ParseLocalFiles(existing_file).parse()
 
     if (
         query_terms != ""

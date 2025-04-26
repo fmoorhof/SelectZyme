@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 from requests import Session
 
-from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher
+from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher, _clean_data
 
 
 def test_parse_fasta():
@@ -191,6 +191,59 @@ class TestUniProtFetcher(unittest.TestCase):
         self.assertEqual(len(batches), 1)
         self.assertEqual(batches[0][1], "1")
         self.assertEqual(batches[0][0].content, mock_response.content)
+
+
+class TestCleanData(unittest.TestCase):
+    def test_remove_header_row(self):
+        # Create a dataframe with a header row in the data (e.g. the first row contains "Entry")
+        df = pd.DataFrame({
+            'accession': ['Entry', 'P12345'],
+            'id': ['id', 'ID1'],
+            'reviewed': ['reviewed', 'yes']
+        })
+        cleaned_df = _clean_data(df)
+        # Verify that the "Entry" row has been removed
+        self.assertFalse((cleaned_df['accession'] == 'Entry').any())
+
+    def test_empty_dataframe(self):
+        # Test with an empty dataframe that has the appropriate columns
+        df = pd.DataFrame(columns=['accession', 'id', 'reviewed'])
+        cleaned_df = _clean_data(df)
+        self.assertTrue(cleaned_df.empty)
+
+    def test_remove_duplicates(self):
+        # Create a df with duplicate rows
+        df = pd.DataFrame({
+            'accession': ['P12345', 'P12345', 'P67890'],
+            'id': ['ID1', 'ID1', 'ID2'],
+            'reviewed': ['yes', 'yes', 'no']
+        })
+        cleaned_df = _clean_data(df)
+        # Expect duplicates to be removed. The expected length is 2.
+        self.assertEqual(len(cleaned_df), 2)
+
+    def test_xref_brenda_missing(self):
+        # Test a dataframe that does NOT contain the 'xref_brenda' column.
+        df = pd.DataFrame({
+            'accession': ['P12345'],
+            'id': ['ID1'],
+            'reviewed': ['yes']
+        })
+        cleaned_df = _clean_data(df)
+        # The 'xref_brenda' column should not be added or present if not originally there.
+        self.assertNotIn('xref_brenda', cleaned_df.columns)
+
+    def test_xref_brenda_present(self):
+        # Test a dataframe that contains the 'xref_brenda' column.
+        df = pd.DataFrame({
+            'accession': ['P12345'],
+            'id': ['ID1'],
+            'reviewed': ['yes'],
+            'xref_brenda': [None]
+        })
+        cleaned_df = _clean_data(df)
+        # The test verifies that the column is still present post-cleaning.
+        self.assertIn('xref_brenda', cleaned_df.columns)
 
 
 if __name__ == "__main__":

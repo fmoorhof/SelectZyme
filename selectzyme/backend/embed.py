@@ -115,8 +115,7 @@ def _extract_no_pad_embedding(
 ) -> np.ndarray:
     """Extract mean embedding after removing padding."""
     seq_len = len(sequence) if plm_model not in {"prott5", "prostt5"} else int(len(sequence) / 2 + 1)
-    embedding = outputs.last_hidden_state[0, :seq_len, :].mean(dim=0).cpu().numpy()
-    return embedding
+    return outputs.last_hidden_state[0, :seq_len, :].mean(dim=0).cpu().numpy()
 
 
 

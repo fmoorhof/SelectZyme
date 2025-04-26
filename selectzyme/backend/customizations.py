@@ -6,7 +6,7 @@ import pandas as pd
 import taxoniq
 
 
-def lineage_resolver(taxid: int) -> tuple[str, str, list[str]]:
+def lineage_resolver(taxid: int) -> tuple[str, str, str, list[str]]:
     """
     Retrieves the lineage of a given taxonomic identifier in taxonomic identifiers. Converts the taxonomic identifiers to scientific names and returns them as a tuple.
     The lineage is always specified with the species name first and the domain name last.
