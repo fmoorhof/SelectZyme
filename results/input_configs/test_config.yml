@@ -18,7 +18,7 @@ project:
       - "protein_name: catchol 1,2-dioxygenases"  # free text search
       - "catchol 1,2-dioxygenases"  # free text search
     length: "10 TO *"  # *=open end
-    custom_data_location: "src/tests/head_10.tsv"  # use "" if no custom data is desired
+    custom_data_location: "tests/head_10.tsv"  # use "" if no custom data is desired
     out_dir: "results/"
     df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 

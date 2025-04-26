@@ -1,0 +1,95 @@
+from __future__ import annotations
+
+import logging
+
+import numpy as np
+import pandas as pd
+from dash import dash_table, dcc, html
+
+from selectzyme.frontend.single_linkage_plotting import create_dendrogram
+from selectzyme.pages.dimred import html_export_figure
+
+
+def layout(_linkage: np.ndarray, df: pd.DataFrame, legend_attribute: str) -> html.Div:
+    """
+    Generates a Dash layout containing a dendrogram plot, a data table, and a download button.
+    Args:
+        _linkage (np.ndarray): The linkage matrix used to create the dendrogram.
+        df (pd.DataFrame): The input DataFrame containing data to be displayed in the table.
+        legend_attribute (str): The attribute used to create the legend for the dendrogram.
+    Returns:
+        html.Div: A Dash HTML Div containing the dendrogram plot, a data table, and a download button.
+    """
+    logging.info("Start building the dendrogram...")
+
+    fig = create_dendrogram(
+        Z=_linkage, df=df, legend_attribute=legend_attribute
+    )
+
+    return html.Div(
+        [
+            # plot download button
+            html.Div(
+                html.A(
+                    html.Button("Download plot as HTML"),
+                    id="download-button",
+                    href=html_export_figure(
+                        fig
+                    ),
+                    download="plotly_graph.html",
+                ),
+                style={"float": "right", "display": "inline-block"},
+            ),
+            # Scatter plot with loading message
+            dcc.Loading(
+                id="loading-plot",
+                type="default",  # or "circle", "dot", "cube"
+                children=dcc.Graph(
+                            id="plot",
+                            figure=fig,
+                            config={
+                                "scrollZoom": True,
+                            },
+                            style={
+                                "width": "100%",
+                                "height": "100%",
+                                "display": "inline-block",
+                            },
+                        ),
+                fullscreen=False,
+            ),
+            html.Div(
+                id="loading-text",
+                style={"textAlign": "center", "marginTop": "10px", "fontStyle": "italic"},
+            ),
+            # data table
+            dash_table.DataTable(
+                id="data-table",
+                columns=[{"id": c, "name": c} for c in df.columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
+                style_cell={
+                    "textAlign": "left",
+                    "maxWidth": "200px",  # Set a maximum width for all columns
+                    "whiteSpace": "normal",  # Allow text to wrap within cells
+                    "overflow": "hidden",  # Hide overflow content
+                    "textOverflow": "ellipsis",  # Add ellipsis for overflow text
+                },
+                style_data={
+                    "width": "150px",  # Set a fixed width for data cells
+                },
+                style_table={
+                    "maxWidth": "100%",  # Set the table width to 100% of its container
+                    "overflowX": "auto",  # Enable horizontal scrolling
+                },
+                editable=True,
+                row_deletable=True,
+                export_format="xlsx",
+                export_headers="display",
+                merge_duplicate_headers=True,
+                filter_action="native",
+                sort_action="native",
+                sort_mode="multi",
+                column_selectable="single",
+                row_selectable="multi",
+            ),
+        ]
+    )

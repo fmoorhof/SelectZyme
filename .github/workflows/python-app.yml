@@ -49,4 +49,4 @@ jobs:
         shell: bash -l {0}  # Ensures the Conda environment is correctly sourced
         run: |
           conda activate selectzyme
-          python -m pytest --cov=src/selectzyme -v src/tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude tests requiring GPU/cuda
+          python -m pytest --cov=selectzyme/ -v tests/test_* -k 'not select and not gen_embedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude tests requiring GPU/cuda
