@@ -139,6 +139,7 @@ def export_data(df, X_red, mst_array, linkage_array, output_dir="results") -> No
 
 
 def main(app, config):
+    # Backend
     df = load_and_preprocess(config)
     X = load_embeddings(config, df)
 
@@ -161,7 +162,20 @@ def main(app, config):
     # save intermediates for external minimal dash version
     export_data(df, X_red, _mst, _linkage, output_dir=config["project"]["data"]["out_dir"])
 
+    # Repeat clustering on only the centroids
+    if set(df['cluster']) != {-1}:
+        # identify cluster centroids and their embeddings
+        centroid_indices = df[df["marker_symbol"] == 'x'].index
+        X_centroids = X[centroid_indices]
+        X_red_centroids = X_red[centroid_indices]
 
+        # Cluster centroids
+        mst_centroids, linkage_centroids, df = perform_hdbscan_clustering(X_centroids, df, re_cluster=True)
+    else:
+        logging.info("Only outlier cluster found. Skipping centroid calculation.")
+
+
+    # Frontend
     # Visualization
     fig = plot_2d(df, X_red, legend_attribute=config["project"]["plot_customizations"]["objective"])
     fig_mst = Figure(fig)  # copy required else fig will be modified by mst creation
@@ -185,18 +199,8 @@ def main(app, config):
     # Register callbacks
     register_callbacks(app, df, X_red)
 
-    # Centroid layouts: repeat clustering on only the centroids
-    if set(df['cluster']) == {-1} and config["project"]["dimred"]["method"].upper() == "TSNE":  # skip centroid calculations if only outliers found or TSNE is used (no centroid projection possible)
-        logging.error("No clusters found or t-SNE used, skipping centroid calculations.")
-    else:
-        # identify cluster centroids and their embeddings
-        centroid_indices = df[df["marker_symbol"] == 'x'].index
-        X_centroids = X[centroid_indices]
-        X_red_centroids = X_red[centroid_indices]
-
-        # Cluster centroids
-        mst_centroids, linkage_centroids, df = perform_hdbscan_clustering(X_centroids, df, re_cluster=True)
-
+    # Create centroid layouts if cetroids are found
+    if set(df['cluster']) != {-1}:
         dash.register_page(
             module="cmst", 
             name="Centroid connectivity", 
@@ -250,7 +254,6 @@ if __name__ == "__main__":
         suppress_callback_exceptions=True,
         external_stylesheets=[dbc.themes.BOOTSTRAP],  # Optional for styling
     )
-    # server = app.server  # this line is only needed when deployed on a (public) server
 
     # CLI argument parsing
     config = parse_args()
