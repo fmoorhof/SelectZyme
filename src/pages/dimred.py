@@ -36,7 +36,7 @@ def layout(df, fig):
             # plot download button
             html.Div(
                 html.A(
-                    html.Button("Download plot as HTML"),
+                    html.Button("Download interactive plot"),
                     id="download-button",
                     href=html_export_figure(
                         fig
@@ -45,18 +45,27 @@ def layout(df, fig):
                 ),
                 style={"float": "right", "display": "inline-block"},
             ),
-            # Scatter plot
-            dcc.Graph(
-                id="plot",
-                figure=fig,
-                config={
-                    "scrollZoom": True,
-                },
-                style={
-                    "width": "100%",
-                    "height": "100%",
-                    "display": "inline-block",
-                },
+            # Scatter plot with loading message
+            dcc.Loading(
+                id="loading-plot",
+                type="default",  # or "circle", "dot", "cube"
+                children=dcc.Graph(
+                            id="plot",
+                            figure=fig,
+                            config={
+                                "scrollZoom": True,
+                            },
+                            style={
+                                "width": "100%",
+                                "height": "100%",
+                                "display": "inline-block",
+                            },
+                        ),
+                fullscreen=False,  # for loading message
+            ),
+            html.Div(
+                id="loading-text",
+                style={"textAlign": "center", "marginTop": "10px", "fontStyle": "italic"},
             ),
             # data table
             dash_table.DataTable(
@@ -64,10 +73,10 @@ def layout(df, fig):
                 columns=[{"id": c, "name": c} for c in df.columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
                 style_cell={
                     "textAlign": "left",
-                    "maxWidth": "200px",  # Set a maximum width for all columns
-                    "whiteSpace": "normal",  # Allow text to wrap within cells
-                    "overflow": "hidden",  # Hide overflow content
-                    "textOverflow": "ellipsis",  # Add ellipsis for overflow text
+                    "maxWidth": "200px",
+                    "whiteSpace": "normal",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
                 },
                 style_data={
                     "width": "150px",  # Set a fixed width for data cells
@@ -87,5 +96,5 @@ def layout(df, fig):
                 column_selectable="single",
                 row_selectable="multi",
             ),
-        ]
-    )
+        ],
+            )

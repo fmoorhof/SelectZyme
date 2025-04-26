@@ -36,7 +36,7 @@ def gen_embedding(
         inputs = tokenizer(seq, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
             inputs = inputs.to(device)
-            outputs = model(**inputs)
+            outputs = model(**inputs)  # , output_attentions=True
 
         if not no_pad:  #  == False:
             last_hidden_states = outputs.last_hidden_state
@@ -114,11 +114,11 @@ def _select_plm_model(plm_model: str = "esm1b") -> tuple:
 
 if __name__ == "__main__":
     # load example data
-    from parsing import Parsing
-    from preprocessing import Preprocessing
+    from selectzyme.parsing import Parsing
+    from selectzyme.preprocessing import Preprocessing
 
-    df = Parsing("tests/head_10.tsv").parse_tsv()
-    # df = Parsing('datasets/output/petase.tsv').parse_tsv()
+    df = Parsing("src/tests/head_10.tsv").parse_tsv()
+    # df = Parsing('datasets/output/ired.tsv').parse_tsv()
     # df = Preprocessing(df).preprocess()
     pp = Preprocessing(df)
     # pp.remove_long_sequences()
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     # test embedding
     embeddings = gen_embedding(
-        df["sequence"].tolist(), plm_model="esm2"
+        df["sequence"].tolist(), plm_model="esm1b"
     )  # , no_pad=True)
     print(embeddings.shape)
     print(embeddings)
