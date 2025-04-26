@@ -18,7 +18,6 @@ import selectzyme.pages.eda as eda
 import selectzyme.pages.mst as mst
 import selectzyme.pages.single_linkage as sl
 import selectzyme.pages.slc_centroid as sl_centroid
-from selectzyme.pages.callbacks import register_callbacks
 from selectzyme.backend.customizations import custom_plotting
 from selectzyme.backend.embed import gen_embedding
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
@@ -26,6 +25,7 @@ from selectzyme.backend.preprocessing import Preprocessing
 from selectzyme.backend.utils import export_annotated_fasta, parse_data
 from selectzyme.backend.vector_db import QdrantDB
 from selectzyme.frontend.visualizer import plot_2d
+from selectzyme.pages.callbacks import register_callbacks
 
 
 def load_and_preprocess(config):

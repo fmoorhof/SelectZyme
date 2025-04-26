@@ -5,8 +5,8 @@ import logging
 import pandas as pd
 from dash import dash_table, dcc, html
 
-from selectzyme.pages.dimred import html_export_figure
 from selectzyme.frontend.single_linkage_plotting import create_dendrogram
+from selectzyme.pages.dimred import html_export_figure
 
 
 def layout(_linkage, df: pd.DataFrame, legend_attribute: str) -> html.Div:

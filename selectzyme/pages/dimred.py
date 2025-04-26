@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dash import dash_table, dcc, html
 
-from selectzyme.pages.callbacks import html_export_figure
 from selectzyme.backend.customizations import set_columns_of_interest
+from selectzyme.pages.callbacks import html_export_figure
 
 
 def layout(df, fig):

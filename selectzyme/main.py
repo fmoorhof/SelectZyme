@@ -23,11 +23,11 @@ from ydata_profiling import ProfileReport
 from selectzyme.backend.customizations import custom_plotting, set_columns_of_interest
 from selectzyme.backend.embed import gen_embedding
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
-from selectzyme.frontend.mst_plotting import MinimumSpanningTree
 from selectzyme.backend.preprocessing import Preprocessing
-from selectzyme.frontend.single_linkage_plotting import create_dendrogram
 from selectzyme.backend.utils import parse_data
 from selectzyme.backend.vector_db import QdrantDB
+from selectzyme.frontend.mst_plotting import MinimumSpanningTree
+from selectzyme.frontend.single_linkage_plotting import create_dendrogram
 from selectzyme.frontend.visualizer import plot_2d
 
 

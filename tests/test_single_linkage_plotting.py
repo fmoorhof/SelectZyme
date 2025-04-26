@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
-from scipy.cluster.hierarchy import linkage
-
 from frontend.single_linkage_plotting import _value_to_color, create_dendrogram
+from scipy.cluster.hierarchy import linkage
 
 
 @pytest.fixture
