@@ -13,19 +13,19 @@ import pandas as pd
 from dash import dcc, html
 from plotly.graph_objects import Figure
 
-import pages.dimred as dimred
-import pages.eda as eda
-import pages.mst as mst
-import pages.single_linkage as sl
-import pages.slc_centroid as sl_centroid
-from pages.callbacks import register_callbacks
-from backend.customizations import custom_plotting
-from backend.embed import gen_embedding
-from backend.ml import dimred_caller, perform_hdbscan_clustering
-from backend.preprocessing import Preprocessing
-from backend.utils import export_annotated_fasta, parse_data
-from backend.vector_db import QdrantDB
-from frontend.visualizer import plot_2d
+import selectzyme.pages.dimred as dimred
+import selectzyme.pages.eda as eda
+import selectzyme.pages.mst as mst
+import selectzyme.pages.single_linkage as sl
+import selectzyme.pages.slc_centroid as sl_centroid
+from selectzyme.pages.callbacks import register_callbacks
+from selectzyme.backend.customizations import custom_plotting
+from selectzyme.backend.embed import gen_embedding
+from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
+from selectzyme.backend.preprocessing import Preprocessing
+from selectzyme.backend.utils import export_annotated_fasta, parse_data
+from selectzyme.backend.vector_db import QdrantDB
+from selectzyme.frontend.visualizer import plot_2d
 
 
 def load_and_preprocess(config):
@@ -240,7 +240,7 @@ def main(app, config):
 if __name__ == "__main__":
     import argparse
 
-    from backend.utils import parse_args
+    from selectzyme.backend.utils import parse_args
 
     app = dash.Dash(
         __name__,
