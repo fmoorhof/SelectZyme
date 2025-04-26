@@ -122,10 +122,10 @@ def _extract_no_pad_embedding(
 
 if __name__ == "__main__":
     # load example data
-    from parsing import Parsing
+    from parsing import ParseLocalFiles
     from preprocessing import Preprocessing
 
-    df = Parsing("tests/head_10.tsv").parse_tsv()
+    df = ParseLocalFiles("tests/head_10.tsv").parse_tsv()
     # df = Parsing('datasets/output/ired.tsv').parse_tsv()
     # df = Preprocessing(df).preprocess()
     pp = Preprocessing(df)
