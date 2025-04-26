@@ -49,9 +49,7 @@ def layout(df, fig):
             dcc.Loading(
                 id="loading-plot",
                 type="default",  # or "circle", "dot", "cube"
-                children=[
-                    html.Div(
-                        dcc.Graph(
+                children=dcc.Graph(
                             id="plot",
                             figure=fig,
                             config={
@@ -62,9 +60,7 @@ def layout(df, fig):
                                 "height": "100%",
                                 "display": "inline-block",
                             },
-                        )
-                    )
-                ],
+                        ),
                 fullscreen=False,  # for loading message
             ),
             html.Div(

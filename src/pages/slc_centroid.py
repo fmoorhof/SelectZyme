@@ -34,9 +34,7 @@ def layout(_linkage, df: pd.DataFrame, legend_attribute: str) -> html.Div:
             dcc.Loading(
                 id="loading-plot",
                 type="default",  # or "circle", "dot", "cube"
-                children=[
-                    html.Div(
-                        dcc.Graph(
+                children=dcc.Graph(
                             id="plot",
                             figure=fig,
                             config={
@@ -47,9 +45,7 @@ def layout(_linkage, df: pd.DataFrame, legend_attribute: str) -> html.Div:
                                 "height": "100%",
                                 "display": "inline-block",
                             },
-                        )
-                    )
-                ],
+                        ),
                 fullscreen=False,
             ),
             html.Div(
