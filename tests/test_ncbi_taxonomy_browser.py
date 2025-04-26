@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.ncbi_taxonomy_resolver import lineage_resolver
+from selectzyme.backend.ncbi_taxonomy_resolver import lineage_resolver
 
 
 def test_lineage_resolver_valid_taxid():

@@ -8,7 +8,7 @@ from backend.parsing import Parsing
 
 def test_parse_fasta():
     """Test the parse_fasta method directly."""
-    parser = Parsing("src/tests/head_10.fasta")
+    parser = Parsing("tests/head_10.fasta")
     df = parser.parse_fasta()
 
     assert not df.empty
@@ -18,7 +18,7 @@ def test_parse_fasta():
 
 def test_parse_tsv():
     """Test the parse_tsv method directly."""
-    parser = Parsing("src/tests/head_10.tsv")
+    parser = Parsing("tests/head_10.tsv")
     df = parser.parse_tsv()
 
     assert not df.empty

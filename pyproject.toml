@@ -31,7 +31,7 @@ dependencies = { file = ["requirements.txt"] }  # extra-index-url are defined in
 "Bug Tracker" = "https://github.com/ipb-halle/SelectZyme/-/issues"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "selectzyme"}
 
 [build-system]
 requires = ["setuptools>=0.61.0"]
@@ -60,7 +60,7 @@ full = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = "src/"
+pythonpath = "selectzyme/"
 filterwarnings = [
     "ignore:.*pkg_resources.*:DeprecationWarning",
 ]

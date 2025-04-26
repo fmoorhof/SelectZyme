@@ -17,9 +17,9 @@ class TestPreprocessing:
     )  # parse tsv and fasta files
     def setup_method(self, request):
         parser = (
-            Parsing("src/tests/head_10.tsv")
+            Parsing("tests/head_10.tsv")
             if request.param.__name__ == "parse_tsv"
-            else Parsing("src/tests/head_10.fasta")
+            else Parsing("tests/head_10.fasta")
         )
         self.df = (
             parser.parse_tsv()

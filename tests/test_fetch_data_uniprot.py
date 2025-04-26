@@ -9,11 +9,11 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 from requests import Session
 
-from backend.fetch_data_uniprot import UniProtFetcher
+from selectzyme.backend.fetch_data_uniprot import UniProtFetcher
 
 
 class TestUniProtFetcher(unittest.TestCase):
-    @patch("selectzyme.fetch_data_uniprot.Session")
+    @patch("selectzyme.backend.fetch_data_uniprot.Session")
     def setUp(self, MockSession):
         self.df_coi = [
             "accession",
@@ -31,7 +31,7 @@ class TestUniProtFetcher(unittest.TestCase):
         self.assertIsInstance(session, Session)
         self.assertEqual(session.adapters["https://"].max_retries.total, 5)
 
-    @patch("selectzyme.fetch_data_uniprot.UniProtFetcher._get_batch")
+    @patch("selectzyme.backend.fetch_data_uniprot.UniProtFetcher._get_batch")
     def test_query_uniprot(self, mock_get_batch):
         mock_response = MagicMock()
         mock_response.content = gzip.compress(
@@ -90,7 +90,7 @@ class TestUniProtFetcher(unittest.TestCase):
         expected_link = "https://rest.uniprot.org/uniprotkb/search?query=kinase&size=500&format=tsv&fields=accession,id,reviewed,protein_name,gene_names,organism_name&offset=500"
         self.assertEqual(next_link, expected_link)
 
-    @patch("selectzyme.fetch_data_uniprot.UniProtFetcher._get_next_link")
+    @patch("selectzyme.backend.fetch_data_uniprot.UniProtFetcher._get_next_link")
     def test_get_batch(self, mock_get_next_link):
         mock_response = MagicMock()
         mock_response.headers = {"x-total-results": "1"}
