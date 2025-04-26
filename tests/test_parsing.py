@@ -7,8 +7,9 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher
 from requests import Session
+
+from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher
 
 
 def test_parse_fasta():

@@ -4,6 +4,7 @@ the test cases and occurences more stringend despite violating the isolation pri
 from __future__ import annotations
 
 import pytest
+
 from selectzyme.backend.parsing import ParseLocalFiles
 from selectzyme.backend.preprocessing import Preprocessing
 
