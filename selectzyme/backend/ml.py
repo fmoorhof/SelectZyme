@@ -8,7 +8,7 @@ from cuml.cluster import HDBSCAN
 from cuml.decomposition import PCA
 from cuml.manifold import TSNE, UMAP
 
-from backend.utils import run_time
+from selectzyme.backend.utils import run_time
 
 
 @run_time

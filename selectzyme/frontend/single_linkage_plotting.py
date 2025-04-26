@@ -6,8 +6,8 @@ import plotly.graph_objects as go
 from pandas import unique
 from scipy.cluster.hierarchy import dendrogram
 
-from backend.customizations import set_columns_of_interest
-from backend.utils import run_time
+from selectzyme.backend.customizations import set_columns_of_interest
+from selectzyme.backend.utils import run_time
 
 
 @run_time

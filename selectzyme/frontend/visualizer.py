@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-from backend.customizations import set_columns_of_interest
-from backend.utils import run_time
+from selectzyme.backend.customizations import set_columns_of_interest
+from selectzyme.backend.utils import run_time
 
 
 @run_time

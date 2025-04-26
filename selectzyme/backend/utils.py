@@ -8,8 +8,8 @@ from time import time
 import pandas as pd
 import yaml
 
-from backend.fetch_data_uniprot import UniProtFetcher
-from backend.parsing import Parsing
+from selectzyme.backend.fetch_data_uniprot import UniProtFetcher
+from selectzyme.backend.parsing import Parsing
 
 
 def parse_args():

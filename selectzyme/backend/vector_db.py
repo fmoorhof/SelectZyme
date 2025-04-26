@@ -8,8 +8,8 @@ import pandas as pd
 from qdrant_client import QdrantClient, models
 from tqdm import tqdm
 
-from backend.embed import gen_embedding
-from backend.utils import run_time
+from selectzyme.backend.embed import gen_embedding
+from selectzyme.backend.utils import run_time
 
 
 class QdrantDB:

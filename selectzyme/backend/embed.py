@@ -114,8 +114,8 @@ def _select_plm_model(plm_model: str = "esm1b") -> tuple:
 
 if __name__ == "__main__":
     # load example data
-    from backend.parsing import Parsing
-    from backend.preprocessing import Preprocessing
+    from selectzyme.backend.parsing import Parsing
+    from selectzyme.backend.preprocessing import Preprocessing
 
     df = Parsing("src/tests/head_10.tsv").parse_tsv()
     # df = Parsing('datasets/output/ired.tsv').parse_tsv()

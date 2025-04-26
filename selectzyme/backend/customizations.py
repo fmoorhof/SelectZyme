@@ -4,7 +4,7 @@ import logging
 
 import pandas as pd
 
-from backend.ncbi_taxonomy_resolver import lineage_resolver
+from selectzyme.backend.ncbi_taxonomy_resolver import lineage_resolver
 
 
 def set_columns_of_interest(df_cols: list) -> list:

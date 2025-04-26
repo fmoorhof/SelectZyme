@@ -5,7 +5,7 @@ from base64 import b64encode
 
 from dash.dependencies import Input, Output, State
 
-from frontend.visualizer import plot_2d
+from selectzyme.frontend.visualizer import plot_2d
 
 
 def register_callbacks(app, df, X_red):

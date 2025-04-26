@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from dash import dash_table, dcc, html
 
-from pages.dimred import html_export_figure
-from frontend.single_linkage_plotting import create_dendrogram
+from selectzyme.pages.dimred import html_export_figure
+from selectzyme.frontend.single_linkage_plotting import create_dendrogram
 
 
 def layout(_linkage: np.ndarray, df: pd.DataFrame, legend_attribute: str) -> html.Div:

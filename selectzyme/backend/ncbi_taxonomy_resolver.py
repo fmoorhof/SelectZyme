@@ -1,5 +1,3 @@
-"""Perform a statistical analysis on the data. Explanatory data analysis (EDA)"""
-
 from __future__ import annotations
 
 import pandas as pd

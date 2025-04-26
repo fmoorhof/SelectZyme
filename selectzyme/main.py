@@ -20,15 +20,15 @@ import copy
 
 from ydata_profiling import ProfileReport
 
-from backend.customizations import custom_plotting, set_columns_of_interest
-from backend.embed import gen_embedding
-from backend.ml import dimred_caller, perform_hdbscan_clustering
-from frontend.mst_plotting import MinimumSpanningTree
-from backend.preprocessing import Preprocessing
-from frontend.single_linkage_plotting import create_dendrogram
-from backend.utils import parse_data
-from backend.vector_db import QdrantDB
-from frontend.visualizer import plot_2d
+from selectzyme.backend.customizations import custom_plotting, set_columns_of_interest
+from selectzyme.backend.embed import gen_embedding
+from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
+from selectzyme.frontend.mst_plotting import MinimumSpanningTree
+from selectzyme.backend.preprocessing import Preprocessing
+from selectzyme.frontend.single_linkage_plotting import create_dendrogram
+from selectzyme.backend.utils import parse_data
+from selectzyme.backend.vector_db import QdrantDB
+from selectzyme.frontend.visualizer import plot_2d
 
 
 def load_and_preprocess(config):

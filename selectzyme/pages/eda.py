@@ -7,7 +7,7 @@ import pandas as pd
 from dash import html
 from ydata_profiling import ProfileReport
 
-from backend.customizations import set_columns_of_interest
+from selectzyme.backend.customizations import set_columns_of_interest
 
 
 def layout(df: pd.DataFrame) -> html.Div:
