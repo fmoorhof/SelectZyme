@@ -13,11 +13,10 @@ from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 
 
-def parse_data(project_name: str, 
-               query_terms: list[str] | None, 
+def parse_data(query_terms: list[str] | None, 
                length: int, 
                custom_file: str, 
-               out_dir: str, 
+               existing_file: str, 
                df_coi: list[str]) -> pd.DataFrame:
     """
     Parses the input data based on existing files, custom files, or UniProt queries.
@@ -26,20 +25,16 @@ def parse_data(project_name: str,
     provided query terms and/or a custom file to fetch or parse the data accordingly.
     
     Args:
-        project_name (str): Name of the project (used for saving/loading files).
         query_terms (list[str] | None): List of search terms for UniProt queries.
         length (int): Length filter for UniProt sequences.
         custom_file (str): Path to a user-provided custom file.
-        out_dir (str): Directory where project files are stored.
+        existing_file (str): Path to an existing file to load data from.
         df_coi (list[str]): List of columns of interest for UniProt fetching.
-
     Returns:
         pd.DataFrame: Parsed data.
     """
-    existing_file = os.path.join(out_dir, f"{project_name}.csv")
-    
     if os.path.isfile(existing_file):
-        logging.info(f"Found existing file at {existing_file}. Loading locally.")
+        logging.info(f"Found and load existing file from: {existing_file}")
         return ParseLocalFiles(existing_file).parse()
 
     df_list = []

@@ -68,112 +68,106 @@ def mock_uniprot_fetcher():
         instance.query_uniprot.return_value = pd.DataFrame({"accession": ["B1", "B2"]})
         yield instance
 
+
 @pytest.fixture
 def tmp_out_dir(tmp_path):
-    """Temporary directory to simulate the output dir."""
+    """Temporary directory to simulate the output directory."""
     return tmp_path
 
-def test_parse_existing_file(monkeypatch, tmp_out_dir, mock_parse_localfiles):
-    # Create a fake existing file
-    project_name = "test_project"
-    existing_file = tmp_out_dir / f"{project_name}.csv"
-    existing_file.write_text("dummy content")
+class TestParseData:
 
-    # Monkeypatch os.path.isfile to simulate file existence
-    monkeypatch.setattr(os.path, "isfile", lambda path: True)
+    def test_parse_existing_file(self, monkeypatch, tmp_out_dir, mock_parse_localfiles):
+        existing_file = tmp_out_dir / "existing_project.csv"
+        existing_file.write_text("dummy content")
 
-    df = parse_data(
-        project_name=project_name,
-        query_terms=None,
-        length=300,
-        custom_file="",
-        out_dir=str(tmp_out_dir),
-        df_coi=[]
-    )
+        # Monkeypatch os.path.isfile to simulate file existence
+        monkeypatch.setattr(os.path, "isfile", lambda path: True)
 
-    assert isinstance(df, pd.DataFrame)
-    mock_parse_localfiles.parse.assert_called_once()
-
-def test_parse_custom_file_only(monkeypatch, tmp_out_dir, mock_parse_localfiles):
-    monkeypatch.setattr(os.path, "isfile", lambda path: False)
-
-    df = parse_data(
-        project_name="no_existing",
-        query_terms=None,
-        length=300,
-        custom_file="path/to/custom.csv",
-        out_dir=str(tmp_out_dir),
-        df_coi=[]
-    )
-
-    assert isinstance(df, pd.DataFrame)
-    assert set(df["accession"]) == {"A1", "A2"}
-    mock_parse_localfiles.parse.assert_called_once()
-
-def test_parse_query_terms_only(monkeypatch, tmp_out_dir, mock_uniprot_fetcher):
-    monkeypatch.setattr(os.path, "isfile", lambda path: False)
-
-    df = parse_data(
-        project_name="no_existing",
-        query_terms=["kinase", "transferase"],
-        length=300,
-        custom_file="",
-        out_dir=str(tmp_out_dir),
-        df_coi=["accession", "length"]
-    )
-
-    assert isinstance(df, pd.DataFrame)
-    assert set(df["accession"]) == {"B1", "B2"}
-    mock_uniprot_fetcher.query_uniprot.assert_called_once_with(["kinase", "transferase"], 300)
-
-def test_parse_custom_and_query(monkeypatch, tmp_out_dir, mock_parse_localfiles, mock_uniprot_fetcher):
-    monkeypatch.setattr(os.path, "isfile", lambda path: False)
-
-    df = parse_data(
-        project_name="no_existing",
-        query_terms=["hydrolase"],
-        length=250,
-        custom_file="path/to/custom.csv",
-        out_dir=str(tmp_out_dir),
-        df_coi=["accession"]
-    )
-
-    # Combined, so 2 custom + 2 uniprot = 4 entries
-    assert isinstance(df, pd.DataFrame)
-    assert len(df) == 4
-    assert set(df["accession"]) == {"A1", "A2", "B1", "B2"}
-
-def test_parse_no_input(monkeypatch, tmp_out_dir):
-    monkeypatch.setattr(os.path, "isfile", lambda path: False)
-
-    with pytest.raises(ValueError, match="No valid 'query_terms' or 'custom_file' provided"):
-        parse_data(
-            project_name="no_existing",
+        df = parse_data(
             query_terms=None,
-            length=100,
+            length=300,
             custom_file="",
-            out_dir=str(tmp_out_dir),
+            existing_file=str(existing_file),
             df_coi=[]
         )
 
-def test_parse_removes_entry_rows(monkeypatch, tmp_out_dir, mock_parse_localfiles, mock_uniprot_fetcher):
-    """Test that 'Entry' rows are correctly removed after concat."""
-    monkeypatch.setattr(os.path, "isfile", lambda path: False)
+        assert isinstance(df, pd.DataFrame)
+        mock_parse_localfiles.parse.assert_called_once()
 
-    # Mock different frames
-    mock_parse_localfiles.parse.return_value = pd.DataFrame({"accession": ["Entry", "A1"]})
-    mock_uniprot_fetcher.query_uniprot.return_value = pd.DataFrame({"accession": ["B1", "Entry"]})
+    def test_parse_custom_file_only(self, monkeypatch, tmp_out_dir, mock_parse_localfiles):
+        monkeypatch.setattr(os.path, "isfile", lambda path: False)
 
-    df = parse_data(
-        project_name="no_existing",
-        query_terms=["kinase"],
-        length=300,
-        custom_file="path/to/custom.csv",
-        out_dir=str(tmp_out_dir),
-        df_coi=["accession"]
-    )
+        df = parse_data(
+            query_terms=None,
+            length=300,
+            custom_file="path/to/custom.csv",
+            existing_file=str(tmp_out_dir / "nonexistent.csv"),
+            df_coi=[]
+        )
 
-    assert set(df["accession"]) == {"A1", "B1"}
+        assert isinstance(df, pd.DataFrame)
+        assert set(df["accession"]) == {"A1", "A2"}
+        mock_parse_localfiles.parse.assert_called_once()
+
+    def test_parse_query_terms_only(self, monkeypatch, tmp_out_dir, mock_uniprot_fetcher):
+        monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+        df = parse_data(
+            query_terms=["kinase", "transferase"],
+            length=300,
+            custom_file="",
+            existing_file=str(tmp_out_dir / "nonexistent.csv"),
+            df_coi=["accession", "length"]
+        )
+
+        assert isinstance(df, pd.DataFrame)
+        assert set(df["accession"]) == {"B1", "B2"}
+        mock_uniprot_fetcher.query_uniprot.assert_called_once_with(["kinase", "transferase"], 300)
+
+    def test_parse_custom_and_query(self, monkeypatch, tmp_out_dir, mock_parse_localfiles, mock_uniprot_fetcher):
+        monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+        df = parse_data(
+            query_terms=["hydrolase"],
+            length=250,
+            custom_file="path/to/custom.csv",
+            existing_file=str(tmp_out_dir / "nonexistent.csv"),
+            df_coi=["accession"]
+        )
+
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 4
+        assert set(df["accession"]) == {"A1", "A2", "B1", "B2"}
+
+    def test_parse_no_input(self, monkeypatch, tmp_out_dir):
+        monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+        with pytest.raises(ValueError, match="No valid 'query_terms' or 'custom_file' provided"):
+            parse_data(
+                query_terms=None,
+                length=100,
+                custom_file="",
+                existing_file=str(tmp_out_dir / "nonexistent.csv"),
+                df_coi=[]
+            )
+
+    def test_parse_removes_entry_rows(self, monkeypatch, tmp_out_dir, mock_parse_localfiles, mock_uniprot_fetcher):
+        """Test that 'Entry' rows are correctly removed after concat."""
+        monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+        # Mock different frames
+        mock_parse_localfiles.parse.return_value = pd.DataFrame({"accession": ["Entry", "A1"]})
+        mock_uniprot_fetcher.query_uniprot.return_value = pd.DataFrame({"accession": ["B1", "Entry"]})
+
+        df = parse_data(
+            query_terms=["kinase"],
+            length=300,
+            custom_file="path/to/custom.csv",
+            existing_file=str(tmp_out_dir / "nonexistent.csv"),
+            df_coi=["accession"]
+        )
+
+        assert set(df["accession"]) == {"A1", "B1"}
 
 
 class TestParseFasta(unittest.TestCase):

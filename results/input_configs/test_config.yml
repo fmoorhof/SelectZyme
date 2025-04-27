@@ -6,7 +6,6 @@
 project: 
   name: "_test_config"
   port: 8050
-  use_DB: False  # use qdrant vector DB to save embeddings for project:name
   preprocessing: False
 
   # Specify data you want to analyze
