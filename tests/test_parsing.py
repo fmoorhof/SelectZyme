@@ -1,15 +1,19 @@
-
+"""Unit tests for the parsing module in selectzyme.backend. 
+Tests for the UniProtFetcher are very difficult and i only understood the first few ones!"""
 from __future__ import annotations
 
 import gzip
+import os
 import tempfile
 import unittest
+from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+import pytest
 from requests import Session
 
-from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher, _clean_data
+from selectzyme.backend.parsing import ParseLocalFiles, UniProtFetcher, parse_data
 
 
 def test_parse_fasta():
@@ -48,6 +52,128 @@ def create_temp_fasta(content: str):
     temp.write(content)
     temp.close()
     return temp.name
+
+
+@pytest.fixture
+def mock_parse_localfiles():
+    with mock.patch("selectzyme.backend.parsing.ParseLocalFiles") as mock_class:
+        instance = mock_class.return_value
+        instance.parse.return_value = pd.DataFrame({"accession": ["A1", "A2"]})
+        yield instance
+
+@pytest.fixture
+def mock_uniprot_fetcher():
+    with mock.patch("selectzyme.backend.parsing.UniProtFetcher") as mock_class:
+        instance = mock_class.return_value
+        instance.query_uniprot.return_value = pd.DataFrame({"accession": ["B1", "B2"]})
+        yield instance
+
+@pytest.fixture
+def tmp_out_dir(tmp_path):
+    """Temporary directory to simulate the output dir."""
+    return tmp_path
+
+def test_parse_existing_file(monkeypatch, tmp_out_dir, mock_parse_localfiles):
+    # Create a fake existing file
+    project_name = "test_project"
+    existing_file = tmp_out_dir / f"{project_name}.csv"
+    existing_file.write_text("dummy content")
+
+    # Monkeypatch os.path.isfile to simulate file existence
+    monkeypatch.setattr(os.path, "isfile", lambda path: True)
+
+    df = parse_data(
+        project_name=project_name,
+        query_terms=None,
+        length=300,
+        custom_file="",
+        out_dir=str(tmp_out_dir),
+        df_coi=[]
+    )
+
+    assert isinstance(df, pd.DataFrame)
+    mock_parse_localfiles.parse.assert_called_once()
+
+def test_parse_custom_file_only(monkeypatch, tmp_out_dir, mock_parse_localfiles):
+    monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+    df = parse_data(
+        project_name="no_existing",
+        query_terms=None,
+        length=300,
+        custom_file="path/to/custom.csv",
+        out_dir=str(tmp_out_dir),
+        df_coi=[]
+    )
+
+    assert isinstance(df, pd.DataFrame)
+    assert set(df["accession"]) == {"A1", "A2"}
+    mock_parse_localfiles.parse.assert_called_once()
+
+def test_parse_query_terms_only(monkeypatch, tmp_out_dir, mock_uniprot_fetcher):
+    monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+    df = parse_data(
+        project_name="no_existing",
+        query_terms=["kinase", "transferase"],
+        length=300,
+        custom_file="",
+        out_dir=str(tmp_out_dir),
+        df_coi=["accession", "length"]
+    )
+
+    assert isinstance(df, pd.DataFrame)
+    assert set(df["accession"]) == {"B1", "B2"}
+    mock_uniprot_fetcher.query_uniprot.assert_called_once_with(["kinase", "transferase"], 300)
+
+def test_parse_custom_and_query(monkeypatch, tmp_out_dir, mock_parse_localfiles, mock_uniprot_fetcher):
+    monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+    df = parse_data(
+        project_name="no_existing",
+        query_terms=["hydrolase"],
+        length=250,
+        custom_file="path/to/custom.csv",
+        out_dir=str(tmp_out_dir),
+        df_coi=["accession"]
+    )
+
+    # Combined, so 2 custom + 2 uniprot = 4 entries
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) == 4
+    assert set(df["accession"]) == {"A1", "A2", "B1", "B2"}
+
+def test_parse_no_input(monkeypatch, tmp_out_dir):
+    monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+    with pytest.raises(ValueError, match="No valid 'query_terms' or 'custom_file' provided"):
+        parse_data(
+            project_name="no_existing",
+            query_terms=None,
+            length=100,
+            custom_file="",
+            out_dir=str(tmp_out_dir),
+            df_coi=[]
+        )
+
+def test_parse_removes_entry_rows(monkeypatch, tmp_out_dir, mock_parse_localfiles, mock_uniprot_fetcher):
+    """Test that 'Entry' rows are correctly removed after concat."""
+    monkeypatch.setattr(os.path, "isfile", lambda path: False)
+
+    # Mock different frames
+    mock_parse_localfiles.parse.return_value = pd.DataFrame({"accession": ["Entry", "A1"]})
+    mock_uniprot_fetcher.query_uniprot.return_value = pd.DataFrame({"accession": ["B1", "Entry"]})
+
+    df = parse_data(
+        project_name="no_existing",
+        query_terms=["kinase"],
+        length=300,
+        custom_file="path/to/custom.csv",
+        out_dir=str(tmp_out_dir),
+        df_coi=["accession"]
+    )
+
+    assert set(df["accession"]) == {"A1", "B1"}
 
 
 class TestParseFasta(unittest.TestCase):
@@ -98,7 +224,6 @@ class TestParseFasta(unittest.TestCase):
         self.assertEqual(df.iloc[1]["sequence"], "AAAACCCC")
 
 
-# todo: logic un-tested yet. So far i see no real call to uniprot is done. change this and assert delivered response.
 class TestUniProtFetcher(unittest.TestCase):
     @patch("selectzyme.backend.parsing.Session")
     def setUp(self, MockSession):
@@ -133,7 +258,7 @@ class TestUniProtFetcher(unittest.TestCase):
         expected_data = {
             "accession": ["P12345"],
             "id": ["ID1"],
-            "reviewed": [True],
+            "reviewed": ["reviewed"],
             "protein_name": ["Protein1"],
             "gene_names": ["Gene1"],
             "organism_name": ["Organism1"],
@@ -142,32 +267,6 @@ class TestUniProtFetcher(unittest.TestCase):
         expected_df = pd.DataFrame(expected_data)
 
         pd.testing.assert_frame_equal(result_df, expected_df)
-
-    def test_process_dataframe(self):
-        data = {
-            "accession": ["P12345"],
-            "id": ["ID1"],
-            "reviewed": ["reviewed"],
-            "protein_name": ["Protein1"],
-            "gene_names": ["Gene1"],
-            "organism_name": ["Organism1"],
-        }
-        df = pd.DataFrame(data)
-        query_term = "kinase"
-        processed_df = self.fetcher._process_dataframe(df, query_term)
-
-        expected_data = {
-            "accession": ["P12345"],
-            "id": ["ID1"],
-            "reviewed": [True],
-            "protein_name": ["Protein1"],
-            "gene_names": ["Gene1"],
-            "organism_name": ["Organism1"],
-            "query_term": ["kinase"],
-        }
-        expected_df = pd.DataFrame(expected_data)
-
-        pd.testing.assert_frame_equal(processed_df, expected_df)
 
     def test_get_next_link(self):
         headers = {
@@ -191,59 +290,6 @@ class TestUniProtFetcher(unittest.TestCase):
         self.assertEqual(len(batches), 1)
         self.assertEqual(batches[0][1], "1")
         self.assertEqual(batches[0][0].content, mock_response.content)
-
-
-class TestCleanData(unittest.TestCase):
-    def test_remove_header_row(self):
-        # Create a dataframe with a header row in the data (e.g. the first row contains "Entry")
-        df = pd.DataFrame({
-            'accession': ['Entry', 'P12345'],
-            'id': ['id', 'ID1'],
-            'reviewed': ['reviewed', 'yes']
-        })
-        cleaned_df = _clean_data(df)
-        # Verify that the "Entry" row has been removed
-        self.assertFalse((cleaned_df['accession'] == 'Entry').any())
-
-    def test_empty_dataframe(self):
-        # Test with an empty dataframe that has the appropriate columns
-        df = pd.DataFrame(columns=['accession', 'id', 'reviewed'])
-        cleaned_df = _clean_data(df)
-        self.assertTrue(cleaned_df.empty)
-
-    def test_remove_duplicates(self):
-        # Create a df with duplicate rows
-        df = pd.DataFrame({
-            'accession': ['P12345', 'P12345', 'P67890'],
-            'id': ['ID1', 'ID1', 'ID2'],
-            'reviewed': ['yes', 'yes', 'no']
-        })
-        cleaned_df = _clean_data(df)
-        # Expect duplicates to be removed. The expected length is 2.
-        self.assertEqual(len(cleaned_df), 2)
-
-    def test_xref_brenda_missing(self):
-        # Test a dataframe that does NOT contain the 'xref_brenda' column.
-        df = pd.DataFrame({
-            'accession': ['P12345'],
-            'id': ['ID1'],
-            'reviewed': ['yes']
-        })
-        cleaned_df = _clean_data(df)
-        # The 'xref_brenda' column should not be added or present if not originally there.
-        self.assertNotIn('xref_brenda', cleaned_df.columns)
-
-    def test_xref_brenda_present(self):
-        # Test a dataframe that contains the 'xref_brenda' column.
-        df = pd.DataFrame({
-            'accession': ['P12345'],
-            'id': ['ID1'],
-            'reviewed': ['yes'],
-            'xref_brenda': [None]
-        })
-        cleaned_df = _clean_data(df)
-        # The test verifies that the column is still present post-cleaning.
-        self.assertIn('xref_brenda', cleaned_df.columns)
 
 
 if __name__ == "__main__":

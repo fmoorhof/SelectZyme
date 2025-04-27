@@ -29,9 +29,9 @@ from selectzyme.frontend.visualizer import plot_2d
 from selectzyme.pages.callbacks import register_callbacks
 
 
-def load_and_preprocess(config):
+def parse_and_preprocess(config):
     """
-    Load and preprocess data based on the provided configuration.
+    Parse and preprocess data based on the provided configuration.
     This function parses data using the configuration parameters, applies 
     preprocessing if specified, and customizes the data for plotting.
     Args:
@@ -64,13 +64,14 @@ def load_and_preprocess(config):
     if config["project"]["preprocessing"]:
         df = Preprocessing(df).preprocess()
 
-    # apply customizations
-    df = custom_plotting(df, 
-                         config["project"]["plot_customizations"]["size"], 
-                         config["project"]["plot_customizations"]["shape"])
+    # Apply customizations
+    df = custom_plotting(df=df, 
+                         size=config["project"]["plot_customizations"]["size"], 
+                         shape=config["project"]["plot_customizations"]["shape"])
     return df
 
 
+@DeprecationWarning
 def load_embeddings(config, df):
     """
     Load embeddings for a given dataset based on the provided configuration.
@@ -141,8 +142,12 @@ def export_data(df, X_red, mst_array, linkage_array, output_dir="results") -> No
 
 def main(app, config):
     # Backend
-    df = load_and_preprocess(config)
-    X = load_embeddings(config, df)
+    df = parse_and_preprocess(config)
+    X = gen_embedding(
+            sequences=df["sequence"].tolist(),
+            plm_model=config["project"]["plm"]["plm_model"],
+        )
+    # X = load_embeddings(config, df)  # Deprecated. Remove soon
 
     # Clustering
     _mst, _linkage, df = perform_hdbscan_clustering(
@@ -193,10 +198,12 @@ def main(app, config):
     dash.register_page(
         module="mst", name="Connectivity", layout=mst.layout(_mst, df, X_red, fig_mst)
     )
-    dash.register_page(module="slc", name="Phylogeny", layout=sl.layout(_linkage=_linkage, 
-                                                                 df=df, 
-                                                                 legend_attribute=config["project"]["plot_customizations"]["objective"]))
-    
+    dash.register_page(module="slc", 
+                       name="Phylogeny", 
+                       layout=sl.layout(_linkage=_linkage, 
+                                        df=df, 
+                                        legend_attribute=config["project"]["plot_customizations"]["objective"]))
+
     # Register callbacks
     register_callbacks(app, df, X_red)
 

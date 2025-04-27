@@ -8,7 +8,8 @@ import taxoniq
 
 def lineage_resolver(taxid: int) -> tuple[str, str, str, list[str]]:
     """
-    Retrieves the lineage of a given taxonomic identifier in taxonomic identifiers. Converts the taxonomic identifiers to scientific names and returns them as a tuple.
+    Retrieves the lineage of a given taxonomic identifier in taxonomic identifiers. 
+    Converts the taxonomic identifiers to scientific names and returns them as a tuple.
     The lineage is always specified with the species name first and the domain name last.
 
     :param taxid: NCBI taxonomic identifier
@@ -34,7 +35,8 @@ def lineage_resolver(taxid: int) -> tuple[str, str, str, list[str]]:
 
 def set_columns_of_interest(df_cols: list) -> list:
     """
-    Filters out specific columns from the DataFrame and returns a list of columns to be used for hover display in plots.
+    Filters out specific columns from the DataFrame and returns
+    a list of columns to be used for hover display in plots.
     Args:
         df (pd.DataFrame): The input DataFrame from which columns are to be filtered.
     Returns:
@@ -49,11 +51,12 @@ def set_columns_of_interest(df_cols: list) -> list:
         "selected",
         "organism_id",
     ]
-    # columns_of_interest= ['accession', 'reviewed', 'ec', 'length', 'xref_brenda', 'xref_pdb', 'cluster', 'species', 'domain', 'kingdom', 'selected']
     return [col for col in df_cols if col not in columns_to_avoid_hover]
 
 
-def custom_plotting(df: pd.DataFrame, size: list = [6, 8, 14], shape: list = ["circle", "diamond", "cross"]) -> pd.DataFrame:
+def custom_plotting(df: pd.DataFrame, 
+                    size: list = [6, 8, 14], 
+                    shape: list = ["circle", "diamond", "cross"]) -> pd.DataFrame:
     """
     Modify the given DataFrame before plotting to make values look nicer/custom.
 
@@ -112,7 +115,7 @@ def custom_plotting(df: pd.DataFrame, size: list = [6, 8, 14], shape: list = ["c
         df["domain"] = [tax[1] for tax in taxa]
         df["kingdom"] = [tax[2] for tax in taxa]
         # df['lineage'] = [tax[3] for tax in taxa]  # full lineage
-
+        
     df = df.fillna("unknown")
     df["selected"] = False
 
