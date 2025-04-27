@@ -6,26 +6,29 @@ import pandas as pd
 
 
 class Preprocessing:
-    """This class should assist in the preprocessing of the data. Instead of returning the df, the self.df gets updated"""
-
+    """This class should assist in the preprocessing of the data.
+    Instead of returning the df, the self.df gets updated"""
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
     def preprocess(self):
         """
-        This function applies all preprocessing steps to the dataframe.
+        This function helps to apply all preprocessing steps to the dataframe.
         """
+        logging.info(f"Number of sequences before preprocessing: {self.df.shape[0]}")
         self.remove_long_sequences()
         self.remove_sequences_without_metheonin()
         self.remove_sequences_with_undertermined_amino_acids()
         self.remove_duplicate_entries()
         self.remove_duplicate_sequences()
+        logging.info(f"Number of sequences after preprocessing: {self.df.shape[0]}")
 
         return self.df
 
     def remove_long_sequences(self) -> None:
         """
-        This function removes too long sequences from the dataset. Sequences > 1024 amino acids cause the esm embedding to fail.
+        This function removes too long sequences from the dataset. 
+        Sequences > 1024 amino acids cause the esm embedding to fail.
         params: df: dataframe containing the sequences
         return: df: dataframe containing only sequences with a length <= 1024 amino acids
         """
@@ -63,7 +66,9 @@ class Preprocessing:
 
     def remove_duplicate_entries(self) -> None:
         """
-        This function removes duplicate entries from the dataframe. In fetch_data_uniprot.py, the function is already used to remove duplicates resulting from the query term. However, with custom data import there can still duplicates occur that will get removed with this function.
+        This function removes duplicate entries from the dataframe. In fetch_data_uniprot.py, 
+        the function is already used to remove duplicates resulting from the query term. 
+        However, with custom data import there can still duplicates occur that will get removed with this function.
         params: df: dataframe containing the sequences
         return: df: dataframe containing only unique sequences
         """

@@ -13,51 +13,58 @@ from requests import Session
 from requests.adapters import HTTPAdapter, Retry
 
 
-def parse_data(project_name, query_terms, length, custom_file, out_dir, df_coi):
-    existing_file = os.path.join(out_dir, project_name + ".csv")
-    df = _parse_data(existing_file, custom_file, query_terms, length, df_coi)
-    df = _clean_data(df)
-    return df
+def parse_data(project_name: str, 
+               query_terms: list[str] | None, 
+               length: int, 
+               custom_file: str, 
+               out_dir: str, 
+               df_coi: list[str]) -> pd.DataFrame:
+    """
+    Parses the input data based on existing files, custom files, or UniProt queries.
+    
+    The function first checks if a project file already exists. If not, it uses
+    provided query terms and/or a custom file to fetch or parse the data accordingly.
+    
+    Args:
+        project_name (str): Name of the project (used for saving/loading files).
+        query_terms (list[str] | None): List of search terms for UniProt queries.
+        length (int): Length filter for UniProt sequences.
+        custom_file (str): Path to a user-provided custom file.
+        out_dir (str): Directory where project files are stored.
+        df_coi (list[str]): List of columns of interest for UniProt fetching.
 
-
-def _parse_data(
-    existing_file: str, custom_file: str, query_terms: list, length: str, df_coi: list
-):
+    Returns:
+        pd.DataFrame: Parsed data.
+    """
+    existing_file = os.path.join(out_dir, f"{project_name}.csv")
+    
     if os.path.isfile(existing_file):
+        logging.info(f"Found existing file at {existing_file}. Loading locally.")
         return ParseLocalFiles(existing_file).parse()
 
-    if (
-        query_terms != ""
-    ):  # todo: handle if query_terms NoneType -> breaks execution when query_terms not defined in config.yml
+    df_list = []
+    if custom_file:
+        try:
+            logging.info(f"Loading custom file: {custom_file}")
+            df_custom = ParseLocalFiles(custom_file).parse()
+            df_list.append(df_custom)
+        except ValueError as e:
+            logging.error(f"Error parsing custom file: {e}")
+            raise ValueError(f"Error parsing custom file: {e}")
+    
+    fetcher = None
+    if query_terms:
+        logging.info(f"Fetching data from UniProt for {len(query_terms)} query terms.")
         fetcher = UniProtFetcher(df_coi)
-    if custom_file != "":
-        df_custom = ParseLocalFiles(custom_file).parse()
-        if query_terms == "":
-            return df_custom
-        df = fetcher.query_uniprot(query_terms, length)
-        df = pd.concat(
-            [df_custom, df], ignore_index=True
-        )  # custom data first that they are displayed first in plot legends
-        return df
-    elif query_terms != "":
-        return fetcher.query_uniprot(query_terms, length)
-    else:
-        raise ValueError("Either 'query_terms' or 'custom_file' must be provided.")
+        df_uniprot = fetcher.query_uniprot(query_terms, length)
+        df_list.append(df_uniprot)
+    
+    if not df_list:
+        raise ValueError("No valid 'query_terms' or 'custom_file' provided. Cannot parse any data.")
 
- 
-def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
-    df = df[
-        df["accession"] != "Entry"
-    ]  # remove concatenated headers that are introduced by each query term
-    logging.info(f"Total amount of retrieved entries: {df.shape[0]}")
-    df.drop_duplicates(subset="accession", keep="first", inplace=True)
-    df.reset_index(drop=True, inplace=True)
-    logging.info(f"Total amount of non redundant entries: {df.shape[0]}")
-    if "xref_brenda" in df.columns:
-        logging.info(
-            f"Amount of BRENDA reviewed entries: {df['xref_brenda'].notna().sum()}"
-        )
-    return df
+    # Combine datasets if necessary, custom data first
+    combined_df = pd.concat(df_list, ignore_index=True)
+    return combined_df[combined_df["accession"] != "Entry"]  # remove concatenated header rows
 
 
 class ParseLocalFiles:
@@ -184,12 +191,14 @@ class UniProtFetcher:
 
     def query_uniprot(self, query_terms: list[str], length: int) -> pd.DataFrame:
         """
-        Queries the UniProt database with the given query terms and sequence length, and returns the results as a pandas DataFrame.
+        Queries the UniProt database with the given query terms and sequence length, 
+        and returns the results as a pandas DataFrame.
         Args:
             query_terms (list[str]): A list of query terms to search for in the UniProt database.
             length (int): The length of the protein sequences to filter by.
         Returns:
-            pd.DataFrame: A DataFrame containing the query results with columns specified in self.df_coi. The 'reviewed' column is a boolean indicating whether the entry is reviewed.
+            pd.DataFrame: A DataFrame containing the query results with columns specified in self.df_coi.
+            The 'reviewed' column is a boolean indicating whether the entry is reviewed.
         Raises:
             ValueError: If the query to UniProt fails or returns an error.
         """
@@ -212,7 +221,9 @@ class UniProtFetcher:
             for batch, total in self._get_batch(batch_url=url):
                 if int(total) > 100000:
                     logging.warning(
-                        f"Query term '{qry}' skipped: Exceeds maximum allowed entries (100,000) per query term. Total entries: {total}. You might want to specify the query term more specifically."
+                        f"Query term '{qry}' skipped: Exceeds maximum allowed entries (100,000)\
+                             per query term. Total entries: {total}. You might want to specify\
+                                  the query term more specifically."
                     )
                     continue
                 raw_data += batch.content
@@ -223,20 +234,9 @@ class UniProtFetcher:
                 "utf-8"
             )  # Decompress raw data
             df = pd.read_csv(StringIO(decompressed_data), delimiter="\t")
-
-            df = self._process_dataframe(df, qry)
+            df["query_term"] = qry
             dfs.append(df)
-
         return pd.concat(dfs, ignore_index=True)
-
-    def _process_dataframe(self, df: pd.DataFrame, query_term: str) -> pd.DataFrame:
-        df.columns = self.df_coi
-        df["reviewed"] = ~df["reviewed"].str.contains(
-            "unreviewed"
-        )  # Set as boolean values
-        df["query_term"] = query_term
-
-        return df
 
     def _get_next_link(self, headers):
         if "Link" in headers:
