@@ -24,40 +24,23 @@ from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.backend.parsing import parse_data
 from selectzyme.backend.preprocessing import Preprocessing
 from selectzyme.backend.utils import export_annotated_fasta
-from selectzyme.backend.vector_db import QdrantDB
 from selectzyme.frontend.visualizer import plot_2d
 from selectzyme.pages.callbacks import register_callbacks
 
 
-def parse_and_preprocess(config):
+def parse_and_preprocess(config, existing_file) -> pd.DataFrame:
     """
-    Parse and preprocess data based on the provided configuration.
+    Parse and preprocess data based on the provided configuration (config.yml).
     This function parses data using the configuration parameters, applies 
     preprocessing if specified, and customizes the data for plotting.
-    Args:
-        config (dict): A dictionary containing configuration parameters. 
-            Expected keys include:
-                - "project": A dictionary with the following keys:
-                    - "name" (str): The name of the project.
-                    - "data": A dictionary with keys:
-                        - "query_terms" (list): Terms to query the data.
-                        - "length" (int): Length of the data to process.
-                        - "custom_data_location" (str): Path to custom data.
-                        - "out_dir" (str): Directory to save output data.
-                        - "df_coi" (str): DataFrame column of interest.
-                    - "preprocessing" (bool): Whether to apply preprocessing.
-                    - "plot_customizations": A dictionary with keys:
-                        - "size" (int): Size parameter for plotting.
-                        - "shape" (str): Shape parameter for plotting.
     Returns:
         pandas.DataFrame: The processed and customized DataFrame.
     """
     df = parse_data(
-        config["project"]["name"],
         config["project"]["data"]["query_terms"],
         config["project"]["data"]["length"],
         config["project"]["data"]["custom_data_location"],
-        config["project"]["data"]["out_dir"],
+        existing_file,
         config["project"]["data"]["df_coi"],
     )
 
@@ -71,44 +54,27 @@ def parse_and_preprocess(config):
     return df
 
 
-@DeprecationWarning
-def load_embeddings(config, df):
-    """
-    Load embeddings for a given dataset based on the provided configuration.
-    This function either retrieves embeddings from a Vector Database (QdrantDB) 
-    or generates embeddings using a pre-trained language model (PLM), depending 
-    on the configuration.
-    Args:
-        config (dict): A dictionary containing configuration settings. 
-            Expected keys:
-                - "project": A dictionary with the following keys:
-                    - "use_DB" (bool): If True, embeddings are loaded from the database.
-                    - "name" (str): The name of the project/collection in the database.
-                    - "plm" (dict): A dictionary with the key:
-                        - "plm_model" (str): The name of the pre-trained language model.
-        df (pandas.DataFrame): A DataFrame containing the data. It must include 
-            a column named "sequence" if embeddings are to be generated.
-    Returns:
-        numpy.ndarray: An array of embeddings corresponding to the input data.
-    """
-    if config["project"]["use_DB"]:
-        # Load embeddings from Vector DB
-        db = QdrantDB(
-            collection_name=config["project"]["name"],
-            host="http://ocean:6333"
-            )
-        X = db.database_access(
-            df=df, plm_model=config["project"]["plm"]["plm_model"]
-        )
+def load_embeddings(df: pd.DataFrame, 
+                    plm_model: str, 
+                    embedding_file: str) -> np.ndarray:
+    if os.path.exists(embedding_file):
+        X = np.load(embedding_file)["X"]
+        logging.info(f"Loaded embeddings from {embedding_file}")
     else:
         X = gen_embedding(
             sequences=df["sequence"].tolist(),
-            plm_model=config["project"]["plm"]["plm_model"],
+            plm_model=plm_model,
         )
+        np.savez_compressed(embedding_file, X=X)
+        logging.info(f"Saved embeddings to {embedding_file}")
     return X
 
 
-def export_data(df, X_red, mst_array, linkage_array, output_dir="results") -> None:
+def export_data(df: pd.DataFrame, 
+                X_red: np.ndarray, 
+                mst_array: np.ndarray, 
+                linkage_array: np.ndarray,
+                analysis_path: str) -> None:
     """
     Exports various data structures to files in specified formats for further use.
     """
@@ -126,28 +92,27 @@ def export_data(df, X_red, mst_array, linkage_array, output_dir="results") -> No
         return df.copy().astype({col: "string" for col in obj_cols})
 
     # export data for minimal front end
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(analysis_path, exist_ok=True)
     df_export = sanitize_for_parquet(df)
-    df_export.to_parquet(os.path.join(output_dir, "df.parquet"), index=False)
-    np.savez_compressed(os.path.join(output_dir, "X_red.npz"), X_red=X_red)
-    np.savez_compressed(os.path.join(output_dir, "hdbscan_structures.npz"),
+    df_export.to_parquet(os.path.join(analysis_path, "df.parquet"), index=False)
+    np.savez_compressed(os.path.join(analysis_path, "x_red_mst_slc.npz"),
+                        X_red=X_red,
                         mst=mst_array,
                         linkage=linkage_array)
     
     # export data for user
-    df.to_csv(os.path.join(output_dir + "data.csv"), index=False)
-    df.to_csv(output_dir + "data.tsv", sep="\t", index=False)
-    export_annotated_fasta(df=df, out_file=os.path.join(output_dir + "data.fasta"))
+    df.to_csv(os.path.join(analysis_path + "/data.csv"), index=False)
+    df.to_csv(analysis_path + "/data.tsv", sep="\t", index=False)
+    export_annotated_fasta(df=df, out_file=os.path.join(analysis_path + "/data.fasta"))
 
 
 def main(app, config):
     # Backend
-    df = parse_and_preprocess(config)
-    X = gen_embedding(
-            sequences=df["sequence"].tolist(),
-            plm_model=config["project"]["plm"]["plm_model"],
-        )
-    # X = load_embeddings(config, df)  # Deprecated. Remove soon
+    analysis_path = os.path.join("results", config["project"]["name"])
+    os.makedirs(analysis_path, exist_ok=True)
+
+    df = parse_and_preprocess(config, existing_file=analysis_path + "/data.csv")
+    X = load_embeddings(df, config["project"]["plm"]["plm_model"], embedding_file=os.path.join(analysis_path, "X.npz"))
 
     # Clustering
     _mst, _linkage, df = perform_hdbscan_clustering(
@@ -166,7 +131,7 @@ def main(app, config):
     )
 
     # save intermediates for external minimal dash version
-    export_data(df, X_red, _mst, _linkage, output_dir=config["project"]["data"]["out_dir"])
+    export_data(df, X_red, _mst, _linkage, analysis_path=analysis_path)
 
     # Repeat clustering on only the centroids
     if set(df['cluster']) != {-1}:

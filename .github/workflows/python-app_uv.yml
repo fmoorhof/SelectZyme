@@ -69,4 +69,4 @@ jobs:
         python --version
         which python
         uv pip list
-        python -m pytest --cov=selectzyme/ -v tests/test_* -k 'not select and not TestLoadModelAndTokenizer and not TestGenEmbedding and not TestML and not cuml and not cuda and not TestQdrantDB'  # exclude tests requiring GPU/cuda
+        python -m pytest --cov=selectzyme/frontend/ --cov=selectzyme/backend/ -v tests/ -k 'not select and not TestLoadModelAndTokenizer and not TestGenEmbedding and not TestML and not cuml and not cuda'  # exclude tests requiring GPU/cuda
