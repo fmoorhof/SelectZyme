@@ -1,37 +1,43 @@
 from __future__ import annotations
 
 from dash import dash_table, dcc, html
+from plotly.graph_objects import Figure
 
-from selectzyme.backend.customizations import set_columns_of_interest
 from selectzyme.pages.callbacks import html_export_figure
 
+# Register page with custom URL path, must be done in app.py if app.layout is in a function layout
+# dash.register_page(__name__, path="/dim", name="DimRed")
 
-def layout(df, fig):
+
+def layout(columns: list, fig: Figure, dropdown = False) -> html.Div:
     """
-    Generate the layout for a Dash app with a 2D plot, dropdown for selecting legend attribute,
-    download button, scatter plot, and data table.
-    Parameters:
-    df (pd.DataFrame): DataFrame containing the data to be visualized.
-    X_red (np.ndarray): Reduced dimensionality data for plotting.
-    X_red_centroids (np.ndarray): Centroid data for the reduced dimensionality data.
+    This layout includes:
+    - An OPTIONAL dropdown menu for selecting a legend attribute from the provided columns.
+    - A button to download the interactive plot as an HTML file.
+    - A scatter plot displayed with a loading spinner.
+    - A data table displaying the provided columns along with additional columns for "x", "y", and "BRENDA URL".
+    Args:
+        columns (list): A list of column names to be displayed in the dropdown and data table. 
+                        The "accession" column is removed from this list.
+        fig (Figure): A Plotly figure object to be displayed in the scatter plot.
+        dropdown (bool): A flag to indicate whether to show the dropdown menu for selecting a legend attribute.
     Returns:
-    html.Div: A Dash HTML Div containing the layout of the app.
+        html.Div: A Dash HTML Div containing the layout components.
     """
-    cols = set_columns_of_interest(df.columns)
-    cols.remove("accession")
+    # columns.remove("accession")
     return html.Div(
         [
-            # Dropdown to select legend attribute of df columns
+            # Dropdown to select legend attribute of df columns. ONLY shown if dropdown is True
             html.Div(
                 [
                     # Plot display selector
                     dcc.Dropdown(
                         id="legend-attribute",
-                        options=[{"label": col, "value": col} for col in cols],
-                        value=cols[0],  # set default column to show on loading
-                    )
+                        options=[{"label": col, "value": col} for col in columns],
+                        value=columns[1],  # set default column to show on loading
+                    ) if dropdown else html.Div(),
                 ],
-                style={"width": "30%", "display": "inline-block"},
+                style={"width": "30%", "display": "inline-block"} if dropdown else {"display": "none"},
             ),
             # plot download button
             html.Div(
@@ -70,7 +76,7 @@ def layout(df, fig):
             # data table
             dash_table.DataTable(
                 id="data-table",
-                columns=[{"id": c, "name": c} for c in df.columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
+                columns=[{"id": c, "name": c} for c in columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
                 style_cell={
                     "textAlign": "left",
                     "maxWidth": "200px",

@@ -8,37 +8,18 @@ import os
 
 import dash
 import dash_bootstrap_components as dbc
-import numpy as np
-import pandas as pd
 from dash import dcc, html
-from plotly.graph_objects import Figure
 
 import selectzyme.pages.dimred as dimred
 import selectzyme.pages.eda as eda
-import selectzyme.pages.mst as mst
-import selectzyme.pages.single_linkage as sl
-import selectzyme.pages.slc_centroid as sl_centroid
-from selectzyme.backend.embed import gen_embedding
+from selectzyme.backend.customizations import set_columns_of_interest
+from selectzyme.backend.embed import load_embeddings
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.backend.utils import export_data, parse_and_preprocess
+from selectzyme.frontend.mst_plotting import MinimumSpanningTree
+from selectzyme.frontend.single_linkage_plotting import create_dendrogram
 from selectzyme.frontend.visualizer import plot_2d
 from selectzyme.pages.callbacks import register_callbacks
-
-
-def load_embeddings(df: pd.DataFrame, 
-                    plm_model: str, 
-                    embedding_file: str) -> np.ndarray:
-    if os.path.exists(embedding_file):
-        X = np.load(embedding_file)["X"]
-        logging.info(f"Loaded embeddings from {embedding_file}")
-    else:
-        X = gen_embedding(
-            sequences=df["sequence"].tolist(),
-            plm_model=plm_model,
-        )
-        np.savez_compressed(embedding_file, X=X)
-        logging.info(f"Saved embeddings to {embedding_file}")
-    return X
 
 
 def main(app, config):
@@ -81,44 +62,55 @@ def main(app, config):
         logging.info("Only outlier cluster found. Skipping centroid calculation.")
 
 
-    # Frontend
-    # Visualization
+    # Frontend / Middleware
+    # Create all plots
     fig = plot_2d(df, X_red, legend_attribute=config["project"]["plot_customizations"]["objective"])
-    fig_mst = Figure(fig)  # copy required else fig will be modified by mst creation
-    fig_cmst = Figure(fig)
+    mst_obj = MinimumSpanningTree(_mst, df, X_red, fig)
+    fig_mst = mst_obj.plot_mst_in_dimred_landscape()
+    # fig = mst.plot_mst_force_directed(G)  # deprecated. usage of graph G not supported any more, remove functionality in near future
+    fig_slc = create_dendrogram(Z=_linkage, 
+                                df=df, 
+                                legend_attribute=config["project"]["plot_customizations"]["objective"])
 
-    # Create page layouts
+    if set(df['cluster']) != {-1}:
+        # Centroid Minimal Spanning Tree
+        mst_obj = MinimumSpanningTree(mst_centroids, df, X_red_centroids, fig)
+        fig_cmst = mst_obj.plot_mst_in_dimred_landscape()
+
+        # Centroid Phylogeny
+        fig_cslc = create_dendrogram(Z=linkage_centroids, 
+                                     df=df[df['marker_symbol'] == 'x'], 
+                                     legend_attribute=config["project"]["plot_customizations"]["objective"])
+        
+    columns = set_columns_of_interest(df.columns)
+
+    # Register pages
     dash.register_page(module="eda", name="Explanatory Data Analysis", layout=eda.layout(df))
     dash.register_page(
         module="dim",
         path="/",
         name="Protein Landscape",
-        layout=dimred.layout(df, fig),
+        layout=dimred.layout(columns, fig, dropdown=True),
     )
-    dash.register_page(
-        module="mst", name="Connectivity", layout=mst.layout(_mst, df, X_red, fig_mst)
-    )
-    dash.register_page(module="slc", 
-                       name="Phylogeny", 
-                       layout=sl.layout(_linkage=_linkage, 
-                                        df=df, 
-                                        legend_attribute=config["project"]["plot_customizations"]["objective"]))
-
-    # Register callbacks
-    register_callbacks(app, df, X_red)
+    dash.register_page(module="mst", name="Connectivity", layout=dimred.layout(columns, fig_mst))
+    dash.register_page(module="slc", name="Phylogeny", layout=dimred.layout(columns, fig_slc))
 
     # Create centroid layouts if cetroids are found
     if set(df['cluster']) != {-1}:
+        # Centroid Minimal Spanning Tree
         dash.register_page(
             module="cmst", 
             name="Centroid connectivity", 
-            layout=mst.layout(mst_centroids, df, X_red_centroids, fig_cmst)
+            layout=dimred.layout(columns, fig_cmst)
         )
+
+        # Centroid Phylogeny
         dash.register_page(module="cslc", 
                            name="Centroid Phylogeny", 
-                           layout=sl_centroid.layout(_linkage=linkage_centroids, 
-                                df=df[df['marker_symbol'] == 'x'], 
-                                legend_attribute=config["project"]["plot_customizations"]["objective"]))
+                           layout=dimred.layout(columns, fig_cslc))
+        
+    # Register callbacks
+    register_callbacks(app, df, X_red)
 
     # App layout with navigation links and page container
     app.layout = dbc.Container(
