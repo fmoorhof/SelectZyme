@@ -8,8 +8,6 @@ import os
 
 import dash
 import dash_bootstrap_components as dbc
-import numpy as np
-import pandas as pd
 from dash import dcc, html
 from plotly.graph_objects import Figure
 
@@ -18,27 +16,11 @@ import selectzyme.pages.eda as eda
 import selectzyme.pages.mst as mst
 import selectzyme.pages.single_linkage as sl
 import selectzyme.pages.slc_centroid as sl_centroid
-from selectzyme.backend.embed import gen_embedding
+from selectzyme.backend.embed import load_embeddings
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.backend.utils import export_data, parse_and_preprocess
 from selectzyme.frontend.visualizer import plot_2d
 from selectzyme.pages.callbacks import register_callbacks
-
-
-def load_embeddings(df: pd.DataFrame, 
-                    plm_model: str, 
-                    embedding_file: str) -> np.ndarray:
-    if os.path.exists(embedding_file):
-        X = np.load(embedding_file)["X"]
-        logging.info(f"Loaded embeddings from {embedding_file}")
-    else:
-        X = gen_embedding(
-            sequences=df["sequence"].tolist(),
-            plm_model=plm_model,
-        )
-        np.savez_compressed(embedding_file, X=X)
-        logging.info(f"Saved embeddings to {embedding_file}")
-    return X
 
 
 def main(app, config):

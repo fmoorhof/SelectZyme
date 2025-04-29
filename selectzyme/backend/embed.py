@@ -1,13 +1,42 @@
 from __future__ import annotations
 
 import logging
+import os
 
 import numpy as np
+import pandas as pd
 import torch
 from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def load_embeddings(df: pd.DataFrame, 
+                    plm_model: str, 
+                    embedding_file: str) -> np.ndarray:
+    """
+    Load or generate embeddings for a given dataset using a specified pre-trained language model (PLM).
+    If the embedding file exists, the function loads the embeddings from the file.
+    Otherwise, it generates embeddings using the provided PLM model and saves them to the file.
+    Args:
+        df (pd.DataFrame): A pandas DataFrame containing a column "sequence" with the input sequences.
+        plm_model (str): The name or identifier of the pre-trained language model to use for generating embeddings.
+        embedding_file (str): The file path to load/save the embeddings.
+    Returns:
+        np.ndarray: A NumPy array containing the embeddings.
+    """
+    if os.path.exists(embedding_file):
+        X = np.load(embedding_file)["X"]
+        logging.info(f"Loaded embeddings from {embedding_file}")
+    else:
+        X = gen_embedding(
+            sequences=df["sequence"].tolist(),
+            plm_model=plm_model,
+        )
+        np.savez_compressed(embedding_file, X=X)
+        logging.info(f"Saved embeddings to {embedding_file}")
+    return X
 
 
 def gen_embedding(
