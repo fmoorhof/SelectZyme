@@ -1,30 +1,21 @@
 from __future__ import annotations
 
-import logging
-
 from dash import dash_table, dcc, html
+from plotly.graph_objects import Figure
 
-from selectzyme.frontend.mst_plotting import MinimumSpanningTree
 from selectzyme.pages.dimred import html_export_figure
 
-# Register page
-# dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")  # Register page with custom URL path, must be done in app.py if app.layout is in a function layout
+# Register page with custom URL path, must be done in app.py if app.layout is in a function layout
+# dash.register_page(__name__, path="/mst", name="Minimal Spanning Tree")
 
 
-def layout(_mst, df, X_red, fig) -> html.Div:
+def layout(columns: list, fig: Figure) -> html.Div:
     """
     Generates a Dash layout for visualizing a minimal spanning tree of a given graph.
     Parameters:
-    _mst (np.ndarray): Minimal spanning tree in np array format
-    df (pd.DataFrame): A DataFrame containing node information such as node ID, x and y positions, and number of connections.
-    X_red (np.ndarray): Reduced dimensionality data for plotting.
+    columns (list): List of column names to be displayed in the data table.
     fig (go.Figure): A Plotly figure object for the minimal spanning tree.
     """
-    logging.info("Start building the MST...")
-    mst = MinimumSpanningTree(_mst, df, X_red, fig)
-    fig = mst.plot_mst_in_dimred_landscape()
-    # fig = mst.plot_mst_force_directed(G)  # deprecated. usage of graph G not supported any more, remove functionality in near future
-
     return html.Div(
         [
             # plot download button
@@ -64,7 +55,7 @@ def layout(_mst, df, X_red, fig) -> html.Div:
             # data table
             dash_table.DataTable(
                 id="data-table",
-                columns=[{"id": c, "name": c} for c in df.columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
+                columns=[{"id": c, "name": c} for c in columns] + [{"id": "x", "name": "x"}, {"id": "y", "name": "y"}, {"id": "BRENDA URL", "name": "BRENDA URL"}],
                 style_cell={
                     "textAlign": "left",
                     "maxWidth": "200px",  # Set a maximum width for all columns
