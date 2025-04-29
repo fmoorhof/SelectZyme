@@ -9,11 +9,10 @@ from selectzyme.pages.callbacks import html_export_figure
 # dash.register_page(__name__, path="/dim", name="DimRed")
 
 
-def layout(columns: list, fig: Figure) -> html.Div:
+def layout(columns: list, fig: Figure, dropdown = False) -> html.Div:
     """
-    Generates a Dash layout for a dimensionality reduction page.
     This layout includes:
-    - A dropdown menu for selecting a legend attribute from the provided columns.
+    - An OPTIONAL dropdown menu for selecting a legend attribute from the provided columns.
     - A button to download the interactive plot as an HTML file.
     - A scatter plot displayed with a loading spinner.
     - A data table displaying the provided columns along with additional columns for "x", "y", and "BRENDA URL".
@@ -21,13 +20,14 @@ def layout(columns: list, fig: Figure) -> html.Div:
         columns (list): A list of column names to be displayed in the dropdown and data table. 
                         The "accession" column is removed from this list.
         fig (Figure): A Plotly figure object to be displayed in the scatter plot.
+        dropdown (bool): A flag to indicate whether to show the dropdown menu for selecting a legend attribute.
     Returns:
         html.Div: A Dash HTML Div containing the layout components.
     """
     # columns.remove("accession")
     return html.Div(
         [
-            # Dropdown to select legend attribute of df columns
+            # Dropdown to select legend attribute of df columns. ONLY shown if dropdown is True
             html.Div(
                 [
                     # Plot display selector
@@ -35,9 +35,9 @@ def layout(columns: list, fig: Figure) -> html.Div:
                         id="legend-attribute",
                         options=[{"label": col, "value": col} for col in columns],
                         value=columns[1],  # set default column to show on loading
-                    )
+                    ) if dropdown else html.Div(),
                 ],
-                style={"width": "30%", "display": "inline-block"},
+                style={"width": "30%", "display": "inline-block"} if dropdown else {"display": "none"},
             ),
             # plot download button
             html.Div(

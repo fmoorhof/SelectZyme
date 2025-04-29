@@ -12,15 +12,15 @@ from dash import dcc, html
 
 import selectzyme.pages.dimred as dimred
 import selectzyme.pages.eda as eda
-import selectzyme.pages.mst as mst
+from selectzyme.backend.customizations import set_columns_of_interest
 from selectzyme.backend.embed import load_embeddings
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.backend.utils import export_data, parse_and_preprocess
-from selectzyme.frontend.visualizer import plot_2d
-from selectzyme.frontend.single_linkage_plotting import create_dendrogram
-from selectzyme.pages.callbacks import register_callbacks
-from selectzyme.backend.customizations import set_columns_of_interest
 from selectzyme.frontend.mst_plotting import MinimumSpanningTree
+from selectzyme.frontend.single_linkage_plotting import create_dendrogram
+from selectzyme.frontend.visualizer import plot_2d
+from selectzyme.pages.callbacks import register_callbacks
+
 
 def main(app, config):
     # Backend
@@ -90,10 +90,10 @@ def main(app, config):
         module="dim",
         path="/",
         name="Protein Landscape",
-        layout=dimred.layout(columns, fig),
+        layout=dimred.layout(columns, fig, dropdown=True),
     )
-    dash.register_page(module="mst", name="Connectivity", layout=mst.layout(columns, fig_mst))
-    dash.register_page(module="slc", name="Phylogeny", layout=mst.layout(columns, fig_slc))
+    dash.register_page(module="mst", name="Connectivity", layout=dimred.layout(columns, fig_mst))
+    dash.register_page(module="slc", name="Phylogeny", layout=dimred.layout(columns, fig_slc))
 
     # Create centroid layouts if cetroids are found
     if set(df['cluster']) != {-1}:
@@ -101,13 +101,13 @@ def main(app, config):
         dash.register_page(
             module="cmst", 
             name="Centroid connectivity", 
-            layout=mst.layout(columns, fig_cmst)
+            layout=dimred.layout(columns, fig_cmst)
         )
 
         # Centroid Phylogeny
         dash.register_page(module="cslc", 
                            name="Centroid Phylogeny", 
-                           layout=mst.layout(columns, fig_cslc))
+                           layout=dimred.layout(columns, fig_cslc))
         
     # Register callbacks
     register_callbacks(app, df, X_red)
