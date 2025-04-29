@@ -229,6 +229,9 @@ class UniProtFetcher:
                 "utf-8"
             )  # Decompress raw data
             df = pd.read_csv(StringIO(decompressed_data), delimiter="\t")
+
+            # Customize column names like defined in config.yml
+            df.columns = self.df_coi
             df["query_term"] = qry
             dfs.append(df)
         return pd.concat(dfs, ignore_index=True)
