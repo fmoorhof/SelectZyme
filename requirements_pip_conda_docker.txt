@@ -1,5 +1,5 @@
 # generate me by (&manual cleaning): pip freeze > requirements_frozen.txt
-transformers==4.48.2
+transformers==4.50.0
 hdbscan==0.8.40
 qdrant-client==1.13.2
 taxoniq==1.0.3
