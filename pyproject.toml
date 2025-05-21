@@ -30,8 +30,9 @@ dependencies = { file = ["requirements.txt"] }  # extra-index-url are defined in
 "Documentation" = "https://fmoorhof.github.io/fmoorhof/ec"
 "Bug Tracker" = "https://github.com/ipb-halle/SelectZyme/-/issues"
 
-[tool.setuptools]
-package-dir = {"" = "selectzyme"}
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["selectzyme*"]
 
 [build-system]
 requires = ["setuptools>=0.61.0"]
