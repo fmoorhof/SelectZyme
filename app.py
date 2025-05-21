@@ -159,7 +159,7 @@ if __name__ == "__main__":
     config = parse_args()
     # Debugging way, only runs always the test_config.yml
     import yaml
-    args = argparse.Namespace(config="results/input_configs/test_config.yml")
+    args = argparse.Namespace(config="results/input_configs/petase_custom.yml")
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 

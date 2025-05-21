@@ -90,10 +90,12 @@ class MinimumSpanningTree:
             edge_x, edge_y, edge_opacity=0.5, edge_width=0.3
         )
         edge_trace.name = "MST lines"
-        
-        self.fig.add_trace(edge_trace)  # if nodes are not first, hover data randomly get only displayed for some nodes!
-        return self.fig
-    
+
+        # Create a new figure for the MST plot
+        fig = go.Figure(self.fig)  # Clone the base figure
+        fig.add_trace(edge_trace)  # Add MST traces to the cloned figure
+        return fig
+
     @run_time
     def create_edge_trace(
         self, edge_x: list, edge_y: list, edge_opacity=None, edge_width: int = 1
