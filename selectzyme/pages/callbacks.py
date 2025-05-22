@@ -62,7 +62,8 @@ def register_callbacks(app, df, X_red):
 
     @app.callback(
         [Output("plot", "figure"), Output("download-button", "href")],
-        Input("legend-attribute", "value"),
+        [Input("legend-attribute", "value")],
+        prevent_initial_call=True,
     )
     def update_plot_and_download(legend_attribute):
         """
@@ -80,7 +81,7 @@ def register_callbacks(app, df, X_red):
         updated_fig.update_layout(uirevision="fixed")
         updated_href = html_export_figure(
             updated_fig
-        )  # Generate the updated download link
+        )
         return updated_fig, updated_href
 
 
