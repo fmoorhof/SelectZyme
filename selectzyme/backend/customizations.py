@@ -75,10 +75,9 @@ def custom_plotting(df: pd.DataFrame,
 
 def _clean_column(df: pd.DataFrame, column: str, replacements: list[str] = None) -> pd.Series:
     """Helper to replace nulls and unwanted values in a column."""
-    df[column] = df[column].fillna("unknown")
+    df[column].fillna("unknown", inplace=True)
     if replacements:
-        df[column] = df[column].replace(replacements, "unknown")
-    return df[column]
+        df[column].replace(replacements, "unknown", inplace=True)
 
 
 def _assign_marker_styles(df: pd.DataFrame, marker_property: list[str], sizes: list[int], shapes: list[str]) -> pd.DataFrame:
@@ -88,11 +87,11 @@ def _assign_marker_styles(df: pd.DataFrame, marker_property: list[str], sizes: l
     df["marker_symbol"] = shapes[0]
 
     for i, col in enumerate(marker_property):
-        if not col in df.columns:
+        if col not in df.columns:
             logging.warning(f"Column {col} not found in DataFrame. Skipping marker assignment for this column.")
             continue
         
-        _clean_column(df, col, replacements=["NA", "0"])
+        _clean_column(df, col, replacements=["NA", "0", "[]"])
         df.loc[df[col] != "unknown", ["marker_size", "marker_symbol"]] = [sizes[i], shapes[i]]
         logging.info(f"{(df[col] != 'unknown').sum()} known {col} found.")
     
