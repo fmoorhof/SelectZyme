@@ -57,7 +57,8 @@ def parse_and_preprocess(config, existing_file) -> pd.DataFrame:
         df = Preprocessing(df).preprocess()
 
     # Apply customizations
-    df = custom_plotting(df=df, 
+    df = custom_plotting(df=df,
+                         marker_property=config["project"]["plot_customizations"]["marker_property"],
                          size=config["project"]["plot_customizations"]["size"], 
                          shape=config["project"]["plot_customizations"]["shape"])
     return df

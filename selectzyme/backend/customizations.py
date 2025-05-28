@@ -54,7 +54,8 @@ def set_columns_of_interest(df_cols: list) -> list:
     return [col for col in df_cols if col not in columns_to_avoid_hover]
 
 
-def custom_plotting(df: pd.DataFrame, 
+def custom_plotting(df: pd.DataFrame,
+                    marker_property: list[str],
                     size: list[int] = [6, 8, 14], 
                     shape: list[str] = ["circle", "diamond", "cross"]) -> pd.DataFrame:
     """
@@ -69,11 +70,12 @@ def custom_plotting(df: pd.DataFrame,
         _clean_column(df, "ec")
         logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers found.")
 
-    df = _assign_marker_styles(df, size, shape)
+    df = _assign_marker_styles(df, marker_property, size, shape)
 
     if "organism_id" in df.columns:
         df = _annotate_taxonomy(df)
 
+    # fill all NaN values with "unknown" to plot also non existent values
     df = df.fillna("unknown")
     df["selected"] = False
 
@@ -88,19 +90,15 @@ def _clean_column(df: pd.DataFrame, column: str, replacements: list[str] = None)
     return df[column]
 
 
-def _assign_marker_styles(df: pd.DataFrame, sizes: list[int], shapes: list[str]) -> pd.DataFrame:
-    """Assign marker sizes and shapes based on conditions."""
+def _assign_marker_styles(df: pd.DataFrame, marker_property: list[str], sizes: list[int], shapes: list[str]) -> pd.DataFrame:
+    """Assign marker sizes and shapes based on marker properties set in the config.yml."""
     df["marker_size"] = sizes[0]
-    df["marker_symbol"] = shapes[0]
-
-    if all(col in df.columns for col in ["xref_brenda", "ec", "reviewed"]):
-        condition_brenda = df["xref_brenda"] != "unknown"
-        condition_ec = df["ec"] != "unknown"
-        condition_reviewed = df["reviewed"].isin([True, "true"])
-
-        df.loc[condition_ec, ["marker_size", "marker_symbol"]] = [sizes[1], shapes[1]]
-        df.loc[condition_reviewed, ["marker_size", "marker_symbol"]] = [sizes[1], shapes[2]]
-        df.loc[condition_reviewed & condition_brenda, "marker_size"] = sizes[2]
+    df["marker_symbol"] = shapes[0]        
+    for i, col in enumerate(marker_property):
+        if not col in df.columns:
+            raise ValueError(f"column {col} is not in the DataFrame (input data). Please make sure it actually exists.")
+        
+        df.loc[df[col] != "unknown", ["marker_size", "marker_symbol"]] = [sizes[i], shapes[i]]
     
     return df
 
