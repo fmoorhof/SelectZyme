@@ -61,15 +61,6 @@ def custom_plotting(df: pd.DataFrame,
     """
     Modify the given DataFrame before plotting to make values look nicer/custom.
     """
-    if "xref_brenda" in df.columns:
-        _clean_column(df, "xref_brenda", replacements=["NA", "0"])
-        df.loc[df["xref_brenda"] != "unknown", "reviewed"] = True
-        logging.info(f"{(df['xref_brenda'] != 'unknown').sum()} BRENDA entries found.")
-
-    if "ec" in df.columns:
-        _clean_column(df, "ec")
-        logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers found.")
-
     df = _assign_marker_styles(df, marker_property, size, shape)
 
     if "organism_id" in df.columns:
@@ -92,13 +83,18 @@ def _clean_column(df: pd.DataFrame, column: str, replacements: list[str] = None)
 
 def _assign_marker_styles(df: pd.DataFrame, marker_property: list[str], sizes: list[int], shapes: list[str]) -> pd.DataFrame:
     """Assign marker sizes and shapes based on marker properties set in the config.yml."""
+    # Set default marker size and shape if no properties are specified
     df["marker_size"] = sizes[0]
-    df["marker_symbol"] = shapes[0]        
+    df["marker_symbol"] = shapes[0]
+
     for i, col in enumerate(marker_property):
         if not col in df.columns:
-            raise ValueError(f"column {col} is not in the DataFrame (input data). Please make sure it actually exists.")
+            logging.warning(f"Column {col} not found in DataFrame. Skipping marker assignment for this column.")
+            continue
         
+        _clean_column(df, col, replacements=["NA", "0"])
         df.loc[df[col] != "unknown", ["marker_size", "marker_symbol"]] = [sizes[i], shapes[i]]
+        logging.info(f"{(df[col] != 'unknown').sum()} known {col} found.")
     
     return df
 
