@@ -41,7 +41,7 @@ def register_callbacks(app, df, X_red):
         - If boxSelect contains points, each point is processed; otherwise, the first point from clickData is processed.
         """
         if clickData is None:
-            return shared_table  # fix: not working, still table loads empty table
+            return shared_table, shared_table
 
         # if user deletes entries or modifies cells
         if data_table is not None and data_table != shared_table:
