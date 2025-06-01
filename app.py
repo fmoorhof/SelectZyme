@@ -12,7 +12,6 @@ from dash import dcc, html
 
 import selectzyme.pages.dimred as dimred
 import selectzyme.pages.eda as eda
-from selectzyme.backend.customizations import set_columns_of_interest
 from selectzyme.backend.embed import load_embeddings
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
 from selectzyme.backend.utils import export_data, parse_and_preprocess
@@ -82,7 +81,6 @@ def main(app, config):
                                      df=df[df['marker_symbol'] == 'x'], 
                                      legend_attribute=config["project"]["plot_customizations"]["objective"])
         
-    columns = set_columns_of_interest(df.columns)
 
     # Register pages
     dash.register_page(module="eda", name="Explanatory Data Analysis", layout=eda.layout(df))
@@ -90,10 +88,10 @@ def main(app, config):
         module="dim",
         path="/",
         name="Protein Landscape",
-        layout=dimred.layout(columns, fig, dropdown=True),
+        layout=dimred.layout(df.columns, fig, dropdown=True),
     )
-    dash.register_page(module="mst", name="Connectivity", layout=dimred.layout(columns, fig_mst))
-    dash.register_page(module="slc", name="Phylogeny", layout=dimred.layout(columns, fig_slc))
+    dash.register_page(module="mst", name="Connectivity", layout=dimred.layout(df.columns, fig_mst))
+    dash.register_page(module="slc", name="Phylogeny", layout=dimred.layout(df.columns, fig_slc))
 
     # Create centroid layouts if cetroids are found
     if set(df['cluster']) != {-1}:
@@ -101,13 +99,13 @@ def main(app, config):
         dash.register_page(
             module="cmst", 
             name="Centroid connectivity", 
-            layout=dimred.layout(columns, fig_cmst)
+            layout=dimred.layout(df.columns, fig_cmst)
         )
 
         # Centroid Phylogeny
         dash.register_page(module="cslc", 
                            name="Centroid Phylogeny", 
-                           layout=dimred.layout(columns, fig_cslc))
+                           layout=dimred.layout(df.columns, fig_cslc))
         
     # Register callbacks
     register_callbacks(app, df, X_red)
@@ -159,7 +157,7 @@ if __name__ == "__main__":
     config = parse_args()
     # Debugging way, only runs always the test_config.yml
     import yaml
-    args = argparse.Namespace(config="results/input_configs/petase_custom.yml")
+    args = argparse.Namespace(config="results/input_configs/test_config.yml")
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 

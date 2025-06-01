@@ -33,7 +33,10 @@ project:
     method: "UMAP"  # [UMAP, TSNE, openTSNE, PCA]
     n_neighbors: 15  # recommended between 5-50
 
-  plot_customizations:  # set marker size and shape for plots
-    objective: "cluster"  # define the marker color objective for MST and SLC
-    size: [6, 8, 14]  # [unknown data type, UniProt annotation, BRENDA annotation]
-    shape: ["circle", "diamond", "cross"]  # [unknown data type, UniProt annotation, BRENDA annotation]
+  plot_customizations:  # define marker size and shape
+    objective: "cluster"  # define the legend objective for MST and SLC
+
+    # display "xref_brenda" data points as "cross" of size 14 (if not having 'unknown' value), use 'accession' for default values
+    marker_property: ["accession", "ec", "xref_brenda"]
+    size: [6, 8, 14]
+    shape: ["circle", "diamond", "cross"]

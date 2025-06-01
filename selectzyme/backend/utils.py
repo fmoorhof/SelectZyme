@@ -57,7 +57,8 @@ def parse_and_preprocess(config, existing_file) -> pd.DataFrame:
         df = Preprocessing(df).preprocess()
 
     # Apply customizations
-    df = custom_plotting(df=df, 
+    df = custom_plotting(df=df,
+                         marker_property=config["project"]["plot_customizations"]["marker_property"],
                          size=config["project"]["plot_customizations"]["size"], 
                          shape=config["project"]["plot_customizations"]["shape"])
     return df
@@ -102,13 +103,14 @@ def export_data(df: pd.DataFrame,
 def export_annotated_fasta(df: pd.DataFrame, out_file: str):
     with open(out_file, "w") as f_out:
         for index, row in df.iterrows():
+            header = "|".join(row.drop("sequence").map(str))
             fasta = (
                 ">",
-                "|".join(row.iloc[:-1].map(str)),
+                header,
                 "\n",
                 row.loc["sequence"],
                 "\n",
-            )  # todo: exclude seq in header (-1=last column potentially broken)
+            )
             f_out.writelines(fasta)
     logging.info(f"FASTA file written to {out_file}")
 

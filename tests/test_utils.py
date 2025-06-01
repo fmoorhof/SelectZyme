@@ -145,7 +145,11 @@ def test_parse_and_preprocess(mock_custom_plotting, mock_Preprocessing, mock_par
                 "df_coi": None,
             },
             "preprocessing": True,
-            "plot_customizations": {"size": 10, "shape": "circle"},
+            "plot_customizations": {
+                "size": 10,
+                "shape": "circle",
+                "marker_property": ["a", "b"],  # Move marker_property inside plot_customizations
+            },
         }
     }
 
@@ -153,7 +157,8 @@ def test_parse_and_preprocess(mock_custom_plotting, mock_Preprocessing, mock_par
     
     mock_parse_data.assert_called_once()
     mock_Preprocessing.assert_called_once()
-    mock_custom_plotting.assert_called_once()
+    # Check that marker_property is passed as argument
+    assert mock_custom_plotting.call_args[1].get("marker_property") == ["a", "b"]
     pd.testing.assert_frame_equal(result, mock_df)
 
 

@@ -34,7 +34,7 @@ def layout(columns: list, fig: Figure, dropdown = False) -> html.Div:
                     dcc.Dropdown(
                         id="legend-attribute",
                         options=[{"label": col, "value": col} for col in columns],
-                        value=columns[1],  # set default column to show on loading
+                        value=columns[-1],  # set default column to show on loading
                     ) if dropdown else html.Div(),
                 ],
                 style={"width": "30%", "display": "inline-block"} if dropdown else {"display": "none"},

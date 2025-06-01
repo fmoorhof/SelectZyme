@@ -47,13 +47,13 @@ def test_set_columns_of_interest():
 def test_custom_plotting_assigns_markers_and_clean_values():
     # Minimal DataFrame for testing
     df = pd.DataFrame({
-        "xref_brenda": ["P12345", None, "NA", "0"],
-        "ec": ["1.1.1.1", None, "2.2.2.2", None],
-        "reviewed": [True, False, "true", False],
-        "organism_id": [9606, 9606, -1, 0],
+        "xref_brenda": ["P12345", None, "NA", "0", "[]"],
+        "ec": ["1.1.1.1", None, "2.2.2.2", None, "[]"],
+        "reviewed": [True, False, "true", False, "[]"],
+        "organism_id": [9606, 9606, -1, 0, "[]"],
     })
 
-    processed_df = custom_plotting(df)
+    processed_df = custom_plotting(df, marker_property=["xref_brenda", "ec"])
 
     # Test fillna replacements
     assert all(processed_df["xref_brenda"].isin(["P12345", "unknown"]))

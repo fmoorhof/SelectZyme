@@ -54,26 +54,19 @@ def set_columns_of_interest(df_cols: list) -> list:
     return [col for col in df_cols if col not in columns_to_avoid_hover]
 
 
-def custom_plotting(df: pd.DataFrame, 
+def custom_plotting(df: pd.DataFrame,
+                    marker_property: list[str],
                     size: list[int] = [6, 8, 14], 
                     shape: list[str] = ["circle", "diamond", "cross"]) -> pd.DataFrame:
     """
     Modify the given DataFrame before plotting to make values look nicer/custom.
     """
-    if "xref_brenda" in df.columns:
-        _clean_column(df, "xref_brenda", replacements=["NA", "0"])
-        df.loc[df["xref_brenda"] != "unknown", "reviewed"] = True
-        logging.info(f"{(df['xref_brenda'] != 'unknown').sum()} BRENDA entries found.")
-
-    if "ec" in df.columns:
-        _clean_column(df, "ec")
-        logging.info(f"{(df['ec'] != 'unknown').sum()} UniProt EC numbers found.")
-
-    df = _assign_marker_styles(df, size, shape)
+    df = _assign_marker_styles(df, marker_property, size, shape)
 
     if "organism_id" in df.columns:
         df = _annotate_taxonomy(df)
 
+    # fill all NaN values with "unknown" to plot also non existent values
     df = df.fillna("unknown")
     df["selected"] = False
 
@@ -82,25 +75,25 @@ def custom_plotting(df: pd.DataFrame,
 
 def _clean_column(df: pd.DataFrame, column: str, replacements: list[str] = None) -> pd.Series:
     """Helper to replace nulls and unwanted values in a column."""
-    df[column] = df[column].fillna("unknown")
+    df[column].fillna("unknown", inplace=True)
     if replacements:
-        df[column] = df[column].replace(replacements, "unknown")
-    return df[column]
+        df[column].replace(replacements, "unknown", inplace=True)
 
 
-def _assign_marker_styles(df: pd.DataFrame, sizes: list[int], shapes: list[str]) -> pd.DataFrame:
-    """Assign marker sizes and shapes based on conditions."""
+def _assign_marker_styles(df: pd.DataFrame, marker_property: list[str], sizes: list[int], shapes: list[str]) -> pd.DataFrame:
+    """Assign marker sizes and shapes based on marker properties set in the config.yml."""
+    # Set default marker size and shape if no properties are specified
     df["marker_size"] = sizes[0]
     df["marker_symbol"] = shapes[0]
 
-    if all(col in df.columns for col in ["xref_brenda", "ec", "reviewed"]):
-        condition_brenda = df["xref_brenda"] != "unknown"
-        condition_ec = df["ec"] != "unknown"
-        condition_reviewed = df["reviewed"].isin([True, "true"])
-
-        df.loc[condition_ec, ["marker_size", "marker_symbol"]] = [sizes[1], shapes[1]]
-        df.loc[condition_reviewed, ["marker_size", "marker_symbol"]] = [sizes[1], shapes[2]]
-        df.loc[condition_reviewed & condition_brenda, "marker_size"] = sizes[2]
+    for i, col in enumerate(marker_property):
+        if col not in df.columns:
+            logging.warning(f"Column {col} not found in DataFrame. Skipping marker assignment for this column.")
+            continue
+        
+        _clean_column(df, col, replacements=["NA", "0", "[]"])
+        df.loc[df[col] != "unknown", ["marker_size", "marker_symbol"]] = [sizes[i], shapes[i]]
+        logging.info(f"{(df[col] != 'unknown').sum()} known {col} found.")
     
     return df
 
