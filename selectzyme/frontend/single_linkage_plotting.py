@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -34,7 +36,10 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
     - The dataframe is reordered to match the dendrogram leaves, and hover text is generated based on selected columns.
     - The plot is saved as an HTML file named 'results/slc.html'.
     """
-    P = dendrogram(Z, no_plot=True, distance_sort="ascending")
+    sys.setrecursionlimit(
+        max(df.shape[0], 10000)
+    )  # fixed: RecursionError: maximum recursion depth exceeded
+    P = dendrogram(Z, no_plot=True, distance_sort=True)
     icoord = np.array(P["icoord"])  # ordered after 'leaves' and not Z!
     dcoord = np.array(P["dcoord"])
     leaves = P["leaves"]  # Indices of df rows corresponding to leaves
@@ -138,42 +143,3 @@ def _value_to_color(values) -> dict:
 def _insert_separator(arrays: np.ndarray) -> np.ndarray:
     # Append NaN to each array and concatenate
     return np.hstack([np.append(a, np.nan) for a in arrays])
-
-
-if __name__ == "__main__":
-    import hdbscan
-    import numpy as np
-    import pandas as pd
-    from sklearn.datasets import make_blobs
-
-    np.random.seed(42)
-    sample_size = 11  # too big samples cause RecursionError but strangely not for my real datasets
-    df = pd.DataFrame(
-        {
-            "x": np.random.randn(sample_size),
-            "y": np.random.randn(sample_size),
-            "accession": np.arange(sample_size),
-            "cluster": np.random.choice([-1, 1, 3], sample_size),
-            "selected": np.random.choice([False, True], sample_size),
-            "marker_symbol": np.random.choice(
-                ["circle", "square", "diamond", "triangle-up"], sample_size
-            ),
-            "marker_size": np.random.randint(10, sample_size, sample_size),
-        }
-    )
-    data, _ = make_blobs(
-        n_samples=sample_size, n_features=2, centers=3, cluster_std=0.8, random_state=42
-    )
-
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=2, gen_min_span_tree=True)
-    clusterer.fit(data)
-
-    hover_text = [
-        "<br>".join(f"{col}: {df[col][i]}" for col in df.columns)
-        for i in range(len(df))
-    ]
-
-    fig = create_dendrogram(
-        Z=clusterer.single_linkage_tree_._linkage, df=df, hovertext=hover_text
-    )
-    fig.show()
