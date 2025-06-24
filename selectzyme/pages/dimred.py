@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dash import dash_table, dcc, html
 import dash_bootstrap_components as dbc
+from dash import dash_table, dcc, html
 from plotly.graph_objects import Figure
 
 from selectzyme.pages.callbacks import html_export_figure
