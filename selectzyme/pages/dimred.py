@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dash_bootstrap_components as dbc
 from dash import dash_table, dcc, html
 from plotly.graph_objects import Figure
 
@@ -30,14 +31,14 @@ def layout(columns: list, fig: Figure, dropdown = False) -> html.Div:
             # Dropdown to select legend attribute of df columns. ONLY shown if dropdown is True
             html.Div(
                 [
-                    # Plot display selector
-                    dcc.Dropdown(
+                    html.Label("Select legend attribute", htmlFor="legend-attribute"),
+                    dbc.Select(
                         id="legend-attribute",
                         options=[{"label": col, "value": col} for col in columns],
-                        value=columns[-1],  # set default column to show on loading
-                    ) if dropdown else html.Div(),
+                        value=columns[-1],  # default selection
+                    ),
                 ],
-                style={"width": "30%", "display": "inline-block"} if dropdown else {"display": "none"},
+                style={"width": "30%", "display": "inline-block", "verticalAlign": "top"} if dropdown else {"display": "none"},
             ),
             # plot download button
             html.Div(
@@ -96,7 +97,7 @@ def layout(columns: list, fig: Figure, dropdown = False) -> html.Div:
                 export_format="xlsx",
                 export_headers="display",
                 merge_duplicate_headers=True,
-                filter_action="native",
+                # filter_action="native",
                 sort_action="native",
                 sort_mode="multi",
                 column_selectable="single",
