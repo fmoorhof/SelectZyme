@@ -40,16 +40,23 @@ def layout(columns: list, fig: Figure, dropdown = False) -> html.Div:
                 ],
                 style={"width": "30%", "display": "inline-block", "verticalAlign": "top"} if dropdown else {"display": "none"},
             ),
-            # plot download button
+            # plot and FASTA download buttons
             html.Div(
-                html.A(
-                    html.Button("Download interactive plot"),
-                    id="download-button",
-                    href=html_export_figure(
-                        fig
-                    ),  # if other column got selected see callback (update_plot_and_download) for export definition
-                    download="plotly_graph.html",
-                ),
+                [
+                    html.A(
+                        html.Button("Download interactive plot"),
+                        id="download-button",
+                        href=html_export_figure(fig),
+                        download="plotly_graph.html",
+                    ),
+                    html.A(
+                        html.Button("Download table as FASTA"),
+                        id="download-fasta-button",
+                        href="/download/fasta",
+                        download="data.fasta",
+                        style={"marginLeft": "10px"},
+                    ),
+                ],
                 style={"float": "right", "display": "inline-block"},
             ),
             # Scatter plot with loading message
