@@ -39,7 +39,7 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
     sys.setrecursionlimit(
         max(df.shape[0], 10000)
     )  # fixed: RecursionError: maximum recursion depth exceeded
-    P = dendrogram(Z, no_plot=False, distance_sort=False)
+    P = dendrogram(Z, no_plot=True, distance_sort=False)
     
     icoord = np.array(P["icoord"])  # ordered after 'leaves' and not Z!
     dcoord = np.array(P["dcoord"])
@@ -117,6 +117,7 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
         ))
     
     # # Debugging: Save the matplotlib dendrogram to a file for comparison
+    # # Before enable no_plot P = dendrogram(Z, no_plot=True, distance_sort=False)
     # import matplotlib.pyplot as plt
 
     # # Plot the dendrogram with accession labels on the leaves

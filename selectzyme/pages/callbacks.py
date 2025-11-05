@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import io
+import tempfile
 from base64 import b64encode
 
-import tempfile
 import pandas as pd
 from dash.dependencies import Input, Output, State
 from flask import send_file
-from selectzyme.frontend.visualizer import plot_2d
+
 from selectzyme.backend.utils import export_annotated_fasta
+from selectzyme.frontend.visualizer import plot_2d
 
 # Holds latest DataTable rows for download routes
 selected_table_data: list[dict] = []
