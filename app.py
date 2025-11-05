@@ -83,7 +83,7 @@ def main(app, config):
         
 
     # Register pages
-    dash.register_page(module="eda", name="Explanatory Data Analysis", layout=eda.layout(df))
+    dash.register_page(module="eda", name="Exploratory Data Analysis", layout=eda.layout(df))
     dash.register_page(
         module="dim",
         path="/",

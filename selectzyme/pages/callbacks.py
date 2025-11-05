@@ -1,14 +1,36 @@
 from __future__ import annotations
 
 import io
+import tempfile
 from base64 import b64encode
 
+import pandas as pd
 from dash.dependencies import Input, Output, State
+from flask import send_file
 
+from selectzyme.backend.utils import export_annotated_fasta
 from selectzyme.frontend.visualizer import plot_2d
+
+# Holds latest DataTable rows for download routes
+selected_table_data: list[dict] = []
 
 
 def register_callbacks(app, df, X_red):
+
+    # Route to export FASTA from current table rows
+    @app.server.route('/download/fasta')
+    def download_fasta():
+        # Use cached table rows; avoid exporting full df unintentionally
+        data = selected_table_data if selected_table_data else []
+        if data:
+            table_df = pd.DataFrame(data)
+        else:
+            # Nothing selected -> export empty to signal user action required
+            table_df = pd.DataFrame(columns=df.columns)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.fasta') as tmp:
+            export_annotated_fasta(table_df, tmp.name)
+            return send_file(tmp.name, mimetype='text/plain', as_attachment=True, download_name='data.fasta')
+
     # Define callbacks
     @app.callback(
         [
@@ -28,6 +50,7 @@ def register_callbacks(app, df, X_red):
     def update_table(
         clickData, boxSelect, shared_table, data_table
     ):  # (input 1, input 2, state)
+        global selected_table_data
         """Updates the existing table with new rows based on the clickData or boxSelect data.
         boxSelect (dict): Data from a box selection event, containing information about the selected points.
         shared_table (list): The current state of the table, represented as a list of dictionaries.
@@ -41,6 +64,11 @@ def register_callbacks(app, df, X_red):
         - If boxSelect contains points, each point is processed; otherwise, the first point from clickData is processed.
         """
         if clickData is None:
+            # Keep download cache synchronized with user edits/removals
+            if isinstance(data_table, list):
+                selected_table_data = data_table
+                return data_table, data_table
+            selected_table_data = shared_table or []
             return shared_table, shared_table
 
         # if user deletes entries or modifies cells
@@ -57,7 +85,8 @@ def register_callbacks(app, df, X_red):
                 _process_selection(df, shared_table, point)
         else:  # avoid adding previous clickData after box select
             _process_selection(df, shared_table, clickData["points"][0])
-
+    # Update cache for downloads
+        selected_table_data = shared_table
         return shared_table, shared_table
 
     @app.callback(
@@ -71,17 +100,11 @@ def register_callbacks(app, df, X_red):
         Args:
             legend_attribute (str): The attribute to be used for the legend in the plot.
         Returns:
-            tuple: A tuple containing the updated figure and the updated download link.
-                - updated_fig: The updated 2D plot figure.
-                - updated_href: The HTML href link for downloading the updated figure.
+            tuple: (updated_fig, updated_href)
         """
-        updated_fig = plot_2d(
-            df, X_red, legend_attribute
-        )  # Update the figure
+        updated_fig = plot_2d(df, X_red, legend_attribute)
         updated_fig.update_layout(uirevision="fixed")
-        updated_href = html_export_figure(
-            updated_fig
-        )
+        updated_href = html_export_figure(updated_fig)
         return updated_fig, updated_href
 
 

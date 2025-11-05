@@ -39,7 +39,8 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
     sys.setrecursionlimit(
         max(df.shape[0], 10000)
     )  # fixed: RecursionError: maximum recursion depth exceeded
-    P = dendrogram(Z, no_plot=True, distance_sort=True)
+    P = dendrogram(Z, no_plot=True, distance_sort=False)
+    
     icoord = np.array(P["icoord"])  # ordered after 'leaves' and not Z!
     dcoord = np.array(P["dcoord"])
     leaves = P["leaves"]  # Indices of df rows corresponding to leaves
@@ -70,13 +71,12 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
         )
     )
 
-    # Pre-calculate markers
-    marker_x = icoord[:, 0]  # always use left branch to place marker
-    marker_y = (
-        dcoord[:, 1] - 0.001
-    )  # if set [0] or [1], hover breaks idk on this unexpected behaviour. 0.001 offset to avoid interference
+    # Compute leaf-aligned marker positions. SciPy places leaves at x positions 5, 15, 25, ... (step=10). We'll align markers exactly to leaves
+    n_leaves = len(leaves)
+    marker_x = 5 + 10 * np.arange(n_leaves)
+    marker_y = np.zeros(n_leaves) - 0.001  # Place markers slightly below baseline to dont break hover data & selection capability
 
-    # Order df to represent 'leaves' correctly
+    # Order df to represent 'leaves' correctly (matches the matplotlib dendrogram order)
     df_copy = df.iloc[leaves].copy()
 
     # set color mapping for marker´s legend_attribute
@@ -88,15 +88,15 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
     # set markers
     columns_of_interest = set_columns_of_interest(df_copy.columns)
     for attribute in df_copy[legend_attribute].unique():
-        mask = df_copy[legend_attribute] == attribute
-        subset = df_copy[mask]
+        mask = (df_copy[legend_attribute] == attribute).to_numpy()
+        subset = df_copy.loc[mask]
 
         fig.add_trace(go.Scattergl(
-            x=marker_x[mask[:marker_x.shape[0]]],
-            y=marker_y[mask[:marker_y.shape[0]]],
+            x=marker_x[mask],
+            y=marker_y[mask],
             mode='markers',
             marker=dict(
-                color=marker_colors[mask[:marker_colors.shape[0]]],
+                color=marker_colors[mask],
                 symbol=subset['marker_symbol'],
                 size=subset['marker_size'],
                 opacity=0.8
@@ -115,6 +115,19 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
             title=dict(text=legend_attribute),
             traceorder='reversed'
         ))
+    
+    # # Debugging: Save the matplotlib dendrogram to a file for comparison
+    # # Before enable no_plot P = dendrogram(Z, no_plot=True, distance_sort=False)
+    # import matplotlib.pyplot as plt
+
+    # # Plot the dendrogram with accession labels on the leaves
+    # fig_, ax = plt.subplots(figsize=(12, 6))
+    # dendro = dendrogram(Z, labels=df['accession'].tolist(), ax=ax)  # labels are automatically in correct leaves equivalent ordering 
+    # plt.xlabel("Accession")
+    # plt.ylabel("Distance")
+    # plt.tight_layout()
+    # plt.savefig("slc_dendrogram_matplotlib.png")
+    # plt.close()
 
     return fig
 
