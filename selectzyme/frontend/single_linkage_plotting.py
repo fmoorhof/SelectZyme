@@ -64,7 +64,7 @@ def create_dendrogram(Z, df, legend_attribute: str = "cluster"):
             x=x_lines,
             y=y_lines,
             mode="lines",
-            # line=dict(color=line_colors),  # not possible to pass list so branch color not specifically changable
+            line=dict(width=1),  # color=line_colors),  # not possible to pass list so branch color not specifically changable
             hoverinfo="none",
             visible=line_visibility,  # dont load line traces by default for large datasets
             name="Dendrogram lines"
