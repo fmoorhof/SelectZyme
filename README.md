@@ -106,3 +106,15 @@ This project uses the following tools to improve code quality:
 
 # License
 MIT
+
+## Citation
+
+This repository contains the source files and supplementary information for the SelectZyme framework, which is described in<br>
+
+Felix Moorhoff<sup>*1*</sup>, David Medina-Ortiz<sup>*1*</sup>, Alicja Kotnis<sup>*1*</sup>, Ahmed Hassanin<sup>*1,2*</sup>, Mehdi D. Davari<sup>*1,\**</sup>, <br>“Visualize, Explore, and Select”: A pLM-Guided Approach for the Navigation of Protein Sequence Space for Enzyme Discovery and Mining<br>
+*Journal* 2026, 61, 3463-3476 <br>
+https://doi.org/ <br>
+
+<sup>*1*</sup><sub>Department of Bioorganic Chemistry, Leibniz Institute of Plant Biochemistry, Weinberg 3, 06120 Halle, Germany</sub> <br>
+<sup>*2*</sup><sub>Department of Pharmacognosy, Faculty of Pharmacy, Assiut University, 71526 Assiut, Egypt</sub> <br>
+<sup>*\**</sup><sub>Corresponding author</sub> <br>
