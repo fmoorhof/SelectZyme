@@ -19,5 +19,6 @@ pytest
 ipykernel
 nbformat
 ipywidgets
+scikit-learn
 # cuml-cu11==24.10.*  # do manually else somehow many sub-dependencies installed
 # dask-cudf-cu11==24.10.* 

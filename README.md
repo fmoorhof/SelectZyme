@@ -1,5 +1,5 @@
 # SelectZyme
-Explore and navigate enzyme sequence space interactively.
+Explore and navigate enzyme sequence spaces interactively. A deployed version can be found [here](https://biocloud.ipb-halle.de/selectzyme/) for initial exploratory steps on pre-calculated datasets. It is advised to start with the 'Minimal Demo' to get an overview about the functional elements and concepts, like presented in the manuscript.
 
 ## Install
 For optimal GPU support, the conda installation is recommended.
@@ -16,12 +16,12 @@ conda env create -f environment.yml
 conda activate selectzyme
 ```
 
-### Pip
+### Pip (not advised)
 ```
 pip install --extra-index-url=https://pypi.nvidia.com cudf-cu11==24.2.* cuml-cu11==24.2.*
 pip install -e . --extra-index-url https://download.pytorch.org/whl/cu118
 ```
-Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed and that causes the docker containers or CI runner to exit on: `OSError: [Errno 28] No space left on device`  
+Note: Please install RAPIDSAI CuMl and CuDf manually since otherwise the entire extra-index is installed which you might not want.
 
 ### Docker
 ```
@@ -47,21 +47,16 @@ On failure please look at the (closed) issues for troubleshooting and solutions 
 ```
 python app.py --config=results/input_configs/test_config.yml
 ```
-For better overview about input parameters, you need to specify them in a `config.yml` file. An example is provided in the results folder. All outputs will also be written to the results folder, including a .tsv file with your project:name containing the sequences you retrieved from UniProt. 
+For better overview about input parameters, you need to specify them in a [config.yml](https://github.com/fmoorhof/SelectZyme/blob/main/results/input_configs/test_config.yml) file. All outputs will also be written to the [results folder](https://github.com/fmoorhof/SelectZyme/blob/main/results/input_configs), including a .tsv file with your `project:name` containing the sequences you retrieved from UniProt. 
 
 > [!IMPORTANT]  
-> If you re-run the job this file will be parsed and UniProt will NOT be queried again!. If you changed some `query_terms` in the config and you want to retrieve data you either need to delete the .tsv file or provide another project:name
+> If you re-run the job this file will be parsed and UniProt will NOT be queried again!. If you changed some `query_terms` in the config and you want to retrieve data you either need to delete the `.tsv` file or provide another `project:name` in your `config.yml`
 
 The terminal output will inform you about the execution status. Once done you can click on the URL to open the app via your web browser. Alternatively, you can access by typing either your *server_IP* or *localhost* and the exposed `port` (8050), you defined in the `config.yml`:
 `http://localhost:8050` or `http://server_IP:8050`
 
 To run your custom searches, seamlessly edit or create new `config.yml` files for your different jobs. 
 
-### Extensive usage
-For extensive usage you might want to setup the Qdrant vector database in a separate docker container. Qdrant suggest to only save up to 20,000 vectors locally and the access time is indeed very slow. However, there is no need to do so, i also once stored up to 1M vectors locally.
-A nice and very simple manual how to do so is provided [here](https://qdrant.tech/documentation/quickstart/#)
-keep in mind to also adapt the codebase accordingly and set the
-`QdrantClient(url="http://localhost:6333")`
 
 ### Jupyter notebook
 We also prepared a juypter notebook for initial explorations of individual plots. However, enzyme selection is not possible within the notebook and the above 'intended usage' is recommended.
@@ -70,9 +65,9 @@ The minimal jupyter notebook can be found [here](https://github.com/fmoorhof/Sel
 
 ## Custom data upload
 Data can be uploaded in the form of `.fasta, .tsv, .csv`
-If `.tsv, .csv` there MUST be a column called 'accession' (a unique ID for your entry) an d a column 'sequence', containing the protein sequence. All additional columns will be available for visualization but as minimal information an accession and sequence is needed. For the .fasta files also additional information can be provided by field separator '|'
+If `.tsv, .csv` there MUST be a column called 'accession' (a unique ID for your entry) and a column called 'sequence', containing the protein sequences. All additional columns will be available for visualization but as minimal information an accession and sequence is needed. For the custom `.fasta` import files also additional information can be provided by the common field separator '|'
 ```{.fasta}
->ID|Info1|Info n...
+>ID|Info1|Info 2|Info n...
 PRTN
 ```
 
@@ -80,16 +75,16 @@ PRTN
 ```mermaid
 graph TD
     subgraph Data Acquisition
-        A[Fetch Data from Uniprot] --> B(NCBI Taxonomy Resolver)
+        A[Fetch Data from Uniprot] --> B(Resolve NCBI Taxonomies)
         B --> C{Data Cleaning/Preprocessing}
     end
-    C --> D[Data Analysis]
-    subgraph "Data Analysis"
-        D --> I(HDBSCAN)
+    C --> D[Data Processing]
+    subgraph "Data Processing"
+        D <--> I(HDBSCAN)
         subgraph Clustering
             I --> J(Single Linkage, MST)
         end
-        D --> K(Dimensionality Reduction)
+        D <--> K(Dimensionality Reduction)
         subgraph Dimensionality Reduction Methods
             K --> L(PCA)
             K --> M(t-SNE)
@@ -110,4 +105,16 @@ This project uses the following tools to improve code quality:
 - [pytest-cov](https://github.com/pytest-dev/pytest-cov)
 
 # License
-OpenGPL 3.0 License
+MIT
+
+## Citation
+
+This repository contains the source files and supplementary information for the SelectZyme framework, which is described in<br>
+
+Felix Moorhoff<sup>*1*</sup>, David Medina-Ortiz<sup>*1*</sup>, Alicja Kotnis<sup>*1*</sup>, Ahmed Hassanin<sup>*1,2*</sup>, Mehdi D. Davari<sup>*1,\**</sup>, <br>“Visualize, Explore, and Select”: A pLM-Guided Approach for the Navigation of Protein Sequence Space for Enzyme Discovery and Mining<br>
+*Journal* 2026, 61, 3463-3476 <br>
+https://doi.org/ <br>
+
+<sup>*1*</sup><sub>Department of Bioorganic Chemistry, Leibniz Institute of Plant Biochemistry, Weinberg 3, 06120 Halle, Germany</sub> <br>
+<sup>*2*</sup><sub>Department of Pharmacognosy, Faculty of Pharmacy, Assiut University, 71526 Assiut, Egypt</sub> <br>
+<sup>*\**</sup><sub>Corresponding author</sub> <br>
