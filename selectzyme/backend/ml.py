@@ -61,12 +61,36 @@ def _identify_centroid(model, X, cluster_id: int) -> int:
 
 @run_time
 def perform_hdbscan_clustering(X, df, min_samples: int = 2, min_cluster_size: int = 2, re_cluster: bool = False, **kwargs) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
-    """
-    Clustering of the embeddings with a Hierarchical Density Based clustering algorithm (HDBSCAN).
+    """Perform hierarchical density-based clustering on embeddings using HDBSCAN.
 
-    :param X: embeddings
-    :param min_samples: amount of how many points shall be in a neighborhood of a point to form a cluster. 30 worked good for ec_only; 50 for 200k
-    return: labels: cluster labels for each point
+    This function applies the HDBSCAN algorithm to cluster embeddings from a protein language model (pLM).
+    It identifies clusters based on density, calculates cluster centroids, and optionally updates the input
+    dataframe with cluster assignments and centroid markers.
+
+    Args:
+        X (np.ndarray): Embeddings matrix of shape (n_samples, n_features) from the pLM.
+        df (pd.DataFrame): DataFrame containing metadata for each sample. Will be updated with cluster
+            assignments and centroid markers if re_cluster is False.
+        min_samples (int, optional): Minimum number of points in a neighborhood required to form a cluster. This parameter results in
+            hard re-computation of the linkage matrix, hence the phylogenetic trees.
+        min_cluster_size (int, optional): Minimum size of a cluster. Smaller clusters are treated as noise.
+        re_cluster (bool, optional): If False, updates df with cluster labels and marks centroids.
+            If True, skips dataframe updates. Default is False.
+        **kwargs: Additional keyword arguments to pass to the HDBSCAN constructor.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray, pd.DataFrame]: A tuple containing:
+            - _mst (np.ndarray): Minimum spanning tree of the clustering.
+            - _linkage (np.ndarray): Single linkage tree representing the hierarchical clustering.
+            - df (pd.DataFrame): Updated dataframe with cluster assignments and centroid markers
+              (if re_cluster is False).
+
+    Raises:
+        ValueError: If the number of samples in X is less than min_samples.
+
+    Note:
+        - Noise points are assigned label -1 and are skipped during centroid calculation.
+        - The clustering uses the 'leaf' cluster selection method for finer-grained results.
 
     # todo: test: # condense_hierarchy: condenses the dendrogram to collapse subtrees containing less than min_cluster_size leaves, and returns an hdbscan.plots.CondensedTree object
     """
