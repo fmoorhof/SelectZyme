@@ -45,7 +45,7 @@ cd CLEAN/app
 python build.py install  # requires activated venv/conda
 cd ../../SelectZyme
 ```
-Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy6Vks91DSUAOcKpZ/view?usp=sharing) and move the contains to `data/pretrained`.
+Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy6Vks91DSUAOcKpZ/view?usp=sharing) and move the contents to `data/pretrained`.
 
 
 ## Test the install

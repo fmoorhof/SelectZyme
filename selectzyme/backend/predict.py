@@ -1,19 +1,17 @@
-import os
+from __future__ import annotations
+
 import logging
+import os
 import pickle
-from typing import Optional
-from types import SimpleNamespace
-from typing import Dict
+from typing import Dict, Optional
+
 import numpy as np
-
-import torch
 import pandas as pd
-
-from CLEAN.utils import get_ec_id_dict
+import torch
 from CLEAN.distance_map import get_dist_map_test
-from CLEAN.evaluate import maximum_separation, infer_confidence_gmm
+from CLEAN.evaluate import infer_confidence_gmm, maximum_separation
 from CLEAN.model import LayerNormNet
-
+from CLEAN.utils import get_ec_id_dict
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +30,8 @@ def get_max_sep_predictions_dict(inference_df, gmm):
     inference_df : pandas.DataFrame
         Distance matrix returned by CLEAN, with sequence IDs as columns and EC
         labels as row indices.
-    gmm : str | None
-        Optional path to a Gaussian mixture model used to transform raw
+    gmm : str
+        Path to a Gaussian mixture model used to transform raw
         distances into confidence scores.
 
     Returns
@@ -42,6 +40,8 @@ def get_max_sep_predictions_dict(inference_df, gmm):
         Mapping from sequence ID to a list of EC predictions ordered from best
         to worst.
     """
+    gmm_lst = pickle.load(open(gmm, 'rb'))
+
     max_sep_predictions = {}
     for sequence_label in inference_df.columns:
         smallest_10_dist_df = inference_df[sequence_label].nsmallest(10)
@@ -51,9 +51,7 @@ def get_max_sep_predictions_dict(inference_df, gmm):
         for i in range(max_sep_i+1):
             EC_i = smallest_10_dist_df.index[i]
             dist_i = smallest_10_dist_df[i]
-            if gmm != None:
-                gmm_lst = pickle.load(open(gmm, 'rb'))
-                dist_i = infer_confidence_gmm(dist_i, gmm_lst)
+            dist_i = infer_confidence_gmm(dist_i, gmm_lst)
             dist_str = "{:.4f}".format(dist_i)
             ec.append('EC:' + str(EC_i) + '/' + dist_str)
         max_sep_predictions[sequence_label] = ec
@@ -80,7 +78,7 @@ def CLEAN_max_sep_predictions(CLEAN_model, sequence_label_esm_emb_dict, emb_trai
     ec_id_dict_train : dict
         EC-to-index mapping loaded from the CLEAN training CSV.
     gmm_path : str
-        Optional path to a Gaussian mixture model used to transform raw
+        Path to a Gaussian mixture model used to transform raw
         distances into confidence scores.
     device : str
         Torch device to run the CLEAN model on.
@@ -91,7 +89,7 @@ def CLEAN_max_sep_predictions(CLEAN_model, sequence_label_esm_emb_dict, emb_trai
         Mapping from sequence ID to formatted EC predictions.
     """
     esm_emb_inference = torch.cat(
-        [torch.from_numpy(sequence_label_esm_emb_dict[label]).unsqueeze(0) if isinstance(sequence_label_esm_emb_dict[label], type(np.array([]))) else sequence_label_esm_emb_dict[label].unsqueeze(0)
+        [torch.from_numpy(sequence_label_esm_emb_dict[label]).unsqueeze(0) if isinstance(sequence_label_esm_emb_dict[label], np.ndarray) else sequence_label_esm_emb_dict[label].unsqueeze(0)
             for label in sequence_label_esm_emb_dict])
     id_ec_inference_dummy = {seq_label:[] for seq_label in sequence_label_esm_emb_dict}
     with torch.no_grad():
@@ -110,7 +108,7 @@ def run_clean_inference_with_embeddings(
     model_ckpt_path: str,
     out_csv: Optional[str] = None,
     device: str = "cpu",
-    gmm: Optional[str] = None,
+    gmm: str = "",
 ) -> pd.DataFrame:
     """Run CLEAN inference using already-computed ESM1b embeddings.
 
@@ -121,7 +119,7 @@ def run_clean_inference_with_embeddings(
     - model_ckpt_path: path to the CLEAN model checkpoint (.pth)
     - out_csv: optional path to write predictions CSV
     - device: 'cpu' or 'cuda'
-
+    - gmm: path to the Gaussian mixture model used to transform raw distances into confidence scores
     Returns a pandas.DataFrame with columns `Seq_ID` and `Prediction`.
     """
     # build model and load checkpoint
@@ -135,8 +133,6 @@ def run_clean_inference_with_embeddings(
 
     # load ec id mapping
     _, ec_id_dict_train = get_ec_id_dict(ec_csv_path)
-
-    args = SimpleNamespace(gmm=gmm)
 
     # call CLEAN inference routine
     preds = CLEAN_max_sep_predictions(
@@ -183,8 +179,8 @@ if __name__ == "__main__":
                 sys.path.insert(0, str(candidate))
             break
 
-    from selectzyme.backend.parsing import ParseLocalFiles
     from selectzyme.backend.embed import gen_embedding
+    from selectzyme.backend.parsing import ParseLocalFiles
 
     df = ParseLocalFiles("scripts/2_old+new.fasta").parse_fasta()
     X = gen_embedding(sequences=df["sequence"].tolist(), plm_model="esm1b")
