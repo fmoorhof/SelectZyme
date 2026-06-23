@@ -37,6 +37,17 @@ docker start CONTAINERID
 docker exec -it CONTAINERID /bin/bash
 ```
 
+## EC number prediction with CLEAN
+```
+git clone https://github.com/tttianhao/CLEAN.git
+cd CLEAN/app
+# get model weights (see below)
+python build.py install  # requires activated venv/conda
+cd ../../SelectZyme
+```
+Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy6Vks91DSUAOcKpZ/view?usp=sharing) and move the contents to `data/pretrained`.
+
+
 ## Test the install
 Run some unit tests to see if SelectZyme got setup properly on your system.
 ```
