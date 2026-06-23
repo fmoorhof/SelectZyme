@@ -22,7 +22,7 @@ project:
     df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 
   plm:
-    plm_model: "prott5" # [esm1b, esm2, prott5, prostt5]
+    plm_model: "esm1b" # [esm1b, esm2, prott5, prostt5]
 
   clustering:  # more details here: https://hdbscan.readthedocs.io/en/latest/parameter_selection.html
     min_cluster_size: 2  # How many sequeces you want to have in a cluster at least? -> Used for MST calculation

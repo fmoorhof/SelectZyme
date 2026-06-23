@@ -143,8 +143,26 @@ def run_clean_inference_with_embeddings(
         CLEAN_model, sequence_label_esm_emb_dict, emb_train, ec_id_dict_train, gmm, device
     )
 
-    # format to DataFrame
-    records = [{"Seq_ID": k, "Prediction": "; ".join(v)} for k, v in preds.items()]
+    # format to DataFrame: split each prediction "EC:3.1.1.1/0.0230" into
+    # CLEAN_EC_pred -> "3.1.1.1" and CLEAN_probability -> "0.0230".
+    records = []
+    for k, v in preds.items():
+        ecs = []
+        probs = []
+        for item in v:
+            parts = item.split("/", 1)
+            left = parts[0]
+            if left.startswith("EC:"):
+                left = left[len("EC:"):]
+            prob = parts[1] if len(parts) > 1 else ""
+            ecs.append(left)
+            probs.append(prob)
+        records.append({
+            "accession": k,
+            "CLEAN_EC_pred": "; ".join(ecs),
+            "CLEAN_probability": "; ".join(probs),
+        })
+
     df = pd.DataFrame(records)
 
     if out_csv:
@@ -188,5 +206,6 @@ if __name__ == "__main__":
         device="cpu",
     )
 
+    
     print(f"Wrote predictions to: {os.path.abspath(out_csv)}")
-    print(df_clean.head())
+    df = df.merge(df_clean[["accession", "CLEAN_EC_pred", "CLEAN_probability"]], on="accession", how="left")
