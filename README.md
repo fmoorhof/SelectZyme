@@ -37,15 +37,23 @@ docker start CONTAINERID
 docker exec -it CONTAINERID /bin/bash
 ```
 
-## EC number prediction with CLEAN
+## Additional predictors based on ESM1b
+### EC number prediction with CLEAN
 ```
-git clone https://github.com/tttianhao/CLEAN.git
+git clone https://github.com/fmoorhof/CLEAN.git
 cd CLEAN/app
 # get model weights (see below)
 python build.py install  # requires activated venv/conda
 cd ../../SelectZyme
 ```
 Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy6Vks91DSUAOcKpZ/view?usp=sharing) and move the contents to `data/pretrained`.
+
+### Solubility prediction with CLEAN
+
+```
+git clone https://github.com/fmoorhof/NetSolP-1.0
+pip install -e NetSolP-1.0/ --no-deps
+```
 
 
 ## Test the install

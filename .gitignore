@@ -8,7 +8,12 @@ datasets/
 .vscode/
 reports/
 .ruff_cache/
+results/
+results2/
+scripts/
 calculation/
+CLEAN/
+NetSolP-1.0/
 
 # C extensions
 *.so

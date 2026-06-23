@@ -20,5 +20,6 @@ ipykernel
 nbformat
 ipywidgets
 scikit-learn
+onnxruntime==1.23.2
 # cuml-cu11==24.10.*  # do manually else somehow many sub-dependencies installed
 # dask-cudf-cu11==24.10.* 

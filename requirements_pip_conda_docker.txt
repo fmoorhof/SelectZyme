@@ -16,4 +16,5 @@ ipywidgets==8.1.5
 matplotlib==3.9.4
 seaborn==0.13.2
 scikit-learn==1.6.1
+onnxruntime==1.23.2
 # pandas==1.5.3 if not desired from CuML: pin pandas to `pandas==1.5.3`  # docker: CuML and CuDF require older version pandas==1.5.3, else AttributeError: module 'pandas.api.types' has no attribute 'is_extension_type' 

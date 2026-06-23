@@ -14,7 +14,7 @@ import selectzyme.pages.dimred as dimred
 import selectzyme.pages.eda as eda
 from selectzyme.backend.embed import load_embeddings
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
-from selectzyme.backend.predict import run_clean_inference_with_embeddings
+from backend.predict_ec import run_clean_inference_with_embeddings
 from selectzyme.backend.utils import export_data, parse_and_preprocess
 from selectzyme.frontend.mst_plotting import MinimumSpanningTree
 from selectzyme.frontend.single_linkage_plotting import create_dendrogram
