@@ -6,7 +6,7 @@
 project: 
   name: "_test_config"
   port: 8050
-  preprocessing: False
+  preprocessing: True
 
   # Specify data you want to analyze
   data:
