@@ -58,7 +58,7 @@ def get_max_sep_predictions_dict(inference_df, gmm):
     return max_sep_predictions
 
 
-def CLEAN_max_sep_predictions(CLEAN_model, sequence_label_esm_emb_dict, emb_train, ec_id_dict_train, gmm_path, device):
+def clean_max_sep_predictions(CLEAN_model, sequence_label_esm_emb_dict, emb_train, ec_id_dict_train, gmm_path, device):
     """Run CLEAN inference on precomputed ESM embeddings.
 
     This is the in-process inference step from CLEAN's original workflow. It
@@ -135,7 +135,7 @@ def run_clean_inference_with_embeddings(
     _, ec_id_dict_train = get_ec_id_dict(ec_csv_path)
 
     # call CLEAN inference routine
-    preds = CLEAN_max_sep_predictions(
+    preds = clean_max_sep_predictions(
         CLEAN_model, sequence_label_esm_emb_dict, emb_train, ec_id_dict_train, gmm, device
     )
 
