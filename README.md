@@ -1,5 +1,7 @@
 # SelectZyme
-Explore and navigate enzyme sequence spaces interactively. A deployed version can be found [here](https://biocloud.ipb-halle.de/selectzyme/) for initial exploratory steps on pre-calculated datasets. It is advised to start with the 'Minimal Demo' to get an overview about the functional elements and concepts, like presented in the manuscript.
+Explore and navigate enzyme sequence spaces interactively. A deployed version is hosted at [https://selectzyme.app.ipb-halle.de/](https://selectzyme.app.ipb-halle.de/) for initial exploratory steps on pre-calculated datasets. It is advised to start with the 'Minimal Demo' to get an overview about the functional elements and concepts, like presented in the manuscript.
+
+![SelectZyme](selectzyme/assets/selectzyme_logo.png)
 
 ## Install
 For optimal GPU support, the conda installation is recommended.
@@ -113,7 +115,7 @@ This repository contains the source files and supplementary information for the 
 
 Felix Moorhoff<sup>*1*</sup>, David Medina-Ortiz<sup>*1*</sup>, Alicja Kotnis<sup>*1*</sup>, Ahmed Hassanin<sup>*1,2*</sup>, Mehdi D. Davari<sup>*1,\**</sup>, <br>“Visualize, Explore, and Select”: A pLM-Guided Approach for the Navigation of Protein Sequence Space for Enzyme Discovery and Mining<br>
 *Journal* 2026, 61, 3463-3476 <br>
-https://doi.org/ <br>
+https://doi.org/10.64898/2026.03.23.712833 <br>
 
 <sup>*1*</sup><sub>Department of Bioorganic Chemistry, Leibniz Institute of Plant Biochemistry, Weinberg 3, 06120 Halle, Germany</sub> <br>
 <sup>*2*</sup><sub>Department of Pharmacognosy, Faculty of Pharmacy, Assiut University, 71526 Assiut, Egypt</sub> <br>
