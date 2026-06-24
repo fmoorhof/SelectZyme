@@ -33,6 +33,10 @@ project:
     method: "UMAP"  # [UMAP, TSNE, openTSNE, PCA]
     n_neighbors: 15  # recommended between 5-50
 
+  predictions:
+    solubility: True  # predict solubility and usability with NetSolP
+    ec: True  # predict EC numbers with CLEAN
+
   plot_customizations:  # define marker size and shape
     objective: "cluster"  # define the legend objective for MST and SLC
 

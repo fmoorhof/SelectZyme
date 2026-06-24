@@ -48,11 +48,11 @@ cd ../../SelectZyme
 ```
 Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy6Vks91DSUAOcKpZ/view?usp=sharing) and move the contents to `data/pretrained`.
 
-### Solubility prediction with CLEAN
+### Solubility prediction with NetSolP
 
 ```
 git clone https://github.com/fmoorhof/NetSolP-1.0
-pip install -r NetSolP-1.0/PredictionServer/requirements_gpu.txt
+pip install -r NetSolP-1.0/PredictionServer/requirements_gpu.txt --extra-index-url https://download.pytorch.org/whl/cu126
 pip install -e NetSolP-1.0/
 ```
 
