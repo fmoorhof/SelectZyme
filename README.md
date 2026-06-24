@@ -52,7 +52,8 @@ Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy
 
 ```
 git clone https://github.com/fmoorhof/NetSolP-1.0
-pip install -e NetSolP-1.0/ --no-deps
+pip install -r NetSolP-1.0/PredictionServer/requirements_gpu.txt
+pip install -e NetSolP-1.0/
 ```
 
 
