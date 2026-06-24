@@ -77,4 +77,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     df_netsolp = get_preds(df=df, args=args)  # , out_path="solubility.csv")
+    print(df_netsolp)
     
