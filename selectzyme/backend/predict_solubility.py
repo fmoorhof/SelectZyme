@@ -11,7 +11,7 @@ from PredictionServer.predict import get_preds_split, sigmoid
 
 
 def get_preds(df, args):
-    alphabet_path = os.path.join("NetSolP-1.0/PredictionServer/models/", "ESM1b_alphabet.pkl")  # args.MODELS_PATH
+    alphabet_path = os.path.join(args.MODELS_PATH, "ESM1b_alphabet.pkl")  # args.MODELS_PATH
 
     with open(alphabet_path, "rb") as f:
         alphabet = pickle.load(f)
