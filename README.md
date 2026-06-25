@@ -37,9 +37,12 @@ docker start CONTAINERID
 docker exec -it CONTAINERID /bin/bash
 ```
 
-## EC number prediction with CLEAN
+## Additional predictors based on ESM1b
+Note: Deployment yet untested on absence of additional predictors. Tried to import only when called but not sure if this was enough.
+### EC number prediction with CLEAN
+Install CLEAN, download weights and place them into the hard coded locations.
 ```
-git clone https://github.com/tttianhao/CLEAN.git
+git clone https://github.com/fmoorhof/CLEAN.git
 cd CLEAN/app
 # get model weights (see below)
 python build.py install  # requires activated venv/conda
@@ -47,6 +50,16 @@ cd ../../SelectZyme
 ```
 Download, unzip [these files](https://drive.google.com/file/d/1kwYd4VtzYuMvJMWXy6Vks91DSUAOcKpZ/view?usp=sharing) and move the contents to `data/pretrained`.
 
+### Solubility prediction with NetSolP
+Install NetSolP, download weights and place them into the hard coded locations.
+```
+git clone https://github.com/fmoorhof/NetSolP-1.0
+pip install -r NetSolP-1.0/PredictionServer/requirements_gpu.txt --extra-index-url https://download.pytorch.org/whl/cu126
+pip install -e NetSolP-1.0/
+wget https://services.healthtech.dtu.dk/services/NetSolP-1.0/netsolp-1.0.ALL.tar.gz
+tar -xzf netsolp-1.0.ALL.tar.gz NetSolP-1.0/
+mv NetSolP-1.0/models NetSolP-1.0/PredictionServer/models
+```
 
 ## Test the install
 Run some unit tests to see if SelectZyme got setup properly on your system.

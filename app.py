@@ -14,7 +14,7 @@ import selectzyme.pages.dimred as dimred
 import selectzyme.pages.eda as eda
 from selectzyme.backend.embed import load_embeddings
 from selectzyme.backend.ml import dimred_caller, perform_hdbscan_clustering
-from selectzyme.backend.predict import run_clean_inference_with_embeddings
+from selectzyme.backend.predict import run_predictions
 from selectzyme.backend.utils import export_data, parse_and_preprocess
 from selectzyme.frontend.mst_plotting import MinimumSpanningTree
 from selectzyme.frontend.single_linkage_plotting import create_dendrogram
@@ -28,6 +28,7 @@ def main(app, config):
     os.makedirs(analysis_path, exist_ok=True)
 
     df = parse_and_preprocess(config, existing_file=analysis_path + "/data.csv")
+
     X = load_embeddings(df, config["project"]["plm"]["plm_model"], embedding_file=os.path.join(analysis_path, "X.npz"))
 
     # Clustering
@@ -46,22 +47,7 @@ def main(app, config):
         config["project"]["dimred"]["random_state"],
     )
 
-    # predict EC numbers with CLEAN
-    if config["project"]["plm"]["plm_model"] == "esm1b":
-        data_path = "../CLEAN/app/data/"
-        desired_split = "100"
-        df_clean = run_clean_inference_with_embeddings(
-            sequence_label_esm_emb_dict={row["accession"]: X[i] for i, row in df.iterrows()},
-            emb_train_path=f'{data_path}pretrained/{desired_split}.pt',
-            ec_csv_path=f'{data_path}split{desired_split}.csv',
-            model_ckpt_path=f'{data_path}pretrained/split{desired_split}.pth',
-            out_csv=analysis_path + "/clean_predictions.csv",
-            gmm=f'{data_path}pretrained/gmm_ensumble.pkl',
-            device="cpu",
-        )
-        
-        df = df.merge(df_clean[["accession", "CLEAN_EC_pred", "CLEAN_probability"]], on="accession", how="left")
-
+    df = run_predictions(df, X, config, analysis_path)
 
     # save intermediates for external minimal dash version
     export_data(df, X_red, _mst, _linkage, analysis_path=analysis_path)
