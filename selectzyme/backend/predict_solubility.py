@@ -9,7 +9,10 @@ import torch
 from PredictionServer.data import BatchConverter, FastaBatchedDataset  # part of local netsolp install
 from PredictionServer.predict import get_preds_split, sigmoid
 
+from selectzyme.backend.utils import run_time
 
+
+@run_time
 def get_preds(df, args):
     alphabet_path = os.path.join(args.MODELS_PATH, "ESM1b_alphabet.pkl")  # args.MODELS_PATH
 

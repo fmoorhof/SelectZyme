@@ -8,7 +8,7 @@ from types import SimpleNamespace
 def run_predictions(df, X, config, analysis_path):
 
     # predict EC numbers with CLEAN if they dont exist yet
-    if df.CLEAN_EC_pred.isnull().all() and df.CLEAN_probability.isnull().all():
+    if "CLEAN_EC_pred" not in df.columns and "CLEAN_probability" not in df.columns:
         if config["project"]["plm"]["plm_model"] == "esm1b" and config["project"]["predictions"]["ec"] == True:
             from selectzyme.backend.predict_ec import run_clean_inference_with_embeddings
 
@@ -26,19 +26,25 @@ def run_predictions(df, X, config, analysis_path):
         
             df = df.merge(df_clean[["accession", "CLEAN_EC_pred", "CLEAN_probability"]], on="accession", how="left")
 
+        else:
+            logging.info("CLEAN predictions are only available for ESM1b embeddings. Skipping prediction. Other reasons can be column names CLEAN_EC_pred and CLEAN_probability already exist in the dataframe or config['project']['predictions']['ec'] is set to False.")
+
     # predict solubility and usability with NetSolP if they dont exist yet
-    if config["project"]["predictions"]["solubility"] == True and df.netSolP_solubility.isnull().all() and df.netSolP_usability.isnull().all():
+    if config["project"]["predictions"]["solubility"] == True and "netSolP_solubility" not in df.columns and "netSolP_usability" not in df.columns:
         from selectzyme.backend.predict_solubility import get_preds
         logging.info("Running NetSolP predictions. This might take a long time.")
 
         # hard coded configurations to pass to NetSolP package
         args = SimpleNamespace(
             MODEL_TYPE="ESM1b",
-            MODELS_PATH="NetSolP-1.0/PredictionServer/models",  # /scratch/global_1/fmoorhof/NetSolP/models/
+            MODELS_PATH="/scratch/global_1/fmoorhof/NetSolP/models/",  # NetSolP-1.0/PredictionServer/models
             NUM_THREADS=os.cpu_count(),
             PREDICTION_TYPE="SU",  # Either Solubility(S), Usability(U) or Both
         )
 
         df = get_preds(df=df, args=args)
+
+    else:
+        logging.info("NetSolP predictions already exist (columns named netSolP_solubility and netSolP_usability). Skipping prediction.")
     
     return df
