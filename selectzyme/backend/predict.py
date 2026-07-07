@@ -4,6 +4,10 @@ import logging
 import os
 from types import SimpleNamespace
 
+import torch
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def run_predictions(df, X, config, analysis_path):
 
@@ -21,7 +25,7 @@ def run_predictions(df, X, config, analysis_path):
                 model_ckpt_path=f'{data_path}pretrained/split{desired_split}.pth',
                 out_csv=analysis_path + "/clean_predictions.csv",
                 gmm=f'{data_path}pretrained/gmm_ensumble.pkl',
-                device="cpu",
+                device=device,
             )
         
             df = df.merge(df_clean[["accession", "CLEAN_EC_pred", "CLEAN_probability"]], on="accession", how="left")
