@@ -8,7 +8,6 @@ import pandas as pd
 import torch
 from PredictionServer.data import BatchConverter, FastaBatchedDataset  # part of local netsolp install
 from PredictionServer.predict import get_preds_split, sigmoid
-from tqdm import tqdm
 
 from selectzyme.backend.utils import run_time
 
@@ -26,33 +25,17 @@ def get_preds(df, args, pred_frequency=2):
     embed_batches = embed_dataset.get_batch_indices(0, extra_toks_per_seq=1)
     embed_dataloader = torch.utils.data.DataLoader(embed_dataset, collate_fn=BatchConverter(alphabet), batch_sampler=embed_batches)
     
-    if args.PREDICTION_TYPE == "SU":
-        preds_per_split_S = []
-        preds_per_split_U = []
-        for i in tqdm(range(pred_frequency)):
-            pred_df_S = get_preds_split(i, embed_dataloader, args, "Solubility", df)
-            preds_i_S = sigmoid(np.stack(pred_df_S.preds.to_numpy()))
-            preds_per_split_S.append(preds_i_S)
-
-            pred_df_U = get_preds_split(i, embed_dataloader, args, "Usability", df)
-            preds_i_U = sigmoid(np.stack(pred_df_U.preds.to_numpy()))
-            preds_per_split_U.append(preds_i_U)
-
-        avg_pred_sol = sum(preds_per_split_S) / pred_frequency
-        df["netSolP_solubility"] = pd.Series(avg_pred_sol)
-        avg_pred_usa = sum(preds_per_split_U) / pred_frequency
-        df["netSolP_usability"] = pd.Series(avg_pred_usa)
-    elif args.PREDICTION_TYPE == "S":
+    if "S" in args.PREDICTION_TYPE:
         preds_per_split = []
-        for i in tqdm(range(pred_frequency)):
+        for i in range(pred_frequency):
             pred_df = get_preds_split(i, embed_dataloader, args, "Solubility", df)
             preds_i = sigmoid(np.stack(pred_df.preds.to_numpy()))
             preds_per_split.append(preds_i)
         avg_pred = sum(preds_per_split) / pred_frequency
         df["netSolP_solubility"] = pd.Series(avg_pred)
-    elif args.PREDICTION_TYPE == "U":
+    if "U" in args.PREDICTION_TYPE:
         preds_per_split = []
-        for i in tqdm(range(pred_frequency)):
+        for i in range(pred_frequency):
             pred_df = get_preds_split(i, embed_dataloader, args, "Usability", df)
             preds_i = sigmoid(np.stack(pred_df.preds.to_numpy()))
             preds_per_split.append(preds_i)
