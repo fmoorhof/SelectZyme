@@ -19,7 +19,7 @@ project:
     length: "10 TO *"  # *=open end
     custom_data_location: "tests/head_10.tsv"  # use "" if no custom data is desired
     out_dir: "results/"
-    df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_brenda", "xref_pdb", "sequence"]  # long inline lists also possible or write like in 'query_terms'
+    df_coi: ["accession", "reviewed", "ec", "organism_id", "length", "xref_pdb", "xref_alphafolddb", "xref_brenda", "sequence"]  # long inline lists also possible or write like in 'query_terms'
 
   plm:
     plm_model: "esm1b" # [esm1b, esm2, prott5, prostt5]
