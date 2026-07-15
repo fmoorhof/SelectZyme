@@ -34,8 +34,15 @@ project:
     n_neighbors: 15  # recommended between 5-50
 
   predictions:
-    solubility: True  # predict solubility and usability with NetSolP
-    ec: True  # predict EC numbers with CLEAN
+    solubility: 
+      enabled: True  # predict solubility with NetSolP
+      weight: 0.5  # weight for solubility prediction (between 0 and 1)
+    usability: 
+      enabled: False  # predict usability with NetSolP
+      weight: 0.1  # weight for usability prediction (between 0 and 1)
+    ec: 
+      enabled: True  # predict EC numbers with CLEAN
+      weight: 0.8  # weight for EC prediction (between 0 and 1)
 
   plot_customizations:  # define marker size and shape
     objective: "cluster"  # define the legend objective for MST and SLC
