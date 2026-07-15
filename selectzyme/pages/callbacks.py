@@ -137,6 +137,11 @@ def _process_selection(df, shared_table, point):
     accession = point["customdata"]
     selected_row = df[df["accession"] == accession].iloc[0]
     selected_row[df.columns.get_loc("selected")] = True
+    if "xref_alphafolddb" in df.columns and selected_row["xref_brenda"] != "unknown":
+        selected_row["xref_alphafolddb"] = (f"https://alphafold.com/entry/AF-{selected_row['xref_alphafolddb'].split(';')[0]}-F1")
+    else:
+        selected_row["Alphafold URL (if accession is from UniProt)"] = (f"https://alphafold.ebi.ac.uk/entry/{selected_row['accession']}")
+
     if all(col in df.columns for col in {"xref_brenda", "accession", "organism_id"}) and selected_row["xref_brenda"] != "unknown":
         selected_row["BRENDA URL"] = (
             f"https://www.brenda-enzymes.org/enzyme.php?ecno={selected_row['xref_brenda'].split(';')[0]}&UniProtAcc={selected_row['accession']}&OrganismID={selected_row['organism_id']}"

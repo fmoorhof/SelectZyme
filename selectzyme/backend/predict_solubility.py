@@ -9,8 +9,11 @@ import torch
 from PredictionServer.data import BatchConverter, FastaBatchedDataset  # part of local netsolp install
 from PredictionServer.predict import get_preds_split, sigmoid
 
+from selectzyme.backend.utils import run_time
 
-def get_preds(df, args):
+
+@run_time
+def get_preds(df, args, pred_frequency=2):
     alphabet_path = os.path.join(args.MODELS_PATH, "ESM1b_alphabet.pkl")  # args.MODELS_PATH
 
     with open(alphabet_path, "rb") as f:
@@ -24,19 +27,19 @@ def get_preds(df, args):
     
     if "S" in args.PREDICTION_TYPE:
         preds_per_split = []
-        for i in range(5):
+        for i in range(pred_frequency):
             pred_df = get_preds_split(i, embed_dataloader, args, "Solubility", df)
             preds_i = sigmoid(np.stack(pred_df.preds.to_numpy()))
             preds_per_split.append(preds_i)
-        avg_pred = sum(preds_per_split) / 5
+        avg_pred = sum(preds_per_split) / pred_frequency
         df["netSolP_solubility"] = pd.Series(avg_pred)
     if "U" in args.PREDICTION_TYPE:
         preds_per_split = []
-        for i in range(5):
+        for i in range(pred_frequency):
             pred_df = get_preds_split(i, embed_dataloader, args, "Usability", df)
             preds_i = sigmoid(np.stack(pred_df.preds.to_numpy()))
             preds_per_split.append(preds_i)
-        avg_pred = sum(preds_per_split) / 5
+        avg_pred = sum(preds_per_split) / pred_frequency
         df["netSolP_usability"] = pd.Series(avg_pred)
     
     df.rename(columns={"sid": "accession", "fasta": "sequence"}, inplace=True)

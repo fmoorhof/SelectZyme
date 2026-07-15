@@ -93,9 +93,9 @@ def clean_max_sep_predictions(CLEAN_model, sequence_label_esm_emb_dict, emb_trai
             for label in sequence_label_esm_emb_dict])
     id_ec_inference_dummy = {seq_label:[] for seq_label in sequence_label_esm_emb_dict}
     with torch.no_grad():
-        model_emb_inference  = CLEAN_model(esm_emb_inference.to(device)).to("cpu").clone()
+        model_emb_inference  = CLEAN_model(esm_emb_inference.to(device))
     inference_dist = get_dist_map_test(
-        emb_train, model_emb_inference, ec_id_dict_train, id_ec_inference_dummy, "cpu", torch.float32)
+        emb_train, model_emb_inference, ec_id_dict_train, id_ec_inference_dummy, device, torch.float32)
     inference_df = pd.DataFrame.from_dict(inference_dist)
     max_sep_predictions_dict = get_max_sep_predictions_dict(inference_df, gmm_path)
     return max_sep_predictions_dict
@@ -107,7 +107,7 @@ def run_clean_inference_with_embeddings(
     ec_csv_path: str,
     model_ckpt_path: str,
     out_csv: Optional[str] = None,
-    device: str = "cpu",
+    device = "cpu",
     gmm: str = "",
 ) -> pd.DataFrame:
     """Run CLEAN inference using already-computed ESM1b embeddings.
@@ -129,7 +129,7 @@ def run_clean_inference_with_embeddings(
     CLEAN_model.eval()
 
     # load emb_train
-    emb_train = torch.load(emb_train_path, map_location="cpu")
+    emb_train = torch.load(emb_train_path, map_location=device)
 
     # load ec id mapping
     _, ec_id_dict_train = get_ec_id_dict(ec_csv_path)
